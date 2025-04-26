@@ -3,26 +3,18 @@
 //
 
 #include "game.h"
-
+#include "inventory.h"
 #include <message.h>
 #include <string.h>
 
 
 void init_game(Game *game) {
-    // game->round_time = 0;
-    // game->elapsed_time = 0;
-    // game->total_effort_A = 0;
-    // game->total_effort_B = 0;
-    // game->round_num = 1;
-    // game->game_running = 1;
-    // game->team_wins_A = 0;
-    // game->team_wins_B = 0;
-    // game->last_winner = NONE;
-    // game->elapsed_time = 0;
-    // game->round_running = 1;
-    // game->round_score = 0;
-    // game->total_score = 0;
-    // game->reset_round_time_flag = 1; // Initialize the flag
+    game->elapsed_time = 0;
+    game->num_frustrated_customers = 0;
+    game->num_complained_customers = 0;
+    game->num_customers_missing = 0;
+
+    init_inventory(&game->inventory);
 }
 
 //
