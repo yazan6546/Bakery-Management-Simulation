@@ -10,6 +10,7 @@ int load_config(const char *filename, Config *config) {
     }
 
     // Initialize all configuration values to default or invalid values to indicate uninitialized state
+    config->MAX_TIME = -1;
     config->FRUSTRATED_CUSTOMERS = -1;
     config->COMPLAINED_CUSTOMERS = -1;
     config->CUSTOMERS_MISSING = -1;
@@ -49,6 +50,7 @@ int load_config(const char *filename, Config *config) {
 
             // Set corresponding config fields based on the key
             if (strcmp(key, "FRUSTRATED_CUSTOMERS") == 0) config->FRUSTRATED_CUSTOMERS = (int)value;
+            else if (strcmp(key, "MAX_TIME") == 0) config->MAX_TIME = (int)value;
             else if (strcmp(key, "COMPLAINED_CUSTOMERS") == 0) config->COMPLAINED_CUSTOMERS = (int)value;
             else if (strcmp(key, "CUSTOMERS_MISSING") == 0) config->CUSTOMERS_MISSING = (int)value;
             else if (strcmp(key, "DAILY_PROFIT") == 0) config->DAILY_PROFIT = value;
@@ -110,6 +112,7 @@ fflush(stdout);
 
 void print_config(Config *config) {
     printf("Config values: \n");
+    printf("MAX_TIME: %d\n", config->MAX_TIME);
     printf("FRUSTRATED_CUSTOMERS: %d\n", config->FRUSTRATED_CUSTOMERS);
     printf("COMPLAINED_CUSTOMERS: %d\n", config->COMPLAINED_CUSTOMERS);
     printf("CUSTOMERS_MISSING: %d\n", config->CUSTOMERS_MISSING);
@@ -141,7 +144,8 @@ void print_config(Config *config) {
 
 int check_parameter_correctness(const Config *config) {
     // Check that all integer parameters are non-negative
-    if (config->FRUSTRATED_CUSTOMERS < 0 ||
+    if (config->MAX_TIME < 0 ||
+        config->FRUSTRATED_CUSTOMERS < 0 ||
         config->COMPLAINED_CUSTOMERS < 0 ||
         config->CUSTOMERS_MISSING < 0 ||
         config->NUM_BREAD_CATEGORIES < 0 ||
@@ -200,7 +204,8 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
+    sprintf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
+    config->MAX_TIME,
     config->FRUSTRATED_CUSTOMERS,
     config->COMPLAINED_CUSTOMERS,
     config->CUSTOMERS_MISSING,
@@ -229,7 +234,9 @@ void serialize_config(Config *config, char *buffer) {
 }
 
 void deserialize_config(Config *config, char *buffer) {
-    sscanf(buffer, "%d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
+
+    sscanf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
+    &config->MAX_TIME,
     &config->FRUSTRATED_CUSTOMERS,
     &config->COMPLAINED_CUSTOMERS,
     &config->CUSTOMERS_MISSING,

@@ -5,16 +5,98 @@
 #include "game.h"
 #include "inventory.h"
 #include <message.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include "config.h"
+#include "common.h"
 #include <string.h>
 
 
-void init_game(Game *game) {
+int game_init(Game *game, pid_t *processes) {
     game->elapsed_time = 0;
     game->num_frustrated_customers = 0;
     game->num_complained_customers = 0;
     game->num_customers_missing = 0;
 
     init_inventory(&game->inventory);
+
+    if (load_config("../config.txt", &game->config) == -1) {
+        printf("Config file failed");
+        return 1;
+    }
+
+    char *binary_paths[] = {
+        "./graphics",
+        "./chefs",
+        "./bakers",
+        "./sellers",
+        "./supply_chain",
+        "./customers"
+    };
+
+    for (int i = 0; i < 6; i++) {
+        processes[i] = start_process(binary_paths[i], &game->config);
+    }
+
+    return 0;
+}
+
+void game_create(int *shm_fd, Game **shared_game) {
+    // Create shared game state using mmap
+    *shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
+    if ((*shm_fd) == -1) {
+        perror("shm_open failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (ftruncate(*shm_fd, sizeof(Game)) == -1) {
+        perror("ftruncate failed");
+        exit(EXIT_FAILURE);
+    }
+
+    *shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
+    if (*shared_game == MAP_FAILED) {
+        perror("mmap failed");
+        exit(EXIT_FAILURE);
+    }
+
+    fcntl(*shm_fd, F_SETFD, fcntl(*shm_fd, F_GETFD) & ~FD_CLOEXEC);
+}
+
+void game_destroy(const int shm_fd, Game *shared_game) {
+    if (shared_game != NULL && shared_game != MAP_FAILED) {
+        if (munmap(shared_game, sizeof(Game)) == -1) {
+            perror("munmap failed");
+        }
+    }
+    shm_unlink("/game_shared_mem");
+
+    if (shm_fd > 0) {
+        close(shm_fd);
+    }
+}
+
+
+pid_t start_process(const char *binary, Config *config) {
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid == 0) {
+        // Now pass two arguments: shared memory fd and GUI pid.
+        char buffer[50];
+        serialize_config(config, buffer);
+        if (execl(binary, binary, buffer, NULL)) {
+
+            printf("%s\n", binary);
+            perror("execl failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return pid;
 }
 
 //
@@ -138,37 +220,25 @@ void init_game(Game *game) {
 //     return winner;
 // }
 
-// int check_game_conditions(const Game *game, const Config *config, Team team_win) {
-//     if (game->round_num >= config->NUM_ROUNDS) {
-//         printf("NUM ROUNDS\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (team_win == game->last_winner && team_win != -1) {
-//         printf("CONSECUTIVE WINS\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (game->elapsed_time > config->MAX_TIME) {
-//         printf("MAX TIME\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (game->total_score > config->MAX_SCORE) {
-//         printf("MAX SCORE\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (game->total_score > config->MAX_SCORE) {
-//         fflush(stdout);
-//         return 0;
-//     }
-//     return 1;
-// }
+int check_game_conditions(const Game *game) {
+
+    if (game->elapsed_time > game->config.MAX_TIME) {
+        return 0;
+    }
+    if (game->num_frustrated_customers >= game->config.FRUSTRATED_CUSTOMERS) {
+        return 0;
+    }
+    if (game->num_complained_customers >= game->config.COMPLAINED_CUSTOMERS) {
+        return 0;
+    }
+    if (game->num_customers_missing >= game->config.CUSTOMERS_MISSING) {
+        return 0;
+    }
+    if (game->daily_profit > game->config.DAILY_PROFIT) {
+        return 0;
+    }
+    return 1;
+}
 //
 // int check_round_conditions(const Game *game, const Config *config) {
 //     if (game->round_time > config->MAX_ROUND_TIME) {

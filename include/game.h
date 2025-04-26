@@ -18,12 +18,17 @@ typedef struct Game {
     int num_frustrated_customers;
     int num_complained_customers;
     int num_customers_missing;
+    float daily_profit;
+    Config config;
     Inventory inventory;
 } Game;
 
-void init_game(Game *game);
+pid_t start_process(const char *binary, Config *config);
+int game_init(Game *game, pid_t *processes);
+void game_destroy(int shm_fd, Game *shared_game);
+void game_create(int *shm_fd, Game **shared_game);
 Team simulate_round(int pipe_fds_team_A[], int pipe_fds_team_B[], const Config *config, Game *game);
-int check_game_conditions(const Game *game, const Config *config, Team team_win);
+int check_game_conditions(const Game *game);
 void go_to_next_round(Game *game);
 int check_round_conditions(const Game *game, const Config *config);
 void print_with_time1(const Game *game, const char *format, ...);
