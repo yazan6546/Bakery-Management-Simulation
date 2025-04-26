@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "config.h"
+#include <stdio.h>
 
 // Global pointer to shared game state
 Game *shared_game;
@@ -48,9 +49,9 @@ void cleanup_resources(void) {
     if (shm_fd > 0) {
         close(shm_fd);
     }
-
-    kill(pid_graphics, SIGKILL);
-    kill(pid_referee, SIGKILL);
+    //
+    // kill(pid_graphics, SIGKILL);
+    // kill(pid_referee, SIGKILL);
 
     printf("Cleanup complete\n");
     fflush(stdout);
@@ -58,7 +59,7 @@ void cleanup_resources(void) {
 
 int main(int argc, char *argv[]) {
 
-    printf("********** The Rope Pulling Game **********\n\n");
+    printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);
 
     Config config;
@@ -129,7 +130,9 @@ pid_t start_process(const char *binary, Config *config) {
         char buffer[50];
         serialize_config(config, buffer);
         if (execl(binary, binary, buffer, NULL)) {
-            perror("execl referee");
+
+            printf("%s\n", binary);
+            perror("execl failed");
             exit(EXIT_FAILURE);
         }
     }

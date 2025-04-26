@@ -10,9 +10,8 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/s
 
 # Declaring our executable
 
-set(main main)
 
-add_executable(${main} src/main.c src/utils/config.c)
+add_executable(main src/main.c src/utils/config.c src/game.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/main.c)
 
@@ -23,7 +22,7 @@ add_executable(supply_chain src/supply_chains/supply_chain.c)
 add_executable(customers src/customers/customer.c)
 
 
-target_include_directories(${main} PRIVATE include) # Include the header files in the include directory for the main executable
+include_directories(main PRIVATE include) # Include the header files in the include directory for the main executable
 target_include_directories(graphics PRIVATE include/lib)
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 
