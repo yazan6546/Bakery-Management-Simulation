@@ -36,7 +36,7 @@ int game_init(Game *game, pid_t *processes) {
     };
 
     for (int i = 0; i < 6; i++) {
-        processes[i] = start_process(binary_paths[i], &game->config);
+        processes[i] = start_process(binary_paths[i]);
     }
 
     return 0;
@@ -78,7 +78,7 @@ void game_destroy(const int shm_fd, Game *shared_game) {
 }
 
 
-pid_t start_process(const char *binary, Config *config) {
+pid_t start_process(const char *binary) {
     pid_t pid = fork();
     if (pid == -1) {
         perror("fork");
@@ -88,8 +88,7 @@ pid_t start_process(const char *binary, Config *config) {
     if (pid == 0) {
         // Now pass two arguments: shared memory fd and GUI pid.
         char buffer[50];
-        serialize_config(config, buffer);
-        if (execl(binary, binary, buffer, NULL)) {
+        if (execl(binary, binary, NULL)) {
 
             printf("%s\n", binary);
             perror("execl failed");
