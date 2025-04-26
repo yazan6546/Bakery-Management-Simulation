@@ -11,7 +11,7 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/s
 # Declaring our executable
 
 
-add_executable(main src/main.c src/utils/config.c src/game.c)
+add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/main.c)
 

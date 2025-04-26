@@ -18,13 +18,7 @@ pid_t start_process(const char *binary, Config *config);
 
 void handle_alarm(int signum) {
 
-    // Check if referee requested a reset
-    if (shared_game->reset_round_time_flag) {
-        shared_game->round_time = 0;
-    } else {
-        shared_game->round_time++;
-        shared_game->elapsed_time++;
-    }
+    shared_game->elapsed_time++;
 
     alarm(1);
 }
@@ -105,7 +99,7 @@ int main(int argc, char *argv[]) {
     pid_t pid_bakers = start_process("./bakers", &config);
     pid_t pid_sellers = start_process("./sellers", &config);
     pid_t pid_supply_chain = start_process("./supply_chain", &config);
-    pid_t pid_customer = start_process("./customer", &config);
+    pid_t pid_customer = start_process("./customers", &config);
 
 
     // Setup signal handler for time management
