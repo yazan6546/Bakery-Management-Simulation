@@ -62,6 +62,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // execlp("pwd", "pwd", NULL);
+
     // Register cleanup function with atexit
     atexit(cleanup_resources);
 
@@ -107,7 +109,14 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, handle_sigint); // Renamed to match actual signal
     alarm(1);  // Start the timer
 
-    wait(&pid_graphics);
+    int status_referee;
+    waitpid(pid_graphics, &status_referee, 0);
+
+    if (WIFEXITED(status_referee)) {
+        printf("Referee Child process exited with code: %d\n", WEXITSTATUS(status_referee));
+    } else if (WIFSIGNALED(status_referee)) {
+        printf("Referee Child process terminated by signal: %d\n", WTERMSIG(status_referee));
+    }
 
 }
 
@@ -127,6 +136,9 @@ pid_t start_process(const char *binary, Config *config) {
 
             printf("%s\n", binary);
             perror("execl failed");
+            sleep(1);
+            // Cleanup resources before exiting
+            fflush(stdout);
             exit(EXIT_FAILURE);
         }
     }
