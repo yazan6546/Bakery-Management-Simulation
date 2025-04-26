@@ -5,16 +5,93 @@
 #include "game.h"
 #include "inventory.h"
 #include <message.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include "config.h"
+#include "common.h"
 #include <string.h>
 
 
-void init_game(Game *game) {
+int init_game(Game *game) {
     game->elapsed_time = 0;
     game->num_frustrated_customers = 0;
     game->num_complained_customers = 0;
     game->num_customers_missing = 0;
 
     init_inventory(&game->inventory);
+
+    if (load_config("../config.txt", &game->config) == -1) {
+        printf("Config file failed");
+        return 1;
+    }
+
+    pid_t pid_graphics = start_process("./graphics", &game->config);
+    pid_t pid_chefs = start_process("./chefs", &game->config);
+    pid_t pid_bakers = start_process("./bakers", &game->config);
+    pid_t pid_sellers = start_process("./sellers", &game->config);
+    pid_t pid_supply_chain = start_process("./supply_chain", &game->config);
+    pid_t pid_customer = start_process("./customers", &game->config);
+
+    return 0;
+}
+
+void game_create(int *shm_fd, Game **shared_game) {
+    // Create shared game state using mmap
+    *shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
+    if ((*shm_fd) == -1) {
+        perror("shm_open failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (ftruncate(*shm_fd, sizeof(Game)) == -1) {
+        perror("ftruncate failed");
+        exit(EXIT_FAILURE);
+    }
+
+    shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
+    if (shared_game == MAP_FAILED) {
+        perror("mmap failed");
+        exit(EXIT_FAILURE);
+    }
+
+    fcntl(*shm_fd, F_SETFD, fcntl(*shm_fd, F_GETFD) & ~FD_CLOEXEC);
+}
+
+void game_destroy(int shm_fd, Game *shared_game) {
+    if (shared_game != NULL && shared_game != MAP_FAILED) {
+        if (munmap(shared_game, sizeof(Game)) == -1) {
+            perror("munmap failed");
+        }
+    }
+
+    shm_unlink("/game_shared_mem");
+
+    if (shm_fd > 0) {
+        close(shm_fd);
+    }
+}
+
+
+pid_t start_process(const char *binary, Config *config) {
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid == 0) {
+        // Now pass two arguments: shared memory fd and GUI pid.
+        char buffer[50];
+        serialize_config(config, buffer);
+        if (execl(binary, binary, buffer, NULL)) {
+
+            printf("%s\n", binary);
+            perror("execl failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return pid;
 }
 
 //

@@ -229,6 +229,7 @@ void serialize_config(Config *config, char *buffer) {
 }
 
 void deserialize_config(Config *config, char *buffer) {
+
     sscanf(buffer, "%d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
     &config->FRUSTRATED_CUSTOMERS,
     &config->COMPLAINED_CUSTOMERS,

@@ -1,9 +1,6 @@
 #include "common.h"
 #include <signal.h>
 #include "game.h"
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include "config.h"
 #include <stdio.h>
 
@@ -14,7 +11,6 @@ int shm_fd; // Store fd globally for cleanup
 void handle_alarm(int signum);
 void handle_sigint(int signum); // Renamed from handle_sigkill to match actual signal
 void cleanup_resources(void);   // New function for atexit
-pid_t start_process(const char *binary, Config *config);
 
 void handle_alarm(int signum) {
 
@@ -32,17 +28,7 @@ void cleanup_resources(void) {
     printf("Cleaning up resources...\n");
     fflush(stdout);
 
-    if (shared_game != NULL && shared_game != MAP_FAILED) {
-        if (munmap(shared_game, sizeof(Game)) == -1) {
-            perror("munmap failed");
-        }
-    }
-
-    shm_unlink("/game_shared_mem");
-
-    if (shm_fd > 0) {
-        close(shm_fd);
-    }
+    game_destroy(shm_fd, shared_game);
     //
     // kill(pid_graphics, SIGKILL);
     // kill(pid_referee, SIGKILL);
@@ -56,79 +42,15 @@ int main(int argc, char *argv[]) {
     printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);
 
-    Config config;
-
-    if (load_config("../config.txt", &config) == -1) {
-        return 1;
-    }
-
     // Register cleanup function with atexit
     atexit(cleanup_resources);
+    game_create()
 
-    // shared_game = malloc(sizeof(Game)); // Remove this line - using mmap instead
-
-    // Create shared game state using mmap
-    shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("shm_open failed");
-        exit(EXIT_FAILURE);
-    }
-
-    if (ftruncate(shm_fd, sizeof(Game)) == -1) {
-        perror("ftruncate failed");
-        exit(EXIT_FAILURE);
-    }
-
-    shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shared_game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(EXIT_FAILURE);
-    }
-
-    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
-
-    // Pass fd as string
-    char fd_str[16];
-    sprintf(fd_str, "%d", shm_fd);
-
-    // Initialize game state
-    init_game(shared_game);
-
-    pid_t pid_graphics = start_process("./graphics", &config);
-    pid_t pid_chefs = start_process("./chefs", &config);
-    pid_t pid_bakers = start_process("./bakers", &config);
-    pid_t pid_sellers = start_process("./sellers", &config);
-    pid_t pid_supply_chain = start_process("./supply_chain", &config);
-    pid_t pid_customer = start_process("./customers", &config);
-
-
-    // Setup signal handler for time management
     signal(SIGALRM, handle_alarm);
     signal(SIGINT, handle_sigint); // Renamed to match actual signal
     alarm(1);  // Start the timer
 
+
     wait(&pid_graphics);
 
-}
-
-
-pid_t start_process(const char *binary, Config *config) {
-    pid_t pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        exit(EXIT_FAILURE);
-    }
-
-    if (pid == 0) {
-        // Now pass two arguments: shared memory fd and GUI pid.
-        char buffer[50];
-        serialize_config(config, buffer);
-        if (execl(binary, binary, buffer, NULL)) {
-
-            printf("%s\n", binary);
-            perror("execl failed");
-            exit(EXIT_FAILURE);
-        }
-    }
-    return pid;
 }
