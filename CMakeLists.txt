@@ -9,9 +9,12 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/s
 
 
 # Declaring our executable
-add_executable(graphics)
-target_sources(graphics PRIVATE src/main.c)
 
+add_executable(main_baking src/main.c src/utils/config.c)
+add_executable(graphics)
+target_sources(graphics PRIVATE src/graphics/main.c)
+
+target_include_directories(main_baking PRIVATE include) # Include the header files in the include directory for the main executable
 target_include_directories(graphics PRIVATE include/lib)
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 
