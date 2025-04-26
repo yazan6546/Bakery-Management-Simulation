@@ -13,7 +13,7 @@
 #include <string.h>
 
 
-int init_game(Game *game) {
+int game_init(Game *game, pid_t *processes) {
     game->elapsed_time = 0;
     game->num_frustrated_customers = 0;
     game->num_complained_customers = 0;
@@ -26,12 +26,18 @@ int init_game(Game *game) {
         return 1;
     }
 
-    pid_t pid_graphics = start_process("./graphics", &game->config);
-    pid_t pid_chefs = start_process("./chefs", &game->config);
-    pid_t pid_bakers = start_process("./bakers", &game->config);
-    pid_t pid_sellers = start_process("./sellers", &game->config);
-    pid_t pid_supply_chain = start_process("./supply_chain", &game->config);
-    pid_t pid_customer = start_process("./customers", &game->config);
+    char *binary_paths[] = {
+        "./graphics",
+        "./chefs",
+        "./bakers",
+        "./sellers",
+        "./supply_chain",
+        "./customers"
+    };
+
+    for (int i = 0; i < 6; i++) {
+        processes[i] = start_process(binary_paths[i], &game->config);
+    }
 
     return 0;
 }
@@ -49,8 +55,8 @@ void game_create(int *shm_fd, Game **shared_game) {
         exit(EXIT_FAILURE);
     }
 
-    shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
-    if (shared_game == MAP_FAILED) {
+    *shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
+    if (*shared_game == MAP_FAILED) {
         perror("mmap failed");
         exit(EXIT_FAILURE);
     }
@@ -58,13 +64,12 @@ void game_create(int *shm_fd, Game **shared_game) {
     fcntl(*shm_fd, F_SETFD, fcntl(*shm_fd, F_GETFD) & ~FD_CLOEXEC);
 }
 
-void game_destroy(int shm_fd, Game *shared_game) {
+void game_destroy(const int shm_fd, Game *shared_game) {
     if (shared_game != NULL && shared_game != MAP_FAILED) {
         if (munmap(shared_game, sizeof(Game)) == -1) {
             perror("munmap failed");
         }
     }
-
     shm_unlink("/game_shared_mem");
 
     if (shm_fd > 0) {
@@ -215,37 +220,25 @@ pid_t start_process(const char *binary, Config *config) {
 //     return winner;
 // }
 
-// int check_game_conditions(const Game *game, const Config *config, Team team_win) {
-//     if (game->round_num >= config->NUM_ROUNDS) {
-//         printf("NUM ROUNDS\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (team_win == game->last_winner && team_win != -1) {
-//         printf("CONSECUTIVE WINS\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (game->elapsed_time > config->MAX_TIME) {
-//         printf("MAX TIME\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (game->total_score > config->MAX_SCORE) {
-//         printf("MAX SCORE\n");
-//         fflush(stdout);
-//         return 0;
-//     }
-//
-//     if (game->total_score > config->MAX_SCORE) {
-//         fflush(stdout);
-//         return 0;
-//     }
-//     return 1;
-// }
+int check_game_conditions(const Game *game) {
+
+    if (game->elapsed_time > game->config.MAX_TIME) {
+        return 0;
+    }
+    if (game->num_frustrated_customers >= game->config.FRUSTRATED_CUSTOMERS) {
+        return 0;
+    }
+    if (game->num_complained_customers >= game->config.COMPLAINED_CUSTOMERS) {
+        return 0;
+    }
+    if (game->num_customers_missing >= game->config.CUSTOMERS_MISSING) {
+        return 0;
+    }
+    if (game->daily_profit > game->config.DAILY_PROFIT) {
+        return 0;
+    }
+    return 1;
+}
 //
 // int check_round_conditions(const Game *game, const Config *config) {
 //     if (game->round_time > config->MAX_ROUND_TIME) {

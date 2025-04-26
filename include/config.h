@@ -8,6 +8,7 @@
 
 
 typedef struct {
+    int MAX_TIME;
     int FRUSTRATED_CUSTOMERS;
     int COMPLAINED_CUSTOMERS;
     int CUSTOMERS_MISSING;

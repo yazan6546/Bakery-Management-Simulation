@@ -6,6 +6,7 @@
 
 // Global pointer to shared game state
 Game *shared_game;
+pid_t processes[6];
 int shm_fd; // Store fd globally for cleanup
 
 void handle_alarm(int signum);
@@ -28,6 +29,10 @@ void cleanup_resources(void) {
     printf("Cleaning up resources...\n");
     fflush(stdout);
 
+    for (int i = 0; i < 6; i++) {
+        kill(processes[i], SIGKILL);
+    }
+
     game_destroy(shm_fd, shared_game);
     //
     // kill(pid_graphics, SIGKILL);
@@ -44,13 +49,17 @@ int main(int argc, char *argv[]) {
 
     // Register cleanup function with atexit
     atexit(cleanup_resources);
-    game_create()
+    game_create(&shm_fd, &shared_game);
+    game_init(shared_game, processes);
+
 
     signal(SIGALRM, handle_alarm);
     signal(SIGINT, handle_sigint); // Renamed to match actual signal
     alarm(1);  // Start the timer
 
 
-    wait(&pid_graphics);
+    while (check_game_conditions(shared_game)) {
+
+    }
 
 }
