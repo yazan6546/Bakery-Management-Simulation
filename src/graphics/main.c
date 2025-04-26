@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <stdio.h>
 
 #define SCREEN_WIDTH (800)
 #define SCREEN_HEIGHT (450)
@@ -7,6 +8,8 @@
 
 int main(void)
 {
+
+    printf("opjdpoewjdpowej\n");
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
     SetTargetFPS(60);
 
