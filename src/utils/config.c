@@ -10,23 +10,31 @@ int load_config(const char *filename, Config *config) {
     }
 
     // Initialize all configuration values to default or invalid values to indicate uninitialized state
-    config->MIN_ENERGY = -1;
-    config->MAX_ENERGY = -1;
-    config->MAX_SCORE = -1;
-    config->MAX_TIME = -1;
-    config->MAX_ROUND_TIME = -1;
-    config->NUM_ROUNDS = -1;
-    config->MIN_RATE_DECAY = -1;
-    config->MAX_RATE_DECAY = -1;
-    config->MIN_RECOVERY_TIME = -1;
-    config->MAX_RECOVERY_TIME = -1;
-    config->WINNING_THRESHOLD = -1;
-    config->NUM_PLAYERS = -1;
-    config->UPDATE_RATE = -1;
-    config->MIN_FALLING_CHANCE = -1;
-    config->MAX_FALLING_CHANCE = -1;
-    config->MIN_ENDURANCE = -1;
-    config->MAX_ENDURANCE = -1;
+    config->FRUSTRATED_CUSTOMERS = -1;
+    config->COMPLAINED_CUSTOMERS = -1;
+    config->CUSTOMERS_MISSING = -1;
+    config->DAILY_PROFIT = -1;
+    config->NUM_BREAD_CATEGORIES = -1;
+    config->NUM_SANDWICH_CATEGORIES = -1;
+    config->NUM_CAKE_FLAVORS = -1;
+    config->NUM_SWEET_CATEGORIES = -1;
+    config->NUM_SWEET_FLAVORS = -1;
+    config->NUM_SAVORY_PATISSERIES = -1;
+    config->NUM_SWEET_PATISSERIES = -1;
+    config->NUM_CHEFS = -1;
+    config->NUM_BAKERS = -1;
+    config->NUM_SELLERS = -1;
+    config->NUM_SUPPLY_CHAIN = -1;
+    config->NUM_PASTRY_CATEGORIES = -1;
+    config->MIN_PURCHASE_QUANTITY = -1;
+    config->MAX_PURCHASE_QUANTITY = -1;
+    config->MIN_ITEM_PRICE = -1;
+    config->MAX_ITEM_PRICE = -1;
+    config->MIN_TIME_FRUSTRATED = -1;
+    config->MAX_TIME_FRUSTRATED = -1;
+    config->MIN_OVEN_TIME = -1;
+    config->MAX_OVEN_TIME = -1;
+    config->NUM_OVENS = -1;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -40,27 +48,35 @@ int load_config(const char *filename, Config *config) {
         if (sscanf(line, "%40[^=]=%f", key, &value) == 2) {
 
             // Set corresponding config fields based on the key
-            if (strcmp(key, "MIN_ENERGY") == 0) config->MIN_ENERGY = value;
-            else if (strcmp(key, "MAX_ENERGY") == 0) config->MAX_ENERGY = value;
-            else if (strcmp(key, "MAX_SCORE") == 0) config->MAX_SCORE = value;
-            else if (strcmp(key, "MAX_TIME") == 0) config->MAX_TIME = value;
-            else if (strcmp(key, "NUM_ROUNDS") == 0) config->NUM_ROUNDS = value;
-            else if (strcmp(key, "MIN_RATE_DECAY") == 0) config->MIN_RATE_DECAY = value;
-            else if (strcmp(key, "MAX_RATE_DECAY") == 0) config->MAX_RATE_DECAY = value;
-            else if (strcmp(key, "MIN_RECOVERY_TIME") == 0) config->MIN_RECOVERY_TIME = value;
-            else if (strcmp(key, "MAX_RECOVERY_TIME") == 0) config->MAX_RECOVERY_TIME = value;
-            else if (strcmp(key, "WINNING_THRESHOLD") == 0) config->WINNING_THRESHOLD = value;
-            else if (strcmp(key, "NUM_PLAYERS") == 0) config->NUM_PLAYERS = value;
-            else if (strcmp(key, "UPDATE_RATE") == 0) config->UPDATE_RATE = value;
-            else if (strcmp(key, "MIN_FALLING_CHANCE") == 0) config->MIN_FALLING_CHANCE = value;
-            else if (strcmp(key, "MAX_FALLING_CHANCE") == 0) config->MAX_FALLING_CHANCE = value;
-            else if (strcmp(key, "MAX_ROUND_TIME") == 0) config->MAX_ROUND_TIME = value;
-            else if (strcmp(key, "MIN_ENDURANCE") == 0) config->MIN_ENDURANCE = value;
-            else if (strcmp(key, "MAX_ENDURANCE") == 0) config->MAX_ENDURANCE = value;
+            if (strcmp(key, "FRUSTRATED_CUSTOMERS") == 0) config->FRUSTRATED_CUSTOMERS = (int)value;
+            else if (strcmp(key, "COMPLAINED_CUSTOMERS") == 0) config->COMPLAINED_CUSTOMERS = (int)value;
+            else if (strcmp(key, "CUSTOMERS_MISSING") == 0) config->CUSTOMERS_MISSING = (int)value;
+            else if (strcmp(key, "DAILY_PROFIT") == 0) config->DAILY_PROFIT = value;
+            else if (strcmp(key, "NUM_BREAD_CATEGORIES") == 0) config->NUM_BREAD_CATEGORIES = (int)value;
+            else if (strcmp(key, "NUM_SANDWICH_CATEGORIES") == 0) config->NUM_SANDWICH_CATEGORIES = (int)value;
+            else if (strcmp(key, "NUM_CAKE_FLAVORS") == 0) config->NUM_CAKE_FLAVORS = (int)value;
+            else if (strcmp(key, "NUM_SWEET_CATEGORIES") == 0) config->NUM_SWEET_CATEGORIES = (int)value;
+            else if (strcmp(key, "NUM_SWEET_FLAVORS") == 0) config->NUM_SWEET_FLAVORS = (int)value;
+            else if (strcmp(key, "NUM_SAVORY_PATISSERIES") == 0) config->NUM_SAVORY_PATISSERIES = (int)value;
+            else if (strcmp(key, "NUM_SWEET_PATISSERIES") == 0) config->NUM_SWEET_PATISSERIES = (int)value;
+            else if (strcmp(key, "NUM_CHEFS") == 0) config->NUM_CHEFS = (int)value;
+            else if (strcmp(key, "NUM_BAKERS") == 0) config->NUM_BAKERS = (int)value;
+            else if (strcmp(key, "NUM_SELLERS") == 0) config->NUM_SELLERS = (int)value;
+            else if (strcmp(key, "NUM_SUPPLY_CHAIN") == 0) config->NUM_SUPPLY_CHAIN = (int)value;
+            else if (strcmp(key, "NUM_PASTRY_CATEGORIES") == 0) config->NUM_PASTRY_CATEGORIES = (int)value;
+            else if (strcmp(key, "MIN_PURCHASE_QUANTITY") == 0) config->MIN_PURCHASE_QUANTITY = (int)value;
+            else if (strcmp(key, "MAX_PURCHASE_QUANTITY") == 0) config->MAX_PURCHASE_QUANTITY = (int)value;
+            else if (strcmp(key, "MIN_ITEM_PRICE") == 0) config->MIN_ITEM_PRICE = value;
+            else if (strcmp(key, "MAX_ITEM_PRICE") == 0) config->MAX_ITEM_PRICE = value;
+            else if (strcmp(key, "MIN_TIME_FRUSTRATED") == 0) config->MIN_TIME_FRUSTRATED = (int)value;
+            else if (strcmp(key, "MAX_TIME_FRUSTRATED") == 0) config->MAX_TIME_FRUSTRATED = (int)value;
+            else if (strcmp(key, "MIN_OVEN_TIME") == 0) config->MIN_OVEN_TIME = (int)value;
+            else if (strcmp(key, "MAX_OVEN_TIME") == 0) config->MAX_OVEN_TIME = (int)value;
+            else if (strcmp(key, "NUM_OVENS") == 0) config->NUM_OVENS = (int)value;
             else {
-                fprintf(stderr, "Unknown key: %s\n", key); // Print error for unknown keys
-                fclose(file); // Close the config file
-                return -1; // Return error code
+                fprintf(stderr, "Unknown key: %s\n", key);
+                fclose(file);
+                return -1;
             }
         }
     }
@@ -93,151 +109,151 @@ fflush(stdout);
 
 
 void print_config(Config *config) {
-    printf("Config values: \n MIN_ENERGY: %f\n"
-           "MAX_ENERGY: %f\n MAX_SCORE: %f\n"
-           "MAX_TIME: %f\n NUM_ROUNDS: %f\n"
-           "MIN_RATE_DECAY: %f\n MAX_RATE_DECAY: %f\n"
-           "MIN RECOVERY TIME: %f\n MAX RECOVERY TIME: %f\n"
-           "WINNING THRESHOLD: %f\n"
-           "NUM_PLAYERS: %d\n"
-           "UPDATE_RATE: %f\n"
-           "MIN_FALLING_CHANCE: %f\n"
-           "MAX_FALLING_CHANCE: %f\n"
-           "MAX_ROUND_TIME: %d\n"
-           "MIN_ENDURANCE: %f\n"
-           "MAX_ENDURANCE: %f\n",
-           config->MIN_ENERGY,
-           config->MAX_ENERGY,
-           config->MAX_SCORE,
-           config->MAX_TIME,
-           config->NUM_ROUNDS,
-           config->MIN_RATE_DECAY,
-           config->MAX_RATE_DECAY,
-           config->MIN_RECOVERY_TIME,
-           config->MAX_RECOVERY_TIME,
-           config->WINNING_THRESHOLD,
-           config->NUM_PLAYERS,
-           config->UPDATE_RATE,
-           config->MIN_FALLING_CHANCE,
-           config->MAX_FALLING_CHANCE,
-           config->MAX_ROUND_TIME,
-           config->MIN_ENDURANCE,
-           config->MAX_ENDURANCE);
+    printf("Config values: \n");
+    printf("FRUSTRATED_CUSTOMERS: %d\n", config->FRUSTRATED_CUSTOMERS);
+    printf("COMPLAINED_CUSTOMERS: %d\n", config->COMPLAINED_CUSTOMERS);
+    printf("CUSTOMERS_MISSING: %d\n", config->CUSTOMERS_MISSING);
+    printf("DAILY_PROFIT: %f\n", config->DAILY_PROFIT);
+    printf("NUM_BREAD_CATEGORIES: %d\n", config->NUM_BREAD_CATEGORIES);
+    printf("NUM_SANDWICH_CATEGORIES: %d\n", config->NUM_SANDWICH_CATEGORIES);
+    printf("NUM_CAKE_FLAVORS: %d\n", config->NUM_CAKE_FLAVORS);
+    printf("NUM_SWEET_CATEGORIES: %d\n", config->NUM_SWEET_CATEGORIES);
+    printf("NUM_SWEET_FLAVORS: %d\n", config->NUM_SWEET_FLAVORS);
+    printf("NUM_SAVORY_PATISSERIES: %d\n", config->NUM_SAVORY_PATISSERIES);
+    printf("NUM_SWEET_PATISSERIES: %d\n", config->NUM_SWEET_PATISSERIES);
+    printf("NUM_CHEFS: %d\n", config->NUM_CHEFS);
+    printf("NUM_BAKERS: %d\n", config->NUM_BAKERS);
+    printf("NUM_SELLERS: %d\n", config->NUM_SELLERS);
+    printf("NUM_SUPPLY_CHAIN: %d\n", config->NUM_SUPPLY_CHAIN);
+    printf("NUM_PASTRY_CATEGORIES: %d\n", config->NUM_PASTRY_CATEGORIES);
+    printf("MIN_PURCHASE_QUANTITY: %d\n", config->MIN_PURCHASE_QUANTITY);
+    printf("MAX_PURCHASE_QUANTITY: %d\n", config->MAX_PURCHASE_QUANTITY);
+    printf("MIN_ITEM_PRICE: %f\n", config->MIN_ITEM_PRICE);
+    printf("MAX_ITEM_PRICE: %f\n", config->MAX_ITEM_PRICE);
+    printf("MIN_TIME_FRUSTRATED: %d\n", config->MIN_TIME_FRUSTRATED);
+    printf("MAX_TIME_FRUSTRATED: %d\n", config->MAX_TIME_FRUSTRATED);
+    printf("MIN_OVEN_TIME: %d\n", config->MIN_OVEN_TIME);
+    printf("MAX_OVEN_TIME: %d\n", config->MAX_OVEN_TIME);
+    printf("NUM_OVENS: %d\n", config->NUM_OVENS);
 
     fflush(stdout);
 }
 
 int check_parameter_correctness(const Config *config) {
-
-    if (config->MIN_ENERGY < 0 || config->MAX_ENERGY < 0 || config->MIN_RATE_DECAY < 0 || config->MAX_RATE_DECAY < 0 ||
-     config->MIN_RECOVERY_TIME < 0 || config->MAX_RECOVERY_TIME < 0 || config->MIN_FALLING_CHANCE < 0 ||
-     config->MAX_FALLING_CHANCE < 0 || config->MIN_ENDURANCE < 0 || config->MAX_ENDURANCE < 0 || config->NUM_ROUNDS < 0 ||
-     config->NUM_PLAYERS < 0 || config->UPDATE_RATE < 0 || config->MAX_ROUND_TIME < 0 || config->WINNING_THRESHOLD < 0 ||
-     config->MAX_SCORE < 0 || config->MAX_TIME < 0) {
-
-        fprintf(stderr, "Values must be greater than or equal to 0\n"); // Print error for invalid energy
-        return -1; // Return error if invalid energy
-     }
-
-
-    if (config->MIN_ENERGY > config->MAX_ENERGY) {
-        fprintf(stderr, "MIN_ENERGY cannot be greater than MAX_ENERGY\n"); // Print error for invalid range
-        return -1; // Return error if range is invalid
+    // Check that all integer parameters are non-negative
+    if (config->FRUSTRATED_CUSTOMERS < 0 ||
+        config->COMPLAINED_CUSTOMERS < 0 ||
+        config->CUSTOMERS_MISSING < 0 ||
+        config->NUM_BREAD_CATEGORIES < 0 ||
+        config->NUM_SANDWICH_CATEGORIES < 0 ||
+        config->NUM_CAKE_FLAVORS < 0 ||
+        config->NUM_SWEET_CATEGORIES < 0 ||
+        config->NUM_SWEET_FLAVORS < 0 ||
+        config->NUM_SAVORY_PATISSERIES < 0 ||
+        config->NUM_SWEET_PATISSERIES < 0 ||
+        config->NUM_CHEFS < 0 ||
+        config->NUM_BAKERS < 0 ||
+        config->NUM_SELLERS < 0 ||
+        config->NUM_SUPPLY_CHAIN < 0 ||
+        config->NUM_PASTRY_CATEGORIES < 0 ||
+        config->MIN_PURCHASE_QUANTITY < 0 ||
+        config->MAX_PURCHASE_QUANTITY < 0 ||
+        config->MIN_TIME_FRUSTRATED < 0 ||
+        config->MAX_TIME_FRUSTRATED < 0 ||
+        config->MIN_OVEN_TIME < 0 ||
+        config->MAX_OVEN_TIME < 0 ||
+        config->NUM_OVENS < 0) {
+        fprintf(stderr, "Values must be greater than or equal to 0\n");
+        return -1;
     }
 
-    if (config->MIN_RATE_DECAY > config->MAX_RATE_DECAY) {
-        fprintf(stderr, "MIN_RATE_DECAY cannot be greater than MAX_RATE_DECAY\n"); // Print error for invalid range
-        return -1; // Return error if range is invalid
+    // Check that float parameters are non-negative
+    if (config->DAILY_PROFIT < 0 ||
+        config->MIN_ITEM_PRICE < 0 ||
+        config->MAX_ITEM_PRICE < 0) {
+        fprintf(stderr, "Values must be greater than or equal to 0\n");
+        return -1;
     }
 
-    if (config->MIN_RECOVERY_TIME > config->MAX_RECOVERY_TIME) {
-        fprintf(stderr, "MIN_RECOVERY_TIME cannot be greater than MAX_RECOVERY_TIME\n"); // Print error for invalid range
-        return -1; // Return error if range is invalid
+    // Logical consistency checks for minimum and maximum pairs
+    if (config->MIN_PURCHASE_QUANTITY > config->MAX_PURCHASE_QUANTITY) {
+        fprintf(stderr, "MIN_PURCHASE_QUANTITY cannot be greater than MAX_PURCHASE_QUANTITY\n");
+        return -1;
     }
 
-    if (config->MIN_FALLING_CHANCE > config->MAX_FALLING_CHANCE) {
-        fprintf(stderr, "MIN_FALLING_CHANCE cannot be greater than MAX_FALLING_CHANCE\n"); // Print error for invalid range
-        return -1; // Return error if range is invalid
+    if (config->MIN_ITEM_PRICE > config->MAX_ITEM_PRICE) {
+        fprintf(stderr, "MIN_ITEM_PRICE cannot be greater than MAX_ITEM_PRICE\n");
+        return -1;
     }
 
-    if (config->MIN_ENDURANCE > config->MAX_ENDURANCE) {
-        fprintf(stderr, "MIN_ENDURANCE cannot be greater than MAX_ENDURANCE\n"); // Print error for invalid range
-        return -1; // Return error if range is invalid
+    if (config->MIN_TIME_FRUSTRATED > config->MAX_TIME_FRUSTRATED) {
+        fprintf(stderr, "MIN_TIME_FRUSTRATED cannot be greater than MAX_TIME_FRUSTRATED\n");
+        return -1;
     }
 
-    if (config->NUM_PLAYERS <= 0) {
-        fprintf(stderr, "NUM_PLAYERS must be greater than 0\n"); // Print error for invalid number of players
-        return -1; // Return error if invalid number of players
-    }
-    if (config->NUM_PLAYERS % 2 != 0) {
-        fprintf(stderr, "NUM_PLAYERS must be even\n"); // Print error for invalid number of players
-        return -1; // Return error if invalid number of players
+    if (config->MIN_OVEN_TIME > config->MAX_OVEN_TIME) {
+        fprintf(stderr, "MIN_OVEN_TIME cannot be greater than MAX_OVEN_TIME\n");
+        return -1;
     }
 
-    if (config->MIN_RECOVERY_TIME > config->MAX_RECOVERY_TIME) {
-        fprintf(stderr, "MIN_RECOVERY_TIME cannot be greater than MAX_RECOVERY_TIME\n"); // Print error for invalid recovery time
-        return -1; // Return error if invalid recovery time
-    }
-
-    if (config->MIN_FALLING_CHANCE > config->MAX_FALLING_CHANCE) {
-        fprintf(stderr, "MIN_FALLING_CHANCE cannot be greater than MAX_FALLING_CHANCE\n"); // Print error for invalid falling chance
-        return -1; // Return error if invalid falling chance
-    }
-
-    if (config->MIN_ENDURANCE > config->MAX_ENDURANCE) {
-        fprintf(stderr, "MIN_ENDURANCE cannot be greater than MAX_ENDURANCE\n"); // Print error for invalid endurance
-        return -1; // Return error if invalid endurance
-    }
-
-
-    if (config->MIN_ENDURANCE > 1 || config->MAX_ENDURANCE > 1) {
-        fprintf(stderr, "MIN_ENDURANCE and MAX_ENDURANCE must be between 0 and 1\n"); // Print error for invalid endurance
-        return -1; // Return error if invalid endurance
-    }
-
-    return 0; // Return success if all checks pass
+    return 0;
 }
 
-
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%f %f %f %f %f %f %f %f %f %f %d %f %f %f %d %f %f",
-            config->MIN_ENERGY,
-            config->MAX_ENERGY,
-            config->MAX_SCORE,
-            config->MAX_TIME,
-            config->NUM_ROUNDS,
-            config->MIN_RATE_DECAY,
-            config->MAX_RATE_DECAY,
-            config->MIN_RECOVERY_TIME,
-            config->MAX_RECOVERY_TIME,
-            config->WINNING_THRESHOLD,
-            config->NUM_PLAYERS,
-            config->UPDATE_RATE,
-            config->MIN_FALLING_CHANCE,
-            config->MAX_FALLING_CHANCE,
-            config->MAX_ROUND_TIME,
-            config->MIN_ENDURANCE,
-            config->MAX_ENDURANCE);
+    sprintf(buffer, "%d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
+    config->FRUSTRATED_CUSTOMERS,
+    config->COMPLAINED_CUSTOMERS,
+    config->CUSTOMERS_MISSING,
+    config->DAILY_PROFIT,
+    config->NUM_BREAD_CATEGORIES,
+    config->NUM_SANDWICH_CATEGORIES,
+    config->NUM_CAKE_FLAVORS,
+    config->NUM_SWEET_CATEGORIES,
+    config->NUM_SWEET_FLAVORS,
+    config->NUM_SAVORY_PATISSERIES,
+    config->NUM_SWEET_PATISSERIES,
+    config->NUM_CHEFS,
+    config->NUM_BAKERS,
+    config->NUM_SELLERS,
+    config->NUM_SUPPLY_CHAIN,
+    config->NUM_PASTRY_CATEGORIES,
+    config->MIN_PURCHASE_QUANTITY,
+    config->MAX_PURCHASE_QUANTITY,
+    config->MIN_ITEM_PRICE,
+    config->MAX_ITEM_PRICE,
+    config->MIN_TIME_FRUSTRATED,
+    config->MAX_TIME_FRUSTRATED,
+    config->MIN_OVEN_TIME,
+    config->MAX_OVEN_TIME,
+    config->NUM_OVENS);
 }
 
 void deserialize_config(Config *config, char *buffer) {
-    sscanf(buffer, "%f %f %f %f %f %f %f %f %f %f %d %f %f %f %d %f %f",
-           &config->MIN_ENERGY,
-           &config->MAX_ENERGY,
-           &config->MAX_SCORE,
-           &config->MAX_TIME,
-           &config->NUM_ROUNDS,
-           &config->MIN_RATE_DECAY,
-           &config->MAX_RATE_DECAY,
-           &config->MIN_RECOVERY_TIME,
-           &config->MAX_RECOVERY_TIME,
-           &config->WINNING_THRESHOLD,
-           &config->NUM_PLAYERS,
-           &config->UPDATE_RATE,
-           &config->MIN_FALLING_CHANCE,
-           &config->MAX_FALLING_CHANCE,
-           &config->MAX_ROUND_TIME,
-           &config->MIN_ENDURANCE,
-           &config->MAX_ENDURANCE);
+    sscanf(buffer, "%d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d",
+    &config->FRUSTRATED_CUSTOMERS,
+    &config->COMPLAINED_CUSTOMERS,
+    &config->CUSTOMERS_MISSING,
+    &config->DAILY_PROFIT,
+    &config->NUM_BREAD_CATEGORIES,
+    &config->NUM_SANDWICH_CATEGORIES,
+    &config->NUM_CAKE_FLAVORS,
+    &config->NUM_SWEET_CATEGORIES,
+    &config->NUM_SWEET_FLAVORS,
+    &config->NUM_SAVORY_PATISSERIES,
+    &config->NUM_SWEET_PATISSERIES,
+    &config->NUM_CHEFS,
+    &config->NUM_BAKERS,
+    &config->NUM_SELLERS,
+    &config->NUM_SUPPLY_CHAIN,
+    &config->NUM_PASTRY_CATEGORIES,
+    &config->MIN_PURCHASE_QUANTITY,
+    &config->MAX_PURCHASE_QUANTITY,
+    &config->MIN_ITEM_PRICE,
+    &config->MAX_ITEM_PRICE,
+    &config->MIN_TIME_FRUSTRATED,
+    &config->MAX_TIME_FRUSTRATED,
+    &config->MIN_OVEN_TIME,
+    &config->MAX_OVEN_TIME,
+    &config->NUM_OVENS);
 }
 
