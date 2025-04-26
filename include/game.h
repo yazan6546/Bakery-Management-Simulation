@@ -23,7 +23,7 @@ typedef struct Game {
     Inventory inventory;
 } Game;
 
-pid_t start_process(const char *binary, Config *config);
+pid_t start_process(const char *binary);
 int game_init(Game *game, pid_t *processes);
 void game_destroy(int shm_fd, Game *shared_game);
 void game_create(int *shm_fd, Game **shared_game);

@@ -3,6 +3,7 @@
 #include "game.h"
 #include "config.h"
 #include <stdio.h>
+#include "assets.h"
 
 // Global pointer to shared game state
 Game *shared_game;
@@ -34,9 +35,6 @@ void cleanup_resources(void) {
     }
 
     game_destroy(shm_fd, shared_game);
-    //
-    // kill(pid_graphics, SIGKILL);
-    // kill(pid_referee, SIGKILL);
 
     printf("Cleanup complete\n");
     fflush(stdout);
@@ -59,6 +57,8 @@ int main(int argc, char *argv[]) {
 
 
     while (check_game_conditions(shared_game)) {
+
+
 
     }
 

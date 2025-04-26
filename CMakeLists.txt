@@ -11,9 +11,9 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/s
 # Declaring our executable
 
 
-add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c)
+add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c)
 add_executable(graphics)
-target_sources(graphics PRIVATE src/graphics/main.c)
+target_sources(graphics PRIVATE src/graphics/graphics.c)
 
 add_executable(chefs src/chefs/chef.c)
 add_executable(bakers src/bakers/baker.c)
@@ -24,7 +24,9 @@ add_executable(customers src/customers/customer.c)
 
 include_directories(main PRIVATE include) # Include the header files in the include directory for the main executable
 target_include_directories(graphics PRIVATE include/lib)
+target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
+
 
 # Setting ASSETS_PATH
 
