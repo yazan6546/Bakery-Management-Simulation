@@ -3,3 +3,12 @@ build
 cmake-build-debug
 config.c*
 config.txt.*
+.cache
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.dSYM
+*.log
+*.out
