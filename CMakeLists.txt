@@ -34,6 +34,7 @@ foreach (need IN LISTS need_queue) # Loop through each executable that needs the
     target_include_directories(${need} PRIVATE include/lib/queue) # Add the source files for each executable to the main executable
     target_link_libraries(${need} PRIVATE ${LIBRARY_DIR}/libgenericQueue.a) # Add dependencies for the main executable
 endforeach()
+
 # Setting ASSETS_PATH
 
 if (CMAKE_RELEASE_BUILD)
