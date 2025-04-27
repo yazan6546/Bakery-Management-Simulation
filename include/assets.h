@@ -8,6 +8,7 @@
 
 #include "raylib.h"
 
+
 // Asset structure to organize all textures
 typedef struct {
     // Customer assets

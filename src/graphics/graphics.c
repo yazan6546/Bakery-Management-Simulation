@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 #define SCREEN_WIDTH (800)
 #define SCREEN_HEIGHT (450)
 
@@ -61,5 +62,6 @@ int main(void)
 
     CloseWindow();
     UnloadTexture(background);
+
     return 0;
 }
