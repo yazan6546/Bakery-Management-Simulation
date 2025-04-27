@@ -2,7 +2,7 @@
 
 ## Game settings
 
-MAX_TIME=10            # Maximum time for the game (in minutes)
+MAX_TIME=50            # Maximum time for the game (in minutes)
 FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing

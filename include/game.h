@@ -23,8 +23,8 @@ typedef struct Game {
     Inventory inventory;
 } Game;
 
-pid_t start_process(const char *binary);
-int game_init(Game *game, pid_t *processes);
+pid_t start_process(const char *binary, int shared_mem_fd);
+int game_init(Game *game, pid_t *processes, int shared_mem_fd);
 void game_destroy(int shm_fd, Game *shared_game);
 void game_create(int *shm_fd, Game **shared_game);
 Team simulate_round(int pipe_fds_team_A[], int pipe_fds_team_B[], const Config *config, Game *game);
