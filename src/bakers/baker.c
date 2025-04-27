@@ -55,41 +55,32 @@ int main(int argc, char *argv[]) {
                 char item_name[50];
                 sprintf(item_name, "Item-%d", rand() % 100);
                 BakeryItem item;
-                backery_item_create(&item, item_name, teams->team_name);
+                backery_item_create(&item, item_name, teams[i].team_name);
                 printf("%s from queue %s\n", item.name, item.team_name);
                 enqueue(baker_queue, &item);
                 printf("Team %s produced %s\n", teams[i].team_name, item_name);
                 fflush(stdout);
             }
-            else {
-                printf("nothing...\n");
-            }
         }
 
-        // Try to put bakery items into ovens
         BakeryItem item;
-        queue *temp = front(baker_queue, &item);
-        while (temp != NULL) {
-
-            printf("%s wed\n", item.name);
-
+        while (!isEmpty(baker_queue)) {
+            front(baker_queue, &item); // Peek the front item without removing it
             int placed = 0;
             for (int j = 0; j < config.NUM_OVENS; j++) {
                 if (!ovens[j].is_busy) {
                     int baking_time = config.MIN_OVEN_TIME + rand() % (config.MAX_OVEN_TIME - config.MIN_OVEN_TIME + 1);
                     put_item_in_oven(&ovens[j], item.name, item.team_name, baking_time);
                     printf("Placed %s in Oven %d for %d seconds.\n", item.name, ovens[j].id, baking_time);
+                    dequeue(baker_queue, &item); // Remove it after placing
                     placed = 1;
                     break;
                 }
             }
             if (!placed) {
                 printf("All ovens busy, %s is waiting.\n", item.name);
-                break; // stop trying more items this second
+                break; // stop trying more items if ovens are full
             }
-
-            temp = dequeue(baker_queue, &item);
-
         }
 
         // Update ovens (tick)
