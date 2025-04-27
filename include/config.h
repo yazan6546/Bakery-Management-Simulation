@@ -34,6 +34,8 @@ typedef struct {
     int MIN_OVEN_TIME;
     int MAX_OVEN_TIME;
     int NUM_OVENS;
+    int MIN_BAKE_TIME;
+    int MAX_BAKE_TIME;
 } Config;
 
 int load_config(const char *filename, Config *config);
