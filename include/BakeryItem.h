@@ -7,4 +7,6 @@ typedef struct BakeryItem {
 } BakeryItem;
 
 
+void backery_item_create(BakeryItem *item, char *name, char *team_name);
+
 #endif // BAKERYQUEUE_H

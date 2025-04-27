@@ -6,7 +6,7 @@
 #include "queue.h"
 #include "oven.h"
 #include "BakerTeam.h"
-#include "BakeryQueue.h"
+#include "BakeryItem.h"
 #include "game.h"
 #include <sys/mman.h>
 
@@ -54,9 +54,15 @@ int main(int argc, char *argv[]) {
             if (rand() % 2 == 0) {
                 char item_name[50];
                 sprintf(item_name, "Item-%d", rand() % 100);
-                BakeryItem item = {item_name, teams[i].team_name};
+                BakeryItem item;
+                backery_item_create(&item, item_name, teams->team_name);
+                printf("%s from queue %s\n", item.name, item.team_name);
                 enqueue(baker_queue, &item);
                 printf("Team %s produced %s\n", teams[i].team_name, item_name);
+                fflush(stdout);
+            }
+            else {
+                printf("nothing...\n");
             }
         }
 
@@ -64,6 +70,9 @@ int main(int argc, char *argv[]) {
         BakeryItem item;
         queue *temp = front(baker_queue, &item);
         while (temp != NULL) {
+
+            printf("%s wed\n", item.name);
+
             int placed = 0;
             for (int j = 0; j < config.NUM_OVENS; j++) {
                 if (!ovens[j].is_busy) {
@@ -79,10 +88,8 @@ int main(int argc, char *argv[]) {
                 break; // stop trying more items this second
             }
 
-            if (dequeue(baker_queue, &item) == NULL) {
-                printf("deque failed");
-                exit(EXIT_FAILURE);
-            }
+            temp = dequeue(baker_queue, &item);
+
         }
 
         // Update ovens (tick)
