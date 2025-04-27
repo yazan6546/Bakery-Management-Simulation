@@ -48,24 +48,23 @@ void UpdateAnimation(Animation *anim, float deltaTime) {
 void DrawAnimationPro(Animation *anim, Rectangle destRec, Vector2 origin, float rotation, Color tint) {
     if (!anim || anim->length <= 0) return;
 
-    // Create a copy of destRec with adjusted width based on the current frame
-    Rectangle scaledDestRec = destRec;
+    // Get current frame
+    Rectangle sourceRec = anim->frames[anim->currentFrame];
 
-    // Calculate proper scale ratio based on original frame dimensions
-    float frameWidthRatio = anim->frames[anim->currentFrame].width / 24.0f;
-    scaledDestRec.width = destRec.width * frameWidthRatio;
+    // For horizontal flipping: If width is negative, use a flipped source rectangle
+    if (destRec.width < 0) {
+        // Make width positive
+        destRec.width = -destRec.width;
 
-    // Recalculate origin to maintain center point
-    Vector2 scaledOrigin = {
-        origin.x * frameWidthRatio,
-        origin.y
-    };
+        // Flip the source rectangle horizontally
+        sourceRec.width = -sourceRec.width;
+    }
 
     DrawTexturePro(
         anim->texture,
-        anim->frames[anim->currentFrame],
-        scaledDestRec,
-        scaledOrigin,
+        sourceRec,
+        destRec,
+        origin,
         rotation,
         tint
     );
