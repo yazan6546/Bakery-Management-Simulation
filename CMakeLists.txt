@@ -15,7 +15,6 @@ add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c)
 
-add_executable(test_queue test_queue.c)
 add_executable(chefs src/chefs/chef.c)
 add_executable(bakers src/bakers/baker.c)
 add_executable(sellers src/sellers/seller.c)
@@ -29,7 +28,7 @@ target_include_directories(graphics PRIVATE include/lib/raylib)
 target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 
-set (need_queue main bakers customers graphics test_queue) # List of executables that need the queue library
+set (need_queue main bakers customers graphics) # List of executables that need the queue library
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
     message("Adding ${need} to the main executable")
     target_include_directories(${need} PRIVATE include/lib/queue) # Add the source files for each executable to the main executable
