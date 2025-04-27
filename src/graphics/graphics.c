@@ -9,28 +9,40 @@
 int main(void)
 {
 
-    printf("opjdpoewjdpowej\n");
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
+    // Texture2D texture = LoadTexture(ASSETS_PATH"test.png"); // Check README.md for how this works
+
+    // Raylib setup
+    InitWindow(1280, 620, "Bakery Simulation");
     SetTargetFPS(60);
 
-    Texture2D texture = LoadTexture(ASSETS_PATH"test.png"); // Check README.md for how this works
-
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()) {
         BeginDrawing();
-
-        DrawCircle(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 100, BLUE);
         ClearBackground(RAYWHITE);
 
-        const int texture_x = SCREEN_WIDTH / 2 - texture.width / 2;
-        const int texture_y = SCREEN_HEIGHT / 2 - texture.height / 2;
-        DrawTexture(texture, texture_x, texture_y, WHITE);
+        // 1. Draw Top Bar
+        DrawRectangle(0, 0, 1280, 40, DARKGRAY);
+        DrawText("Profit: $520 | Time: 12m 30s | Frustrated: 3/10", 10, 10, 20, WHITE);
 
-        const char* text = "OMG! IT WORKS!";
-        const Vector2 text_size = MeasureTextEx(GetFontDefault(), text, 20, 1);
-        DrawText(text, SCREEN_WIDTH / 2 - text_size.x / 2, texture_y + texture.height + text_size.y + 10, 20, BLACK);
+        // 2. Draw Left Panel (Resources)
+        DrawRectangle(0, 40, 320, 680, LIGHTGRAY);
+        DrawText("Wheat: 50kg", 10, 60, 20, BLACK);
+        DrawText("Salami: 0kg ❌", 10, 90, 20, RED);
+
+        // 3. Draw Middle Panel (Teams)
+        DrawRectangle(320, 40, 640, 600, WHITE);
+        DrawText("Chefs - Paste: Active ✅", 330, 60, 20, DARKGREEN);
+
+        // 4. Draw Right Panel (Customers)
+        DrawRectangle(960, 40, 320, 600, LIGHTGRAY);
+        DrawCircle(970, 100, 5, GREEN); // Example customer
+
+        // 5. Draw Bottom Log
+        DrawRectangle(0, 680, 1280, 40, DARKGRAY);
+        DrawText("Event: Cheese restocked!", 10, 600, 20, WHITE);
 
         EndDrawing();
+
+        // Update simulation state here (e.g., IPC data)
     }
 
     CloseWindow();
