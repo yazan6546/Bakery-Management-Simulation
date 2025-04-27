@@ -6,7 +6,8 @@
 #define ASSETS_H
 
 
-#include "lib/raylib.h"
+#include "raylib.h"
+
 
 // Asset structure to organize all textures
 typedef struct {

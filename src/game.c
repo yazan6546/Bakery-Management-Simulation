@@ -21,7 +21,7 @@ int game_init(Game *game, pid_t *processes) {
 
     init_inventory(&game->inventory);
 
-    if (load_config("../config.txt", &game->config) == -1) {
+    if (load_config(CONFIG_PATH, &game->config) == -1) {
         printf("Config file failed");
         return 1;
     }
