@@ -1,3 +1,4 @@
+// src/bakers/baker.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,7 +12,7 @@
 #include "BakerTeam.h"
 #include "game.h"
 #include "random.h"
-#include "bakeryteam.h"
+#include "bakery_utils.h"
 
 typedef struct {
     long mtype;
@@ -19,7 +20,7 @@ typedef struct {
 } Message;
 
 Game *game;
-pid_t start_process_baker(const char *binary, Config *config, int mqid_from_main, int mqid_ready);
+
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -39,7 +40,7 @@ int main(int argc, char *argv[]) {
     print_config(&config);
     init_random();
 
-    // 👇 FIX: Initialize ovens cleanly
+    // Initialize ovens
     for (int i = 0; i < config.NUM_OVENS; i++) {
         init_oven(&game->ovens[i], i);
     }
@@ -52,27 +53,14 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    // Distribute bakers among teams
+    BakerTeam teams[NUM_BAKERY_TEAMS];
+    distribute_bakers_locally(&game->config, teams);
 
-
-    // pid_t bread_pid = fork();
-    // if (bread_pid == 0) {
-    //     handle_bread_team(mqid_from_main, mqid_ready, game);
-    //     exit(0);
-    // }
-    //
-    // pid_t cakesweets_pid = fork();
-    // if (cakesweets_pid == 0) {
-    //     handle_cakesweets_team(mqid_from_main, mqid_ready, game);
-    //     exit(0);
-    // }
-    //
-    // pid_t patisseries_pid = fork();
-    // if (patisseries_pid == 0) {
-    //     handle_patisseries_team(mqid_from_main, mqid_ready, game);
-    //     exit(0);
-    // }
-
-    start_process_baker("./baker_team", &game->config, mqid_from_main, mqid_ready);
+    // Start a separate baker team process for each team
+    for (int i = 0; i < NUM_BAKERY_TEAMS; i++) {
+        start_process_baker("./baker_team", &teams[i], &game->config, mqid_from_main, mqid_ready);
+    }
 
     for (int t = 0;; t++) {
         printf("\n=== Main Time Step %d ===\n", t + 1);
@@ -107,9 +95,9 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < config.NUM_OVENS; j++) {
                 if (!game->ovens[j].is_busy) {
-                    int baking_time = config.MIN_OVEN_TIME + rand() % (config.MAX_OVEN_TIME - config.MIN_OVEN_TIME + 1);
-                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, baking_time);
-                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, baking_time);
+                    int oven_time = random_float(config.MIN_OVEN_TIME, config.MAX_OVEN_TIME);
+                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, oven_time);
+                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, oven_time);
                     placed = 1;
                     break;
                 }
@@ -133,32 +121,4 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
-}
-
-
-pid_t start_process_baker(const char *binary, Config *config, int mqid_from_main, int mqid_ready) {
-    pid_t pid = fork();
-    if (pid == -1) {
-        perror("fork");
-        exit(EXIT_FAILURE);
-    }
-
-    if (pid == 0) {
-        // Now pass two arguments: shared memory fd and GUI pid.
-        // Convert fd to string
-        char mqid_from_main_str[10];
-        char mqid_ready_str[10];
-        char buffer[100];
-        serialize_config(config, buffer);
-        snprintf(mqid_from_main_str, sizeof(mqid_from_main_str), "%d", mqid_from_main);
-        snprintf(mqid_ready_str, sizeof(mqid_ready_str), "%d", mqid_ready);
-
-        if (execl(binary, binary, buffer, mqid_from_main_str, mqid_ready_str, NULL)) {
-
-            printf("%s\n", binary);
-            perror("execl failed");
-            exit(EXIT_FAILURE);
-        }
-    }
-    return pid;
 }

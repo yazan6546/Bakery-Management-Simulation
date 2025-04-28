@@ -2,7 +2,7 @@
 #define BAKERYQUEUE_H
 
 typedef struct BakeryItem {
-    char name[50];
+    int name;
     char team_name[50];
 } BakeryItem;
 

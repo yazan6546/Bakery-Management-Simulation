@@ -32,7 +32,7 @@ MAX_TIME_FRUSTRATED=5        # Maximum time to be frustrated
 MIN_OVEN_TIME=1        # should be changed later for each type
 MAX_OVEN_TIME=5        # should be changed later for each type
 
-MIN_BAKE_TIME=1        # Minimum bake time
-MAX_BAKE_TIME=3        # Maximum bake time
+MIN_BAKE_TIME=10        # Minimum bake time
+MAX_BAKE_TIME=20        # Maximum bake time
 
 NUM_OVENS=2            # Number of ovens
