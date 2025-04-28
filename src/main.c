@@ -45,10 +45,17 @@ int main(int argc, char *argv[]) {
     printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);
 
+    // execlp("pwd", "pwd", NULL);
     // Register cleanup function with atexit
     atexit(cleanup_resources);
     game_create(&shm_fd, &shared_game);
-    game_init(shared_game, processes);
+
+    if (load_config(CONFIG_PATH, &shared_game->config) == -1) {
+        printf("Config file failed");
+        return 1;
+    }
+
+    game_init(shared_game, processes, shm_fd);
 
 
     signal(SIGALRM, handle_alarm);

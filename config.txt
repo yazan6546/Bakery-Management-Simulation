@@ -2,7 +2,7 @@
 
 ## Game settings
 
-MAX_TIME=10            # Maximum time for the game (in minutes)
+MAX_TIME=50            # Maximum time for the game (in minutes)
 FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
@@ -31,5 +31,8 @@ MAX_TIME_FRUSTRATED=5        # Maximum time to be frustrated
 
 MIN_OVEN_TIME=1        # should be changed later for each type
 MAX_OVEN_TIME=5        # should be changed later for each type
+
+MIN_BAKE_TIME=4        # Minimum bake time
+MAX_BAKE_TIME=8        # Maximum bake time
 
 NUM_OVENS=2            # Number of ovens

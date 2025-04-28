@@ -13,7 +13,7 @@
 #include <string.h>
 
 
-int game_init(Game *game, pid_t *processes) {
+int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
     game->elapsed_time = 0;
     game->num_frustrated_customers = 0;
     game->num_complained_customers = 0;
@@ -21,13 +21,9 @@ int game_init(Game *game, pid_t *processes) {
 
     init_inventory(&game->inventory);
 
-    if (load_config("../config.txt", &game->config) == -1) {
-        printf("Config file failed");
-        return 1;
-    }
 
     char *binary_paths[] = {
-        "./graphics",
+        // "./graphics",
         "./chefs",
         "./bakers",
         "./sellers",
@@ -36,7 +32,7 @@ int game_init(Game *game, pid_t *processes) {
     };
 
     for (int i = 0; i < 6; i++) {
-        processes[i] = start_process(binary_paths[i]);
+        processes[i] = start_process(binary_paths[i], shared_mem_fd);
     }
 
     return 0;
@@ -78,7 +74,7 @@ void game_destroy(const int shm_fd, Game *shared_game) {
 }
 
 
-pid_t start_process(const char *binary) {
+pid_t start_process(const char *binary, int shared_mem_fd) {
     pid_t pid = fork();
     if (pid == -1) {
         perror("fork");
@@ -87,8 +83,10 @@ pid_t start_process(const char *binary) {
 
     if (pid == 0) {
         // Now pass two arguments: shared memory fd and GUI pid.
-        char buffer[50];
-        if (execl(binary, binary, NULL)) {
+        // Convert fd to string
+        char fd_str[10];
+        snprintf(fd_str, sizeof(fd_str), "%d", shared_mem_fd);
+        if (execl(binary, binary, fd_str, NULL)) {
 
             printf("%s\n", binary);
             perror("execl failed");

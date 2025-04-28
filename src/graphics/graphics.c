@@ -1,38 +1,122 @@
 #include "raylib.h"
+#include "animation.h"
 #include <stdio.h>
 
-#define SCREEN_WIDTH (800)
-#define SCREEN_HEIGHT (450)
+int main(void) {
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+    InitWindow(screenWidth, screenHeight, "Walking Side Animation");
 
-#define WINDOW_TITLE "Window title"
+    // Load background texture
+    Texture2D background = LoadTexture(ASSETS_PATH"Background3.png");
+    if (background.id == 0) {
+        printf("Failed to load background texture!\n");
+        CloseWindow();
+        return 1;
+    }
 
-int main(void)
-{
+    Texture2D spritesheet = LoadTexture(ASSETS_PATH"characters/customer/SpriteSheet.png");
+    if (spritesheet.id == 0) {
+        printf("Failed to load spritesheet texture!\n");
+        UnloadTexture(background);
+        CloseWindow();
+        return 1;
+    }
 
-    printf("opjdpoewjdpowej\n");
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
+    // Define the 8 frame rectangles for the walking side animation
+    Rectangle walkingSideFrames[8] = {
+        {22, 289, 20, 48},   // Frame 0
+        {44, 289, 17, 48},   // Frame 1
+        {63, 289, 12, 48},   // Frame 2
+        {77, 289, 14, 48},   // Frame 3
+        {97, 289, 20, 49},   // Frame 4
+        {120, 289, 15, 48},  // Frame 5
+        {140, 289, 13, 48},  // Frame 6
+        {158, 289, 14, 48}   // Frame 7
+    };
+
+    // Create animation
+    Animation* walkingSide = CreateAnimation(spritesheet, walkingSideFrames, 8, 8.0f);
+
+    // Character position and movement variables
+    Vector2 position = { screenWidth/2.0f, screenHeight/2.0f + 100.0f };
+    float speed = 5.0f;
+    bool isMoving = false;
+    int direction = 1;  // 1 for right, -1 for left
+
+    float scale = 5.0f;
+
     SetTargetFPS(60);
 
-    Texture2D texture = LoadTexture(ASSETS_PATH"test.png"); // Check README.md for how this works
+    while (!WindowShouldClose()) {
+        // Process input for movement (only left/right)
+        isMoving = false;
 
-    while (!WindowShouldClose())
-    {
+        if (IsKeyDown(KEY_RIGHT)) {
+            position.x += speed;
+            isMoving = true;
+            direction = 1;  // Moving right
+        }
+        else if (IsKeyDown(KEY_LEFT)) {
+            position.x -= speed;
+            isMoving = true;
+            direction = -1; // Moving left
+        }
+
+        // Keep character within screen bounds
+        float characterWidth = walkingSideFrames[walkingSide->currentFrame].width * scale / 2.0f;
+        if (position.x < characterWidth) position.x = characterWidth;
+        if (position.x > screenWidth - characterWidth) position.x = screenWidth - characterWidth;
+
+        // Only update animation if moving
+        if (isMoving) {
+            UpdateAnimation(walkingSide, GetFrameTime());
+        }
+
+        // Get current frame width for proper proportions
+        float currentFrameWidth = walkingSideFrames[walkingSide->currentFrame].width;
+        float currentFrameHeight = walkingSideFrames[walkingSide->currentFrame].height;
+
+        // Update destination rectangle
+        Rectangle destRec = {
+            position.x,
+            position.y,
+            currentFrameWidth * scale,
+            currentFrameHeight * scale
+        };
+
+        // Calculate origin for proper centering
+        Vector2 origin = {
+            currentFrameWidth * scale / 2.0f,
+            currentFrameHeight * scale / 2.0f
+        };
+
         BeginDrawing();
+            ClearBackground(RAYWHITE);
 
-        DrawCircle(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 100, BLUE);
-        ClearBackground(RAYWHITE);
 
-        const int texture_x = SCREEN_WIDTH / 2 - texture.width / 2;
-        const int texture_y = SCREEN_HEIGHT / 2 - texture.height / 2;
-        DrawTexture(texture, texture_x, texture_y, WHITE);
 
-        const char* text = "OMG! IT WORKS!";
-        const Vector2 text_size = MeasureTextEx(GetFontDefault(), text, 20, 1);
-        DrawText(text, SCREEN_WIDTH / 2 - text_size.x / 2, texture_y + texture.height + text_size.y + 10, 20, BLACK);
+        Rectangle source = { 0, 0, background.width, background.height };
+        Rectangle dest = { 0, 0, GetScreenWidth(), GetScreenHeight() };
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+
+        // Select the correct orientation based on direction
+        if (direction > 0) {
+            // Draw facing right (original orientation)
+            DrawAnimationPro(walkingSide, destRec, origin, 0.0f, WHITE);
+        } else {
+            // Mirror the sprite for walking left
+            Rectangle flippedDestRec = destRec;
+            flippedDestRec.width *= -1;  // Flip horizontally by negating width
+            DrawAnimationPro(walkingSide, flippedDestRec, origin, 0.0f, WHITE);
+        }
 
         EndDrawing();
     }
 
+    FreeAnimation(&walkingSide);
+    UnloadTexture(spritesheet);
+    UnloadTexture(background);
     CloseWindow();
 
     return 0;
