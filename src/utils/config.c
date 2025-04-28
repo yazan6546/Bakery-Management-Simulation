@@ -36,6 +36,8 @@ int load_config(const char *filename, Config *config) {
     config->MIN_OVEN_TIME = -1;
     config->MAX_OVEN_TIME = -1;
     config->NUM_OVENS = -1;
+    config->MIN_BAKE_TIME= -1;
+    config->MAX_BAKE_TIME= -1;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -75,6 +77,8 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "MIN_OVEN_TIME") == 0) config->MIN_OVEN_TIME = (int)value;
             else if (strcmp(key, "MAX_OVEN_TIME") == 0) config->MAX_OVEN_TIME = (int)value;
             else if (strcmp(key, "NUM_OVENS") == 0) config->NUM_OVENS = (int)value;
+            else if (strcmp(key, "MIN_BAKE_TIME") == 0) config->MIN_BAKE_TIME = (int)value;
+            else if (strcmp(key, "MAX_BAKE_TIME") == 0) config->MAX_BAKE_TIME = (int)value;
             else {
                 fprintf(stderr, "Unknown key: %s\n", key);
                 fclose(file);
@@ -138,6 +142,8 @@ void print_config(Config *config) {
     printf("MIN_OVEN_TIME: %d\n", config->MIN_OVEN_TIME);
     printf("MAX_OVEN_TIME: %d\n", config->MAX_OVEN_TIME);
     printf("NUM_OVENS: %d\n", config->NUM_OVENS);
+    printf("MIN_BAKE_TIME: %d\n", config->MIN_BAKE_TIME);
+    printf("MAX_BAKE_TIME: %d\n", config->MAX_BAKE_TIME);
 
     fflush(stdout);
 }
@@ -166,7 +172,9 @@ int check_parameter_correctness(const Config *config) {
         config->MAX_TIME_FRUSTRATED < 0 ||
         config->MIN_OVEN_TIME < 0 ||
         config->MAX_OVEN_TIME < 0 ||
-        config->NUM_OVENS < 0) {
+        config->NUM_OVENS < 0 ||
+        config->MIN_BAKE_TIME < 0 ||
+            config->MAX_BAKE_TIME < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -197,6 +205,11 @@ int check_parameter_correctness(const Config *config) {
 
     if (config->MIN_OVEN_TIME > config->MAX_OVEN_TIME) {
         fprintf(stderr, "MIN_OVEN_TIME cannot be greater than MAX_OVEN_TIME\n");
+        return -1;
+    }
+
+    if (config->MIN_BAKE_TIME > config->MAX_BAKE_TIME) {
+        fprintf(stderr, "MIN_BAKE_TIME cannot be greater than MAX_BAKE_TIME\n");
         return -1;
     }
 
