@@ -12,8 +12,7 @@ pid_t processes[6];
 int shm_fd; // Store fd globally for cleanup
 
 void handle_alarm(int signum);
-void handle_sigint(int signum); // Renamed from handle_sigkill to match actual signal
-void cleanup_resources(void);   // New function for atexit
+void cleanup_resources();
 
 void handle_alarm(int signum) {
 
@@ -22,17 +21,14 @@ void handle_alarm(int signum) {
     alarm(1);
 }
 
-void handle_sigint(int signum) {
-    exit(0); // Let atexit handle cleanup
-}
 
 // Function for cleaning up resources, registered with atexit()
-void cleanup_resources(void) {
+void cleanup_resources() {
     printf("Cleaning up resources...\n");
     fflush(stdout);
 
     for (int i = 0; i < 6; i++) {
-        kill(processes[i], SIGKILL);
+        kill(processes[i], SIGINT);
     }
 
     game_destroy(shm_fd, shared_game);
@@ -41,7 +37,13 @@ void cleanup_resources(void) {
     fflush(stdout);
 }
 
+void handle_kill(int signum) {
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
+
+
 
     printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);
@@ -51,6 +53,11 @@ int main(int argc, char *argv[]) {
     atexit(cleanup_resources);
     game_create(&shm_fd, &shared_game);
 
+    signal(SIGALRM, handle_alarm);
+    signal(SIGINT, handle_kill); // Renamed to match actual signal
+    signal(SIGKILL, handle_kill); // Renamed to match actual signal
+
+
     if (load_config(CONFIG_PATH, &shared_game->config) == -1) {
         printf("Config file failed");
         return 1;
@@ -59,8 +66,8 @@ int main(int argc, char *argv[]) {
     game_init(shared_game, processes, shm_fd);
 
 
-    signal(SIGALRM, handle_alarm);
-    signal(SIGINT, handle_sigint); // Renamed to match actual signal
+
+
     alarm(1);  // Start the timer
 
 

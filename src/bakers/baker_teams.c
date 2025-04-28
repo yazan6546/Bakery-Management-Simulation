@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     // Parse arguments
     Config config;
-    deserialize_config(&config, argv[1]);
+    deserialize_config(argv[1], &config);
 
     int mqid_from_main = atoi(argv[2]);
     int mqid_ready = atoi(argv[3]);

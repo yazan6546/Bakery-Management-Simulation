@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
+#include <signal.h>
 #include <time.h>
 
 #include "queue.h"
@@ -19,10 +20,40 @@ typedef struct {
     BakeryItem item;
 } Message;
 
+int mqid_from_main = -1;
+int mqid_ready = -1;
+
 Game *game;
 
+void handle_sigkill(int signum) {
+    printf("Baker: Cleaning up resources...\n");
+    fflush(stdout);
+
+    // Clean message queues
+    if (mqid_from_main != -1) {
+        msgctl(mqid_from_main, IPC_RMID, NULL);
+    }
+
+    if (mqid_ready != -1) {
+        msgctl(mqid_ready, IPC_RMID, NULL);
+    }
+
+    // Clean shared memory (unmap only, main process handles unlinking)
+    if (game != MAP_FAILED && game != NULL) {
+        munmap(game, sizeof(Game));
+    }
+
+    printf("Baker: Cleanup complete\n");
+    exit(0);
+}
 
 int main(int argc, char *argv[]) {
+
+
+    // Register signal handlers (add immediately after checking argc)
+    signal(SIGINT, handle_sigkill);
+    signal(SIGTERM, handle_sigkill);
+
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <fd>\n", argv[0]);
         return 1;
@@ -45,8 +76,8 @@ int main(int argc, char *argv[]) {
         init_oven(&game->ovens[i], i);
     }
 
-    int mqid_from_main = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    mqid_from_main = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
 
     if (mqid_from_main == -1 || mqid_ready == -1) {
         perror("msgget failed");
