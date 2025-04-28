@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     };
 
     // Initialize chef teams
-    ChefTeam teams[];
+    ChefTeam teams[NUM_CHEF_TEAMS];
     initialize_chef_teams(teams, NUM_CHEF_TEAMS);
 
     // Print initial status
