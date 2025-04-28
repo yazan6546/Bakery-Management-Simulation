@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include "game.h"
+#include <sys/mman.h>
 
 #define NUM_CHEF_TEAMS 6
 #define SIMULATION_TIME 30  // seconds
@@ -16,7 +18,22 @@ void handle_signal(int sig) {
     stop_simulation = 1;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    if (argc < 2) {
+        printf("Usage: %s <fd>\n", argv[0]);
+    }
+
+    int fd = atoi(argv[1]);  // 4th argument for mmap
+    // Open the file descriptor for reading
+    Game *shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (shared_game == MAP_FAILED) {
+        perror("mmap failed");
+        return 1;
+    }
+
+    Config config = shared_game->config;
+
     srand(time(NULL));
 
     // Set up signal handling
@@ -31,7 +48,7 @@ int main() {
     };
 
     // Initialize chef teams
-    ChefTeam teams[NUM_CHEF_TEAMS];
+    ChefTeam teams[];
     initialize_chef_teams(teams, NUM_CHEF_TEAMS);
 
     // Print initial status
@@ -47,7 +64,7 @@ int main() {
     // Main simulation loop
     printf("\n=== SIMULATION RUNNING ===\n");
     time_t start_time = time(NULL);
-    while (!stop_simulation && difftime(time(NULL), start_time) < SIMULATION_TIME) {
+    while (!stop_simulation && difftime(time(NULL), start_time) < config.MAX_TIME) {
         sleep(1); // Main process just waits
 
         // In a real implementation, you might monitor shared memory here
