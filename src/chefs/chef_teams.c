@@ -144,22 +144,24 @@ void chef_team_work(ChefTeam *team, BakeryIngredients *ingredients) {
     exit(EXIT_SUCCESS);
 }
 
-// Create processes for all chef teams
 void create_chef_processes(ChefTeam *teams, int num_teams, BakeryIngredients *ingredients) {
     for (int i = 0; i < num_teams; i++) {
         pid_t pid = fork();
 
-        if (pid == 0) { // Child process - the chef team
-            chef_team_work(&teams[i], ingredients);
-            _exit(EXIT_SUCCESS); // Use _exit to avoid flushing stdio buffers
+        if (pid == 0) { // Child process
+            // Use the current executable path
+            char *args[] = {"./chefs", NULL};
+            execv(args[0], args);
+
+            // If execv returns, it failed
+            perror("execv failed");
+            exit(EXIT_FAILURE);
         }
-        else if (pid > 0) { // Parent process
+        else if (pid > 0) {
             teams[i].pid = pid;
-            printf("Created chef team %d (%s) with PID: %d\n",
-                   i, get_team_type_name(teams[i].type), pid);
         }
         else {
-            perror("Failed to create chef team process");
+            perror("fork failed");
             exit(EXIT_FAILURE);
         }
     }
