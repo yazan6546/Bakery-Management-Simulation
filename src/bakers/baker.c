@@ -19,6 +19,7 @@ typedef struct {
 } Message;
 
 Game *game;
+pid_t start_process_baker(const char *binary, Config *config, int mqid_from_main, int mqid_ready);
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -51,23 +52,27 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    pid_t bread_pid = fork();
-    if (bread_pid == 0) {
-        handle_bread_team(mqid_from_main, mqid_ready, game);
-        exit(0);
-    }
 
-    pid_t cakesweets_pid = fork();
-    if (cakesweets_pid == 0) {
-        handle_cakesweets_team(mqid_from_main, mqid_ready, game);
-        exit(0);
-    }
 
-    pid_t patisseries_pid = fork();
-    if (patisseries_pid == 0) {
-        handle_patisseries_team(mqid_from_main, mqid_ready, game);
-        exit(0);
-    }
+    // pid_t bread_pid = fork();
+    // if (bread_pid == 0) {
+    //     handle_bread_team(mqid_from_main, mqid_ready, game);
+    //     exit(0);
+    // }
+    //
+    // pid_t cakesweets_pid = fork();
+    // if (cakesweets_pid == 0) {
+    //     handle_cakesweets_team(mqid_from_main, mqid_ready, game);
+    //     exit(0);
+    // }
+    //
+    // pid_t patisseries_pid = fork();
+    // if (patisseries_pid == 0) {
+    //     handle_patisseries_team(mqid_from_main, mqid_ready, game);
+    //     exit(0);
+    // }
+
+    start_process_baker("./baker_team", &game->config, mqid_from_main, mqid_ready);
 
     for (int t = 0;; t++) {
         printf("\n=== Main Time Step %d ===\n", t + 1);
@@ -128,4 +133,32 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+
+pid_t start_process_baker(const char *binary, Config *config, int mqid_from_main, int mqid_ready) {
+    pid_t pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid == 0) {
+        // Now pass two arguments: shared memory fd and GUI pid.
+        // Convert fd to string
+        char mqid_from_main_str[10];
+        char mqid_ready_str[10];
+        char buffer[100];
+        serialize_config(config, buffer);
+        snprintf(mqid_from_main_str, sizeof(mqid_from_main_str), "%d", mqid_from_main);
+        snprintf(mqid_ready_str, sizeof(mqid_ready_str), "%d", mqid_ready);
+
+        if (execl(binary, binary, buffer, mqid_from_main_str, mqid_ready_str, NULL)) {
+
+            printf("%s\n", binary);
+            perror("execl failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return pid;
 }

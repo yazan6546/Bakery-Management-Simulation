@@ -4,20 +4,32 @@
 #include <unistd.h>
 #include <sys/msg.h>
 
+#include "BakerTeam.h"
+#include "config.h"
+
 #include "BakeryItem.h"
 #include "oven.h"
 #include "random.h"
-#include "game.h"
 
 typedef struct {
     long mtype;
     BakeryItem item;
 } Message;
 
-void handle_bread_team(int mqid_from_main, int mqid_ready, Game *game) {
+int main(int argc, char *argv[]) {
+
+
+    char *buffer = argv[1];
+    Config config;
+    deserialize_config(&config, buffer);
+
+    int mqid_from_main = atoi(argv[2]);
+    int mqid_ready = atoi(argv[3]);
+
+
     init_random();
 
-    int bakers_available = game->config.NUM_BAKERS / 3;
+    int bakers_available = config.NUM_BAKERS / NUM_BAKERY_TEAMS;
     int busy_bakers = 0;
 
     while (1) {
@@ -39,7 +51,7 @@ void handle_bread_team(int mqid_from_main, int mqid_ready, Game *game) {
 
             busy_bakers++;
 
-            int prep_time = (int)random_float(game->config.MIN_BAKE_TIME, game->config.MAX_BAKE_TIME);
+            int prep_time = (int)random_float(config.MIN_BAKE_TIME, config.MAX_BAKE_TIME);
             printf("[Bread Team] Preparing %s for %d seconds\n", item->name, prep_time);
             sleep(prep_time);
 
@@ -54,3 +66,4 @@ void handle_bread_team(int mqid_from_main, int mqid_ready, Game *game) {
         }
     }
 }
+
