@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
     // Start a separate baker team process for each team
     for (int i = 0; i < NUM_BAKERY_TEAMS; i++) {
-        start_process_baker("./baker_team", &teams[i], &game->config, mqid_from_main, mqid_ready);
+        start_process_baker("./baker_teams", &teams[i], &game->config, mqid_from_main, mqid_ready);
     }
 
     for (int t = 0;; t++) {

@@ -31,6 +31,12 @@ add_executable(bakers
         src/bakers/baker_utils.c
 )
 
+add_executable(baker_teams
+    src/bakers/baker_teams.c
+   src/utils/config.c
+        src/bakers/baker_utils.c
+        src/utils/random.c
+)
 
 
 
