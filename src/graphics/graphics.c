@@ -8,7 +8,7 @@ int main(void) {
     InitWindow(screenWidth, screenHeight, "Walking Side Animation");
 
     // Load background texture
-    Texture2D background = LoadTexture(ASSETS_PATH"Background2.jpeg");
+    Texture2D background = LoadTexture(ASSETS_PATH"Background3.png");
     if (background.id == 0) {
         printf("Failed to load background texture!\n");
         CloseWindow();
@@ -39,7 +39,7 @@ int main(void) {
     Animation* walkingSide = CreateAnimation(spritesheet, walkingSideFrames, 8, 8.0f);
 
     // Character position and movement variables
-    Vector2 position = { screenWidth/2.0f, screenHeight/2.0f };
+    Vector2 position = { screenWidth/2.0f, screenHeight/2.0f + 100.0f };
     float speed = 5.0f;
     bool isMoving = false;
     int direction = 1;  // 1 for right, -1 for left
@@ -94,8 +94,11 @@ int main(void) {
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
-            // Draw background first
-            DrawTexture(background, 0, 0, WHITE);
+
+
+        Rectangle source = { 0, 0, background.width, background.height };
+        Rectangle dest = { 0, 0, GetScreenWidth(), GetScreenHeight() };
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
 
         // Select the correct orientation based on direction
         if (direction > 0) {
