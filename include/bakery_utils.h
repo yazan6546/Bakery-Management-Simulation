@@ -4,6 +4,7 @@
 
 #include "BakerTeam.h"
 #include "BakeryItem.h"
+#include "config.h"
 
 // Get the team name string from the enum
 const char* get_team_name_str(Team team);

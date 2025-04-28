@@ -1,8 +1,9 @@
-#include "common.h"
 #include <signal.h>
 #include "game.h"
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "assets.h"
 
 // Global pointer to shared game state

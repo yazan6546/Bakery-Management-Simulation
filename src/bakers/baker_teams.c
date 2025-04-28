@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
             const char* team_name = get_team_name_str(team.team_name);
 
             int prep_time = (int)random_float(config.MIN_BAKE_TIME, config.MAX_BAKE_TIME);
-            printf("[%s] Preparing %d for %d seconds\n", team_name, item->name, prep_time);
+            printf("[%s] Preparing %s for %d seconds\n", team_name, item->name, prep_time);
             sleep(prep_time);
 
             // Send the item to be baked

@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-void backery_item_create(BakeryItem *item, int name, char *team_name) {
-    item->name = name;
+void backery_item_create(BakeryItem *item, char *name, char *team_name) {
+    strcpy(item->name, name);
     strcpy(item->team_name, team_name);
 }

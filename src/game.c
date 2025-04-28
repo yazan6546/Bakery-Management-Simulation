@@ -4,7 +4,6 @@
 
 #include "game.h"
 #include "inventory.h"
-#include <message.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
