@@ -40,8 +40,6 @@ add_executable(baker_teams
 
 
 
-
-
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
 include_directories(include)
 target_include_directories(graphics PRIVATE include/lib/raylib)

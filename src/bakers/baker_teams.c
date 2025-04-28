@@ -1,4 +1,3 @@
-// src/bakers/baker_team.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,12 +43,12 @@ int main(int argc, char *argv[]) {
     while (1) {
         if (!has_item) {
             Message incoming;
-            if (msgrcv(mqid_team, &incoming, sizeof(BakeryItem), 0, IPC_NOWAIT) >= 0) {
+            if (msgrcv(mqid_team, &incoming, sizeof(BakeryItem), 0, 0) >= 0) {  // 🚀 blocking wait
                 BakeryItem *item = &incoming.item;
                 if (!is_team_item(item, team.team_name)) {
                     // Wrong team item
                     msgsnd(mqid_team, &incoming, sizeof(BakeryItem), 0);
-                    usleep(5000);
+                    usleep(10000);
                     continue;
                 }
 
@@ -58,7 +57,7 @@ int main(int argc, char *argv[]) {
                 if (prep_time < 1) prep_time = 1;
                 remaining_time = prep_time;
 
-                printf("[%s] Preparing %s, estimated %d seconds\n",
+                printf("[%s] Preparing %s for %d seconds (after division)\n",
                        get_team_name_str(team.team_name),
                        current_item.name,
                        prep_time);
@@ -67,8 +66,8 @@ int main(int argc, char *argv[]) {
             }
         } else {
             if (remaining_time > 0) {
-                remaining_time--;
                 sleep(1);
+                remaining_time--;
             }
             if (remaining_time == 0) {
                 Message ready;
@@ -77,15 +76,13 @@ int main(int argc, char *argv[]) {
                 if (msgsnd(mqid_ready, &ready, sizeof(BakeryItem), 0) == -1) {
                     perror("Failed to send ready item");
                 } else {
-                    printf("[%s] Finished preparing %s, sending to oven queue\n",
+                    printf("[%s] Finished preparing %s, sent to oven queue\n",
                            get_team_name_str(team.team_name),
                            current_item.name);
                 }
                 has_item = 0;
             }
         }
-
-        usleep(10000);
     }
 
     return 0;
