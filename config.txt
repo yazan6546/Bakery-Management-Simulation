@@ -15,7 +15,7 @@ NUM_SWEET_FLAVORS=3          # Number of sweet flavors
 NUM_SAVORY_PATISSERIES=2        # Number of savory categories
 NUM_SWEET_PATISSERIES=2        # Number of sweet categories
 NUM_CHEFS=2            # Number of chefs
-NUM_BAKERS=2           # Number of bakers
+NUM_BAKERS=6         # Number of bakers
 NUM_SELLERS=2           # Number of sellers
 NUM_SUPPLY_CHAIN=2        # Number of supply chain members
 NUM_PASTRY_CATEGORIES=2       # Number of pastry categories
@@ -32,7 +32,7 @@ MAX_TIME_FRUSTRATED=5        # Maximum time to be frustrated
 MIN_OVEN_TIME=1        # should be changed later for each type
 MAX_OVEN_TIME=5        # should be changed later for each type
 
-MIN_BAKE_TIME=4        # Minimum bake time
-MAX_BAKE_TIME=8        # Maximum bake time
+MIN_BAKE_TIME=1        # Minimum bake time
+MAX_BAKE_TIME=3        # Maximum bake time
 
 NUM_OVENS=2            # Number of ovens

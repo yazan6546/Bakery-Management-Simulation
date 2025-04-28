@@ -1,5 +1,7 @@
 #include "oven.h"
 #include <string.h>
+#include <stdio.h>
+
 
 void init_oven(Oven *oven, int id) {
     oven->id = id;
@@ -25,8 +27,12 @@ int oven_tick(Oven *oven) {
         oven->time_left--;
         if (oven->time_left <= 0) {
             oven->is_busy = 0;
-            return 1; // Finished baking
+            printf("Oven %d finished baking %s\n", oven->id, oven->item_name);
+            oven->item_name[0] = '\0';
+            oven->team_name[0] = '\0'; 
+            return 1;
         }
     }
     return 0;
 }
+

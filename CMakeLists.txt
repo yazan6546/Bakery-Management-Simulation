@@ -24,11 +24,18 @@ add_executable(bakers
     src/bakers/baker.c
     src/bakers/oven.c
     src/bakers/BakerTeam.c
-        src/bakers/BakeryItem.c
-        src/utils/config.c
-        src/game.c
-        src/inventory.c
+    src/bakers/BakeryItem.c
+    src/bakers/team_bread.c
+    src/bakers/team_cakesweets.c
+    src/bakers/team_patisseries.c
+    src/utils/random_baker.c
+    src/utils/config.c
+    src/game.c
+    src/inventory.c
 )
+
+
+
 
 
 
