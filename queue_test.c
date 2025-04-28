@@ -16,3 +16,7 @@ int main() {
     front(bakery_queue, &temp);
     printf("Front item: %s from %s\n", temp.name, temp.team_name);
 }
+
+void create_queue() {
+
+}

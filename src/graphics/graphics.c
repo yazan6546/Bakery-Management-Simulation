@@ -1,67 +1,123 @@
 #include "raylib.h"
+#include "animation.h"
 #include <stdio.h>
-#include <stdlib.h>
 
+int main(void) {
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+    InitWindow(screenWidth, screenHeight, "Walking Side Animation");
 
-#define SCREEN_WIDTH (800)
-#define SCREEN_HEIGHT (450)
+    // Load background texture
+    Texture2D background = LoadTexture(ASSETS_PATH"Background3.png");
+    if (background.id == 0) {
+        printf("Failed to load background texture!\n");
+        CloseWindow();
+        return 1;
+    }
 
-#define WINDOW_TITLE "Window title"
+    Texture2D spritesheet = LoadTexture(ASSETS_PATH"characters/customer/SpriteSheet.png");
+    if (spritesheet.id == 0) {
+        printf("Failed to load spritesheet texture!\n");
+        UnloadTexture(background);
+        CloseWindow();
+        return 1;
+    }
 
-int main(void)
-{
+    // Define the 8 frame rectangles for the walking side animation
+    Rectangle walkingSideFrames[8] = {
+        {22, 289, 20, 48},   // Frame 0
+        {44, 289, 17, 48},   // Frame 1
+        {63, 289, 12, 48},   // Frame 2
+        {77, 289, 14, 48},   // Frame 3
+        {97, 289, 20, 49},   // Frame 4
+        {120, 289, 15, 48},  // Frame 5
+        {140, 289, 13, 48},  // Frame 6
+        {158, 289, 14, 48}   // Frame 7
+    };
 
-    // Texture2D texture = LoadTexture(ASSETS_PATH"test.png"); // Check README.md for how this works
+    // Create animation
+    Animation* walkingSide = CreateAnimation(spritesheet, walkingSideFrames, 8, 8.0f);
 
-    // Raylib setup
-    InitWindow(1280, 620, "Bakery Simulation");
+    // Character position and movement variables
+    Vector2 position = { screenWidth/2.0f, screenHeight/2.0f + 100.0f };
+    float speed = 5.0f;
+    bool isMoving = false;
+    int direction = 1;  // 1 for right, -1 for left
+
+    float scale = 5.0f;
+
     SetTargetFPS(60);
 
-    Texture2D background = LoadTexture(ASSETS_PATH"background.png");
-
-    if (background.id <= 0) {
-        printf("Failed to load background image\n");
-        exit(1);
-    }
-    // Define source and destination rectangles for proper scaling
-    Rectangle sourceRec = { 0, 0, (float)background.width, (float)background.height };
-    Rectangle destRec = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-    Vector2 origin = { 0, 0 };
-
     while (!WindowShouldClose()) {
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
+        // Process input for movement (only left/right)
+        isMoving = false;
 
-        // Draw background with proper scaling
-        DrawTexturePro(background, sourceRec, destRec, origin, 0.0f, WHITE);
-        // // 1. Draw Top Bar
-        // DrawRectangle(0, 0, 1280, 40, DARKGRAY);
-        // DrawText("Profit: $520 | Time: 12m 30s | Frustrated: 3/10", 10, 10, 20, WHITE);
-        //
-        // // 2. Draw Left Panel (Resources)
-        // DrawRectangle(0, 40, 320, 680, LIGHTGRAY);
-        // DrawText("Wheat: 50kg", 10, 60, 20, BLACK);
-        // DrawText("Salami: 0kg ❌", 10, 90, 20, RED);
-        //
-        // // 3. Draw Middle Panel (Teams)
-        // DrawRectangle(320, 40, 640, 600, WHITE);
-        // DrawText("Chefs - Paste: Active ✅", 330, 60, 20, DARKGREEN);
-        //
-        // // 4. Draw Right Panel (Customers)
-        // DrawRectangle(960, 40, 320, 600, LIGHTGRAY);
-        // DrawCircle(970, 100, 5, GREEN); // Example customer
-        //
-        // // 5. Draw Bottom Log
-        // DrawRectangle(0, 680, 1280, 40, DARKGRAY);
-        // DrawText("Event: Cheese restocked!", 10, 600, 20, WHITE);
+        if (IsKeyDown(KEY_RIGHT)) {
+            position.x += speed;
+            isMoving = true;
+            direction = 1;  // Moving right
+        }
+        else if (IsKeyDown(KEY_LEFT)) {
+            position.x -= speed;
+            isMoving = true;
+            direction = -1; // Moving left
+        }
+
+        // Keep character within screen bounds
+        float characterWidth = walkingSideFrames[walkingSide->currentFrame].width * scale / 2.0f;
+        if (position.x < characterWidth) position.x = characterWidth;
+        if (position.x > screenWidth - characterWidth) position.x = screenWidth - characterWidth;
+
+        // Only update animation if moving
+        if (isMoving) {
+            UpdateAnimation(walkingSide, GetFrameTime());
+        }
+
+        // Get current frame width for proper proportions
+        float currentFrameWidth = walkingSideFrames[walkingSide->currentFrame].width;
+        float currentFrameHeight = walkingSideFrames[walkingSide->currentFrame].height;
+
+        // Update destination rectangle
+        Rectangle destRec = {
+            position.x,
+            position.y,
+            currentFrameWidth * scale,
+            currentFrameHeight * scale
+        };
+
+        // Calculate origin for proper centering
+        Vector2 origin = {
+            currentFrameWidth * scale / 2.0f,
+            currentFrameHeight * scale / 2.0f
+        };
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+
+
+
+        Rectangle source = { 0, 0, background.width, background.height };
+        Rectangle dest = { 0, 0, GetScreenWidth(), GetScreenHeight() };
+        DrawTexturePro(background, source, dest, (Vector2){0, 0}, 0.0f, WHITE);
+
+        // Select the correct orientation based on direction
+        if (direction > 0) {
+            // Draw facing right (original orientation)
+            DrawAnimationPro(walkingSide, destRec, origin, 0.0f, WHITE);
+        } else {
+            // Mirror the sprite for walking left
+            Rectangle flippedDestRec = destRec;
+            flippedDestRec.width *= -1;  // Flip horizontally by negating width
+            DrawAnimationPro(walkingSide, flippedDestRec, origin, 0.0f, WHITE);
+        }
 
         EndDrawing();
-
-        // Update simulation state here (e.g., IPC data)
     }
 
-    CloseWindow();
+    FreeAnimation(&walkingSide);
+    UnloadTexture(spritesheet);
     UnloadTexture(background);
+    CloseWindow();
 
     return 0;
 }
