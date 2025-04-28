@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
-#include <signal.h>
+#include <string.h>
 #include <time.h>
 
 #include "queue.h"
@@ -20,40 +20,9 @@ typedef struct {
     BakeryItem item;
 } Message;
 
-int mqid_from_main = -1;
-int mqid_ready = -1;
-
 Game *game;
 
-void handle_sigkill(int signum) {
-    printf("Baker: Cleaning up resources...\n");
-    fflush(stdout);
-
-    // Clean message queues
-    if (mqid_from_main != -1) {
-        msgctl(mqid_from_main, IPC_RMID, NULL);
-    }
-
-    if (mqid_ready != -1) {
-        msgctl(mqid_ready, IPC_RMID, NULL);
-    }
-
-    // Clean shared memory (unmap only, main process handles unlinking)
-    if (game != MAP_FAILED && game != NULL) {
-        munmap(game, sizeof(Game));
-    }
-
-    printf("Baker: Cleanup complete\n");
-    exit(0);
-}
-
 int main(int argc, char *argv[]) {
-
-
-    // Register signal handlers (add immediately after checking argc)
-    signal(SIGINT, handle_sigkill);
-    signal(SIGTERM, handle_sigkill);
-
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <fd>\n", argv[0]);
         return 1;
@@ -71,27 +40,26 @@ int main(int argc, char *argv[]) {
     print_config(&config);
     init_random();
 
-    // Initialize ovens
     for (int i = 0; i < config.NUM_OVENS; i++) {
         init_oven(&game->ovens[i], i);
     }
 
-    mqid_from_main = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_bread = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_cakesweets = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_patisseries = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
 
-    if (mqid_from_main == -1 || mqid_ready == -1) {
+    if (mqid_bread == -1 || mqid_cakesweets == -1 || mqid_patisseries == -1 || mqid_ready == -1) {
         perror("msgget failed");
         exit(1);
     }
 
-    // Distribute bakers among teams
-    BakerTeam teams[NUM_BAKERY_TEAMS];
-    distribute_bakers_locally(&game->config, teams);
+    BakerTeam teams[3];
+    distribute_bakers_locally(&config, teams);
 
-    // Start a separate baker team process for each team
-    for (int i = 0; i < NUM_BAKERY_TEAMS; i++) {
-        start_process_baker("./baker_teams", &teams[i], &game->config, mqid_from_main, mqid_ready);
-    }
+    start_process_baker("baker_teams", &teams[0], &config, mqid_bread, mqid_ready);
+    start_process_baker("baker_teams", &teams[1], &config, mqid_cakesweets, mqid_ready);
+    start_process_baker("baker_teams", &teams[2], &config, mqid_patisseries, mqid_ready);
 
     for (int t = 0;; t++) {
         printf("\n=== Main Time Step %d ===\n", t + 1);
@@ -112,7 +80,10 @@ int main(int argc, char *argv[]) {
             Message msg;
             msg.mtype = 1;
             msg.item = item;
-            if (msgsnd(mqid_from_main, &msg, sizeof(BakeryItem), 0) == -1) {
+
+            int target_mqid = (team == 0) ? mqid_bread : (team == 1) ? mqid_cakesweets : mqid_patisseries;
+
+            if (msgsnd(target_mqid, &msg, sizeof(BakeryItem), 0) == -1) {
                 perror("msgsnd main->team failed");
             } else {
                 printf("Main produced: %s (%s)\n", item.name, item.team_name);
@@ -126,9 +97,9 @@ int main(int argc, char *argv[]) {
 
             for (int j = 0; j < config.NUM_OVENS; j++) {
                 if (!game->ovens[j].is_busy) {
-                    int oven_time = random_float(config.MIN_OVEN_TIME, config.MAX_OVEN_TIME);
-                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, oven_time);
-                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, oven_time);
+                    int baking_time = config.MIN_OVEN_TIME + rand() % (config.MAX_OVEN_TIME - config.MIN_OVEN_TIME + 1);
+                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, baking_time);
+                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, baking_time);
                     placed = 1;
                     break;
                 }
@@ -136,7 +107,7 @@ int main(int argc, char *argv[]) {
 
             if (!placed) {
                 if (msgsnd(mqid_ready, &ready_msg, sizeof(BakeryItem), 0) == -1) {
-                    perror("msgsnd requeue failed");
+                    perror("msgsnd requeue ready failed");
                 }
                 break;
             }
