@@ -14,7 +14,6 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <string.h>
-#include "game.h"
 
 // Define names for shared memory file and semaphore
 
@@ -59,8 +58,6 @@ typedef struct {
 } ReadyProducts;
 
 // Shared memory globals
-extern int shm_fd;
-extern Game* game_shm;
 extern sem_t* inventory_sem;
 extern sem_t* ready_products_sem;
 
