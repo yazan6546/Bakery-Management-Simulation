@@ -2,7 +2,8 @@
 #define CHEF_H
 #include <stdbool.h>
 #include <sys/types.h>
-
+#include "config.h"
+#define NUM_MAIN_ITEMS 6
 // Define team types
 typedef enum {
     TEAM_PASTE,
@@ -40,12 +41,29 @@ typedef struct {
     int items_required;     // Items needed from dependent team
 } ChefTeam;
 
+typedef struct {
+    char name[50];          // Name of the item (e.g., "Cake", "Sweet")
+    char **subtypes;        // Dynamically allocated subtypes
+    int num_subtypes;       // Number of subtypes
+} MenuItem;
+
+
+typedef struct {
+    MenuItem *items;        // Dynamically allocated array of menu items
+    int num_items;          // Number of items in the menu
+} Menu;
+
+
+
 // Function prototypes
 void initialize_chef_teams(ChefTeam *teams, int num_teams);
 void create_chef_processes(ChefTeam *teams, int num_teams, BakeryIngredients *ingredients);
 void cleanup_chef_processes(ChefTeam *teams, int num_teams);
 const char* get_team_type_name(TeamType type);
 void print_team_status(const ChefTeam *team);
+void initialize_menu(Menu *menu, const Config *config);
+void print_menu(const Menu *menu);
+void free_menu(Menu *menu);
 
 
 #endif //CHEF_H
