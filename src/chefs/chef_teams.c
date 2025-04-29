@@ -150,7 +150,7 @@ void create_chef_processes(ChefTeam *teams, int num_teams, BakeryIngredients *in
 
         if (pid == 0) { // Child process
             // Use the current executable path
-            char *args[] = {"./chefs", NULL};
+            char *args[] = {"./chef", NULL};
             execv(args[0], args);
 
             // If execv returns, it failed
