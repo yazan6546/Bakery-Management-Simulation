@@ -64,6 +64,16 @@ void unlock_ready_products(void) {
     }
 }
 
+// Unlock the ready products
+void unlock_ready_products(void) {
+    if (sem_post(ready_products_sem) == -1) {
+        perror("sem_post failed for ready products");
+        exit(1);
+    }
+}
+
+ 
+
 // Initialize inventory
 void init_inventory(Inventory *inventory) {
     // Initialize all quantities to zero
@@ -168,6 +178,42 @@ int get_ready_product(ReadyProducts *ready_products, ProductType type, int quant
     }
     
     unlock_ready_products();
+    
+    return result;
+}
+
+// Add ready product with thread safety
+void add_ready_product(ReadyProducts *ready_products, ProductType type, int quantity) {
+    
+    lock_ready_products();
+    
+    
+    if (type >= 0 && type < NUM_PRODUCTS) {
+        ready_products->quantities[type] += quantity;
+    }
+    
+    
+    unlock_ready_products();
+    
+}
+
+// Get ready product with thread safety
+// Returns 1 if successful, 0 if not enough products
+int get_ready_product(ReadyProducts *ready_products, ProductType type, int quantity) {
+    int result = 0;
+    
+    
+    lock_ready_products();
+    
+    
+    if (type >= 0 && type < NUM_PRODUCTS && ready_products->quantities[type] >= quantity) {
+        ready_products->quantities[type] -= quantity;
+        result = 1;
+    }
+    
+    
+    unlock_ready_products();
+    
     
     return result;
 }
