@@ -41,7 +41,7 @@ extern "C"
   queue *front(queue *q, void *data);
 
   /**
-   * @brief Reverse the queue
+   * @brieft Reverse the queue
    * @param The queue
    * @return q, NULL on error
    */
@@ -90,6 +90,16 @@ extern "C"
    * @return The new queue, NULL on error
    */
   queue *copyQueue(queue *src);
+
+
+  /**
+   * @brief Remove an element from the queue
+   *
+   * @param q The queue
+   * @param data The data to be removed
+   * @return The queue, NULL on error
+   */
+  queue *removeElement(queue *q, void *data);
 
 #ifdef __cplusplus
 }
