@@ -38,6 +38,9 @@ add_executable(baker_teams
         src/utils/random.c
 )
 
+add_executable(graphics1 src/graphics/graphics1.c src/graphics/animation.c)
+target_include_directories(graphics1 PRIVATE "include/lib/raylib") # Add the library directory to the link directories
+
 
 
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
@@ -45,6 +48,7 @@ include_directories(include)
 target_include_directories(graphics PRIVATE include/lib/raylib)
 target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
+target_link_libraries(graphics1 PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 
 set (need_queue main bakers customers graphics queue-test) # List of executables that need the queue library
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
@@ -61,5 +65,6 @@ if (CMAKE_RELEASE_BUILD)
 else()
     message("Debug build")
     target_compile_definitions(graphics PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") # Set the asset path macro to the absolute path on the dev machine
+    target_compile_definitions(graphics1 PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") # Set the asset path macro to the absolute path on the dev machine
     target_compile_definitions(main PUBLIC CONFIG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/config.txt") # Set the config path macro to the absolute path on the dev machine
 endif()
