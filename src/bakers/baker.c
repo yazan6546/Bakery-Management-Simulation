@@ -1,95 +1,124 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
+#include <sys/mman.h>
+#include <sys/msg.h>
+#include <string.h>
+#include <time.h>
 
 #include "queue.h"
 #include "oven.h"
-#include "BakerTeam.h"
 #include "BakeryItem.h"
+#include "BakerTeam.h"
 #include "game.h"
-#include <sys/mman.h>
+#include "random.h"
+#include "bakery_utils.h"
+
+typedef struct {
+    long mtype;
+    BakeryItem item;
+} Message;
 
 Game *game;
 
 int main(int argc, char *argv[]) {
-
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <fd>\n", argv[0]);
         return 1;
     }
 
-    int fd = atoi(argv[1]);  // 4th argument for mmap
-
-    // Open the file descriptor for reading
+    int fd = atoi(argv[1]);
     game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    fflush(stdout);
-    Config config = game->config;
-
-    print_config(&config);
-
-    srand(time(NULL)); // Random seed
-
-    // Create ovens
-    Oven ovens[config.NUM_OVENS];
-    for (int i = 0; i < config.NUM_OVENS; i++) {
-        init_oven(&ovens[i], i);
+    if (game == MAP_FAILED) {
+        perror("mmap failed");
+        exit(1);
     }
 
-    // Create baker teams
+    printf("********** Bakery Simulation **********\n");
+    Config config = game->config;
+    print_config(&config);
+    init_random();
+
+    for (int i = 0; i < config.NUM_OVENS; i++) {
+        init_oven(&game->ovens[i], i);
+    }
+
+    int mqid_bread = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_cakesweets = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_patisseries = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    int mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+
+    if (mqid_bread == -1 || mqid_cakesweets == -1 || mqid_patisseries == -1 || mqid_ready == -1) {
+        perror("msgget failed");
+        exit(1);
+    }
+
     BakerTeam teams[3];
+    distribute_bakers_locally(&config, teams);
 
-    init_team(&teams[0], "Bake Bread");
-    init_team(&teams[1], "Bake Cakes and Sweets");
-    init_team(&teams[2], "Bake Sweet and Savory Patisseries");
+    start_process_baker("baker_teams", &teams[0], &config, mqid_bread, mqid_ready);
+    start_process_baker("baker_teams", &teams[1], &config, mqid_cakesweets, mqid_ready);
+    start_process_baker("baker_teams", &teams[2], &config, mqid_patisseries, mqid_ready);
 
-    queue *baker_queue = createQueue(sizeof(BakeryItem));
+    for (int t = 0;; t++) {
+        printf("\n=== Main Time Step %d ===\n", t + 1);
 
-    // Simulate 20 time units
-    for (int t = 0 ;; t++) {
-        printf("\n--- Time step %d ---\n", t + 1);
+        if (rand() % 2 == 0) {
+            char item_name[50];
+            sprintf(item_name, "Item-%d", rand() % 100);
 
-        // Teams randomly produce items
-        for (int i = 0; i < 3; i++) {
-            if (rand() % 2 == 0) {
-                char item_name[50];
-                sprintf(item_name, "Item-%d", rand() % 100);
-                BakeryItem item;
-                backery_item_create(&item, item_name, teams[i].team_name);
-                enqueue(baker_queue, &item);
-                printf("Team %s produced %s\n", teams[i].team_name, item_name);
-                fflush(stdout);
+            BakeryItem item;
+            int team = rand() % 3;
+            if (team == 0)
+                backery_item_create(&item, item_name, "Bake Bread");
+            else if (team == 1)
+                backery_item_create(&item, item_name, "Bake Cakes and Sweets");
+            else
+                backery_item_create(&item, item_name, "Bake Sweet and Savory Patisseries");
+
+            Message msg;
+            msg.mtype = 1;
+            msg.item = item;
+
+            int target_mqid = (team == 0) ? mqid_bread : (team == 1) ? mqid_cakesweets : mqid_patisseries;
+
+            if (msgsnd(target_mqid, &msg, sizeof(BakeryItem), 0) == -1) {
+                perror("msgsnd main->team failed");
+            } else {
+                printf("Main produced: %s (%s)\n", item.name, item.team_name);
             }
         }
 
-        BakeryItem item;
-        while (!isEmpty(baker_queue)) {
-            front(baker_queue, &item); // Peek the front item without removing it
+        Message ready_msg;
+        while (msgrcv(mqid_ready, &ready_msg, sizeof(BakeryItem), 0, IPC_NOWAIT) >= 0) {
+            BakeryItem *ready_item = &ready_msg.item;
             int placed = 0;
+
             for (int j = 0; j < config.NUM_OVENS; j++) {
-                if (!ovens[j].is_busy) {
+                if (!game->ovens[j].is_busy) {
                     int baking_time = config.MIN_OVEN_TIME + rand() % (config.MAX_OVEN_TIME - config.MIN_OVEN_TIME + 1);
-                    dequeue(baker_queue, &item); // Remove it after placing
-                    put_item_in_oven(&ovens[j], item.name, item.team_name, baking_time);
-                    printf("Placed %s in Oven %d for %d seconds.\n", item.name, ovens[j].id, baking_time);
+                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, baking_time);
+                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, baking_time);
                     placed = 1;
                     break;
                 }
             }
+
             if (!placed) {
-                printf("All ovens busy, %s is waiting.\n", item.name);
+                if (msgsnd(mqid_ready, &ready_msg, sizeof(BakeryItem), 0) == -1) {
+                    perror("msgsnd requeue ready failed");
+                }
                 break;
             }
         }
 
-        // Update ovens (tick)
         for (int j = 0; j < config.NUM_OVENS; j++) {
-            if (oven_tick(&ovens[j])) {
-                printf("Oven %d finished baking %s\n", ovens[j].id, ovens[j].item_name);
+            if (oven_tick(&game->ovens[j])) {
+                printf("Oven %d finished baking %s\n", game->ovens[j].id, game->ovens[j].item_name);
             }
         }
 
-        sleep(1); // simulate 1 second
+        sleep(1);
     }
 
     return 0;
