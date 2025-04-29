@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include "config.h"
-#define NUM_MAIN_ITEMS 6
 // Define team types
 typedef enum {
     TEAM_PASTE,
@@ -14,6 +13,16 @@ typedef enum {
     TEAM_SAVORY_PATISSERIE,
     NUM_TEAM_TYPES
 } TeamType;
+
+typedef enum {
+    ITEM_PASTE,
+    ITEM_CAKES,
+    ITEM_SANDWICHES,
+    ITEM_SWEETS,
+    ITEM_SWEET_PATISSERIE,
+    ITEM_SAVORY_PATISSERIE,
+    NUM_MENU_ITEMS
+} MenuItemName;
 
 // Structure for bakery ingredients (will be in shared memory)
 typedef struct {
@@ -42,7 +51,7 @@ typedef struct {
 } ChefTeam;
 
 typedef struct {
-    char name[50];          // Name of the item (e.g., "Cake", "Sweet")
+    MenuItemName name;          // Enum
     char **subtypes;        // Dynamically allocated subtypes
     int num_subtypes;       // Number of subtypes
 } MenuItem;
