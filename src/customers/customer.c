@@ -43,41 +43,63 @@ int main(int argc, char *argv[]) {
     customer.has_complained = 0;
     customer.state = WALKING;
 
-    printf("Customer %d is walking...\n", customer.id);
-    sleep(rand() % 3);
-    customer.state = WAITING_IN_QUEUE;
-
-    printf("Customer %d is waiting in queue with patience %d...\n", customer.id, customer.patience);
-
-    // Send order to seller
-    struct msgbuf orderMsg;
-    orderMsg.mtype = 1;
-    snprintf(orderMsg.mtext, sizeof(orderMsg.mtext), "Customer %d ordering", customer.id);
-    msgsnd(msgID, &orderMsg, strlen(orderMsg.mtext) + 1, 0);
-
-    customer.state = ORDERING;
-    printf("Customer %d is ordering...\n", customer.id);
-
     int waitTime = rand() % 10 + 1;
-    if (waitTime > customer.patience) {
-        customer.state = LEFT;
-        shared_game->num_customers_missing++;
-        printf("Customer %d got frustrated and left after waiting %d seconds.\n", customer.id, waitTime);
-        exit(0);
+
+    while (1) {
+        switch (customer.state) {
+            case WALKING:
+                printf("Customer %d is walking...\n", customer.id);
+                sleep(rand() % 3);
+                customer.state = WAITING_IN_QUEUE;
+                break;
+
+            case WAITING_IN_QUEUE:
+                printf("Customer %d is waiting in queue with patience %d...\n", customer.id, customer.patience);
+                customer.state = ORDERING;
+                break;
+
+            case ORDERING: {
+                struct msgbuf orderMsg;
+                orderMsg.mtype = 1;
+                snprintf(orderMsg.mtext, sizeof(orderMsg.mtext), "Customer %d ordering", customer.id);
+                msgsnd(msgID, &orderMsg, strlen(orderMsg.mtext) + 1, 0);
+
+                printf("Customer %d is ordering...\n", customer.id);
+
+                if (waitTime > customer.patience) {
+                    customer.state = LEFT;
+                } else {
+                    customer.state = WAITING_FOR_ORDER;
+                }
+                break;
+            }
+
+            case WAITING_FOR_ORDER:
+                sleep(waitTime);
+                printf("Customer %d is waiting for order...\n", customer.id);
+
+                int quality = rand() % 2 + 1;
+                if (quality == FEEDBACK_BAD) {
+                    customer.state = COMPLAINING;
+                } else {
+                    printf("Customer %d is happy with good quality.\n", customer.id);
+                    return 0;
+                }
+                break;
+
+            case COMPLAINING:
+                shared_game->num_complained_customers++;
+                printf("Customer %d complained about bad quality.\n", customer.id);
+                return 0;
+
+            case LEFT:
+                shared_game->num_customers_missing++;
+                printf("Customer %d got frustrated and left after waiting %d seconds.\n", customer.id, waitTime);
+                return 0;
+
+            default:
+                fprintf(stderr, "Customer %d entered unknown state.\n", customer.id);
+                return 1;
+        }
     }
-
-    sleep(waitTime);
-    customer.state = WAITING_FOR_ORDER;
-    printf("Customer %d is waiting for order...\n", customer.id);
-
-    int quality = rand() % 2 + 1;
-    if (quality == FEEDBACK_BAD) {
-        customer.state = COMPLAINING;
-        shared_game->num_complained_customers++;
-        printf("Customer %d complained about bad quality.\n", customer.id);
-    } else {
-        printf("Customer %d is happy with good quality.\n", customer.id);
-    }
-
-    exit(0);
 }
