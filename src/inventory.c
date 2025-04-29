@@ -6,7 +6,6 @@
 #include <unistd.h>
 
 // Global variables for shared memory and semaphores
-int shm_fd = -1;
 sem_t* inventory_sem = NULL;
 sem_t* ready_products_sem = NULL;
 
