@@ -14,7 +14,6 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <string.h>
-#include "game.h"
 
 // Define names for shared memory file and semaphore
 
