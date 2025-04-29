@@ -7,48 +7,27 @@
 
 // Global variables for shared memory and semaphores
 int shm_fd = -1;
-Inventory* shared_inventory = NULL;
 sem_t* inventory_sem = NULL;
+sem_t* ready_products_sem = NULL;
 
-// Setup shared memory for inventory using mmap
-int setup_shared_memory(void) {
-    // Create or open a shared memory file
-    shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("shm_open failed");
-        return -1;
-    }
-
-    // Set the size of the shared memory region
-    if (ftruncate(shm_fd, sizeof(Inventory)) == -1) {
-        perror("ftruncate failed");
-        close(shm_fd);
-        shm_unlink(SHM_NAME);
-        return -1;
-    }
-
-    // Map the shared memory region into our address space
-    shared_inventory = (Inventory*)mmap(NULL, sizeof(Inventory), 
-                                        PROT_READ | PROT_WRITE, MAP_SHARED, 
-                                        shm_fd, 0);
-    if (shared_inventory == MAP_FAILED) {
-        perror("mmap failed");
-        close(shm_fd);
-        shm_unlink(SHM_NAME);
-        return -1;
-    }
-
-    // Initialize the inventory in shared memory
-    init_inventory(shared_inventory);
-    return 0;
-}
 
 // Setup semaphore using POSIX semaphores
-int setup_semaphore(void) {
+int setup_inventory_semaphore(void) {
     // Create or open the semaphore
     inventory_sem = sem_open(SEM_NAME, O_CREAT, 0666, 1); // Initial value 1
     if (inventory_sem == SEM_FAILED) {
         perror("sem_open failed");
+        return -1;
+    }
+    return 0;
+}
+
+// Setup semaphore for ready products
+int setup_ready_products_semaphore(void) {
+    // Create or open the semaphore
+    ready_products_sem = sem_open(READY_SEM_NAME, O_CREAT, 0666, 1); // Initial value 1
+    if (ready_products_sem == SEM_FAILED) {
+        perror("sem_open failed for ready products");
         return -1;
     }
     return 0;
@@ -70,31 +49,23 @@ void unlock_inventory(void) {
     }
 }
 
-// Clean up resources
-void cleanup_resources(void) {
-    // Unmap shared memory
-    if (shared_inventory != NULL && shared_inventory != MAP_FAILED) {
-        if (munmap(shared_inventory, sizeof(Inventory)) == -1) {
-            perror("munmap failed");
-        }
-    }
-
-    // Close and unlink shared memory
-    if (shm_fd != -1) {
-        close(shm_fd);
-        if (shm_unlink(SHM_NAME) == -1) {
-            perror("shm_unlink failed");
-        }
-    }
-
-    // Close and unlink semaphore
-    if (inventory_sem != NULL && inventory_sem != SEM_FAILED) {
-        sem_close(inventory_sem);
-        if (sem_unlink(SEM_NAME) == -1) {
-            perror("sem_unlink failed");
-        }
+// Lock the ready products for exclusive access
+void lock_ready_products(void) {
+    if (sem_wait(ready_products_sem) == -1) {
+        perror("sem_wait failed for ready products");
+        exit(1);
     }
 }
+
+// Unlock the ready products
+void unlock_ready_products(void) {
+    if (sem_post(ready_products_sem) == -1) {
+        perror("sem_post failed for ready products");
+        exit(1);
+    }
+}
+
+ 
 
 // Initialize inventory
 void init_inventory(Inventory *inventory) {
@@ -103,6 +74,15 @@ void init_inventory(Inventory *inventory) {
         inventory->quantities[i] = 0;
     }
     inventory->max_capacity = 100; // Set a default max capacity
+}
+
+// Initialize ready products
+void init_ready_products(ReadyProducts *ready_products) {
+    // Initialize all quantities to zero
+    for (int i = 0; i < NUM_PRODUCTS; i++) {
+        ready_products->quantities[i] = 0;
+    }
+    ready_products->max_capacity = 50; // Set a default max capacity
 }
 
 // Add ingredient with thread safety
@@ -185,5 +165,41 @@ void restock_ingredients(Inventory *inventory) {
     if (inventory == shared_inventory) {
         unlock_inventory();
     }
+}
+
+// Add ready product with thread safety
+void add_ready_product(ReadyProducts *ready_products, ProductType type, int quantity) {
+    if (ready_products == shared_ready_products) {
+        lock_ready_products();
+    }
+    
+    if (type >= 0 && type < NUM_PRODUCTS) {
+        ready_products->quantities[type] += quantity;
+    }
+    
+    if (ready_products == shared_ready_products) {
+        unlock_ready_products();
+    }
+}
+
+// Get ready product with thread safety
+// Returns 1 if successful, 0 if not enough products
+int get_ready_product(ReadyProducts *ready_products, ProductType type, int quantity) {
+    int result = 0;
+    
+    if (ready_products == shared_ready_products) {
+        lock_ready_products();
+    }
+    
+    if (type >= 0 && type < NUM_PRODUCTS && ready_products->quantities[type] >= quantity) {
+        ready_products->quantities[type] -= quantity;
+        result = 1;
+    }
+    
+    if (ready_products == shared_ready_products) {
+        unlock_ready_products();
+    }
+    
+    return result;
 }
 
