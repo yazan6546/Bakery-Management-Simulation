@@ -70,7 +70,7 @@ void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]
 void restock_ingredients(Inventory *inventory);
 
 // Function prototypes for shared memory and semaphores
-int setup_semaphore(void);
+int setup_inventory_semaphore(void);
 void lock_inventory(void);
 void unlock_inventory(void);
 void cleanup_resources(void);
