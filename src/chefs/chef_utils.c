@@ -1,4 +1,5 @@
 #include "chef.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,6 +31,17 @@ void print_team_status(const ChefTeam *team) {
            team->pid,
            team->is_active ? "Active" : "Inactive",
            team->items_produced);
+}
+
+void serialize_chef_team(ChefTeam *team, char *buffer) {
+    sprintf(buffer, "%d %d %d %d %d %d %d",
+            team->team_id,
+            team->pid,
+            team->type,
+            team->team_size,
+            team->is_active,
+            team->depends_on,
+            team->items_produced);
 }
 
 // Initialize chef teams based on configuration
@@ -144,26 +156,24 @@ void chef_team_work(ChefTeam *team, BakeryIngredients *ingredients) {
     exit(EXIT_SUCCESS);
 }
 
-void create_chef_processes(ChefTeam *teams, int num_teams, BakeryIngredients *ingredients) {
+void create_chef_processes(const char *binary,ChefTeam *teams, int num_teams, BakeryIngredients *ingredients, Config *config) {
     for (int i = 0; i < num_teams; i++) {
         pid_t pid = fork();
 
-        if (pid == 0) { // Child process
-            // Use the current executable path
-            char *args[] = {"./chef", NULL};
-            execv(args[0], args);
-
-            // If execv returns, it failed
-            perror("execv failed");
-            exit(EXIT_FAILURE);
-        }
-        else if (pid > 0) {
-            teams[i].pid = pid;
+        if (pid == 0) {
+            char config_buffer[512];
+            serialize_config(config, config_buffer);
+            char team_buffer[512];
+            serialize_chef_team(&teams[i], team_buffer);
+            if (execl(binary, binary,team_buffer,config_buffer,NULL)) {
+                perror("execl failed");
+                exit(EXIT_FAILURE);
+            }
         }
         else {
-            perror("fork failed");
-            exit(EXIT_FAILURE);
+            teams[i].pid = pid;
         }
+
     }
 }
 
