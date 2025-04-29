@@ -65,8 +65,6 @@ void unlock_ready_products(void) {
     }
 }
 
- 
-
 // Initialize inventory
 void init_inventory(Inventory *inventory) {
     // Initialize all quantities to zero
@@ -87,40 +85,30 @@ void init_ready_products(ReadyProducts *ready_products) {
 
 // Add ingredient with thread safety
 void add_ingredient(Inventory *inventory, IngredientType type, int quantity) {
-    if (inventory == shared_inventory) {
-        lock_inventory();
-    }
+    lock_inventory();
     
     if (type >= 0 && type < NUM_INGREDIENTS) {
         inventory->quantities[type] += quantity;
     }
     
-    if (inventory == shared_inventory) {
-        unlock_inventory();
-    }
+    unlock_inventory();
 }
 
 void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]) {
-    if (inventory == shared_inventory) {
-        lock_inventory();
-    }
+    lock_inventory();
     
     // Add quantities from the array
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
         inventory->quantities[i] += quantities[i];
     }
     
-    if (inventory == shared_inventory) {
-        unlock_inventory();
-    }
+    unlock_inventory();
 }
 
 int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]) {
     int result = 1;
     
-    if (inventory == shared_inventory) {
-        lock_inventory();
-    }
+    lock_inventory();
     
     // Check if we have enough of each ingredient
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
@@ -130,56 +118,42 @@ int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS
         }
     }
     
-    if (inventory == shared_inventory) {
-        unlock_inventory();
-    }
+    unlock_inventory();
     
     return result;
 }
 
 void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]) {
-    if (inventory == shared_inventory) {
-        lock_inventory();
-    }
+    lock_inventory();
     
     // Deduct used ingredients
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
         inventory->quantities[i] -= quantities[i];
     }
     
-    if (inventory == shared_inventory) {
-        unlock_inventory();
-    }
+    unlock_inventory();
 }
 
 void restock_ingredients(Inventory *inventory) {
-    if (inventory == shared_inventory) {
-        lock_inventory();
-    }
+    lock_inventory();
     
     // Reset all ingredients to 0
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
         inventory->quantities[i] = 0;
     }
     
-    if (inventory == shared_inventory) {
-        unlock_inventory();
-    }
+    unlock_inventory();
 }
 
 // Add ready product with thread safety
 void add_ready_product(ReadyProducts *ready_products, ProductType type, int quantity) {
-    if (ready_products == shared_ready_products) {
-        lock_ready_products();
-    }
+    lock_ready_products();
     
     if (type >= 0 && type < NUM_PRODUCTS) {
         ready_products->quantities[type] += quantity;
     }
     
-    if (ready_products == shared_ready_products) {
-        unlock_ready_products();
-    }
+    unlock_ready_products();
 }
 
 // Get ready product with thread safety
@@ -187,18 +161,14 @@ void add_ready_product(ReadyProducts *ready_products, ProductType type, int quan
 int get_ready_product(ReadyProducts *ready_products, ProductType type, int quantity) {
     int result = 0;
     
-    if (ready_products == shared_ready_products) {
-        lock_ready_products();
-    }
+    lock_ready_products();
     
     if (type >= 0 && type < NUM_PRODUCTS && ready_products->quantities[type] >= quantity) {
         ready_products->quantities[type] -= quantity;
         result = 1;
     }
     
-    if (ready_products == shared_ready_products) {
-        unlock_ready_products();
-    }
+    unlock_ready_products();
     
     return result;
 }
