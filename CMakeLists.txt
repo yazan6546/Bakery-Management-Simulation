@@ -7,9 +7,7 @@ set(LIBRARY_DIR "${CMAKE_CURRENT_LIST_DIR}/lib")
 # Adding our source files
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/sources/*.c") # Define PROJECT_SOURCES as a list of all source files
 
-
 # Declaring our executable
-
 
 add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c)
 add_executable(graphics)
@@ -19,26 +17,37 @@ add_executable(chefs src/chefs/chef.c)
 add_executable(sellers src/sellers/seller.c)
 add_executable(supply_chain src/supply_chains/supply_chain.c)
 add_executable(customers src/customers/customer.c)
+add_executable(inventory-semaphore-test tests/inventory-semaphore-test.c src/inventory.c)
+target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
+
+# Add chef-supply-chain test
+add_executable(chef-supply-chain-test 
+    tests/chef-supply-chain-test.c 
+    src/inventory.c
+    src/utils/config.c
+    src/game.c
+    src/chefs/chef_functions.c
+    src/supply_chains/supply_chain_functions.c
+)
+target_link_libraries(chef-supply-chain-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
 
 add_executable(bakers
     src/bakers/baker.c
     src/bakers/oven.c
-        src/bakers/BakeryItem.c
-        src/utils/random.c
+    src/bakers/BakeryItem.c
+    src/utils/random.c
     src/utils/config.c
     src/game.c
     src/inventory.c
-        src/bakers/baker_utils.c
+    src/bakers/baker_utils.c
 )
 
 add_executable(baker_teams
     src/bakers/baker_teams.c
-   src/utils/config.c
-        src/bakers/baker_utils.c
-        src/utils/random.c
+    src/utils/config.c
+    src/bakers/baker_utils.c
+    src/utils/random.c
 )
-
-
 
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
 include_directories(include)
