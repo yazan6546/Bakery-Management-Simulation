@@ -4,15 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>  // For fork() and execl()
+#include <sys/types.h> // For pid_t
 
 
 const char* get_team_name_str(Team team) {
     switch (team) {
-        case BREAD:
+        case BREAD_BAKERS:
             return "Bake Bread";
-        case CAKE_AND_SWEETS:
+        case CAKE_AND_SWEETS_BAKERS:
             return "Bake Cakes and Sweets";
-        case PASTRIES:
+        case PASTRIES_BAKERS:
             return "Bake Sweet and Savory Patisseries";
         default:
             return "Unknown Team";
@@ -25,11 +27,13 @@ int is_team_item(BakeryItem* item, Team team) {
 }
 
 void serialize_baker_team(BakerTeam *team, char *buffer, size_t size) {
-    snprintf(buffer, size, "%d,%d", team->team_name, team->number_of_bakers);
+    snprintf(buffer, size, "%d,%d", (int)team->team_name, team->number_of_bakers);
 }
 
 void deserialize_baker_team(const char *buffer, BakerTeam *team) {
-    sscanf(buffer, "%d,%d", &team->team_name, &team->number_of_bakers);
+    int team_value;
+    sscanf(buffer, "%d,%d", &team_value, &team->number_of_bakers);
+    team->team_name = (Team)team_value;
 }
 
 // Distributes bakers among the three teams
