@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     create_chef_processes(teams, NUM_CHEF_TEAMS, &ingredients);
 
     // Main simulation loop
-    printf("\n=== SIMULATION RUNNING ===\n");
+    printf("\n=== SIMULATION RUNNING ==\n");
     time_t start_time = time(NULL);
     while (!stop_simulation && difftime(time(NULL), start_time) < config.MAX_TIME) {
         sleep(1); // Main process just waits
