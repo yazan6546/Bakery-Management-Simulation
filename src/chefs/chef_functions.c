@@ -1,5 +1,6 @@
 //
 // Created by yazan on 4/26/2025.
+// Chef functions extracted for testing
 //
 
 #include <stdio.h>
@@ -15,9 +16,6 @@
 #include "config.h"
 #include "game.h"
 #include "chef.h"
-
-// Shared game reference
-Game *game;
 
 // Function to check if ingredients are low and need to be restocked
 void check_and_request_ingredients(ChefState *chef, Inventory *inventory) {
@@ -141,76 +139,4 @@ void prepare_recipes(ChefState *chef, Inventory *inventory, ReadyProducts *ready
         // Cook time
         sleep(2);
     }
-}
-
-int main(int argc, char *argv[]) {
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s <shared_memory_fd> <request_queue_id> <response_queue_id> [chef_id]\n", argv[0]);
-        return 1;
-    }
-    
-    srand(time(NULL) ^ getpid());  // Seed random number generator
-    
-    // Parse command line arguments
-    int shm_fd = atoi(argv[1]);
-    int request_queue_id = atoi(argv[2]);
-    int response_queue_id = atoi(argv[3]);
-    int chef_id = (argc > 4) ? atoi(argv[4]) : (getpid() % 100);
-    
-    // Map shared memory
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
-    
-    // Setup inventory semaphores
-    sem_t *inventory_sem = setup_inventory_semaphore();
-    if (inventory_sem == NULL) {
-        perror("Failed to setup inventory semaphore");
-        exit(1);
-    }
-    
-    // Setup ready products semaphore
-    sem_t *ready_products_sem = setup_ready_products_semaphore();
-    if (ready_products_sem == NULL) {
-        perror("Failed to setup ready products semaphore");
-        exit(1);
-    }
-    
-    // Initialize chef state
-    ChefState chef;
-    chef.id = chef_id;
-    chef.request_queue_id = request_queue_id;
-    chef.response_queue_id = response_queue_id;
-    chef.is_waiting_for_ingredients = 0;
-    chef.inventory_sem = inventory_sem;
-    chef.ready_products_sem = ready_products_sem;
-    
-    printf("[Chef %d] Chef process started\n", chef.id);
-    
-    // Main chef loop
-    while (1) {
-        // Check inventory and request ingredients if needed
-        check_and_request_ingredients(&chef, &game->inventory);
-        
-        // Check for confirmations from supply chain
-        check_for_confirmations(&chef);
-        
-        // Try to prepare recipes
-        prepare_recipes(&chef, &game->inventory, &game->ready_products);
-        
-        // Small delay to prevent busy-waiting
-        usleep(500000);  // 0.5 seconds
-    }
-    
-    // Clean up (this never executes in the current implementation)
-    if (inventory_sem) {
-        sem_close(inventory_sem);
-    }
-    if (ready_products_sem) {
-        sem_close(ready_products_sem);
-    }
-    
-    return 0;
 }

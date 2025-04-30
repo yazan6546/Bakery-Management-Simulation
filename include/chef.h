@@ -5,6 +5,8 @@
 #ifndef CHEF_H
 #define CHEF_H
 
+#include <semaphore.h>
+
 // Message structure for restock requests
 typedef struct {
     long mtype;
@@ -29,6 +31,8 @@ typedef struct {
     int is_waiting_for_ingredients;
     IngredientType waiting_for;
     int waiting_quantity;
+    sem_t* inventory_sem;
+    sem_t* ready_products_sem;
 } ChefState;
 
 // Constants for inventory management
@@ -36,8 +40,8 @@ typedef struct {
 #define RESTOCK_TARGET_QUANTITY 50
 
 // Function prototypes
-void check_and_request_ingredients(ChefState *chef);
+void check_and_request_ingredients(ChefState *chef, Inventory *inventory);
 void check_for_confirmations(ChefState *chef);
-void prepare_recipes(ChefState *chef);
+void prepare_recipes(ChefState *chef, Inventory *inventory, ReadyProducts *ready_products);
 
 #endif //CHEF_H
