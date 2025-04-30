@@ -196,7 +196,7 @@ int get_ready_product(ReadyProducts *ready_products, ProductType type, int quant
 }
 
 // Cleanup resources
-void cleanup_resources(sem_t* inventory_sem, sem_t* ready_products_sem) {
+void cleanup_semaphore_resources(sem_t* inventory_sem, sem_t* ready_products_sem) {
     // Close and unlink semaphores
     if (inventory_sem != NULL) {
         sem_close(inventory_sem);

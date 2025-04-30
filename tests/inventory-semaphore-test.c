@@ -186,7 +186,7 @@ int main() {
     }
     
     // Clean up
-    cleanup_resources(inventory_sem, ready_products_sem);
+    cleanup_semaphore_resources(inventory_sem, ready_products_sem);
     
     if (munmap(shared_inventory, sizeof(Inventory)) == -1) {
         perror("munmap failed for inventory");

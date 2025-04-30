@@ -69,7 +69,7 @@ void restock_ingredients(Inventory *inventory, sem_t* sem);
 sem_t* setup_inventory_semaphore(void);
 void lock_inventory(sem_t* sem);
 void unlock_inventory(sem_t* sem);
-void cleanup_resources(sem_t* inventory_sem, sem_t* ready_products_sem);
+void cleanup_semaphore_resources(sem_t* inventory_sem, sem_t* ready_products_sem);
 
 // Function prototypes for ready products
 sem_t* setup_ready_products_semaphore(void);
