@@ -18,6 +18,7 @@
 #include "supply_chain.h"
 #include "chef.h"
 
+
 // Function to process a restock request
 void process_restock_request(SupplyChainState *state, SupplyChainRequest *request, Inventory *inventory) {
     printf("[Supply Chain %d] Processing restock request for ingredient %d, quantity %d, urgency %d\n", 
