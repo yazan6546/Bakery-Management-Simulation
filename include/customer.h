@@ -23,7 +23,7 @@ typedef enum {
 typedef struct {
     int id;
     int patience;  // in seconds
-    int has_complained;
+    bool has_complained;
     CustomerState state;
 } Customer;
 

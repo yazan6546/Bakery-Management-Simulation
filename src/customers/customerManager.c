@@ -12,27 +12,20 @@
 #include "game.h"
 
 #define MAX_CUSTOMERS 20
-#define MAX_COMPLAINT_THRESHOLD 3
 
 Game *shared_game;
 
 void setup_shared_memory() {
-    int shm_fd = shm_open("/game_shm", O_CREAT | O_RDWR, 0666);
+    int shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
     ftruncate(shm_fd, sizeof(Game));
     shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     close(shm_fd);
-
-    shared_game->elapsed_time = 0;
-    shared_game->num_frustrated_customers = 0;
-    shared_game->num_complained_customers = 0;
-    shared_game->num_customers_missing = 0;
-    shared_game->daily_profit = 0.0;
 }
 
 void spawn_customer(queue *customerQueue, int msgQueueID, int custID) {
     Customer newCust;
     newCust.id = custID;
-    newCust.patience = rand() % 10 + 5;
+    newCust.patience =
     newCust.has_complained = 0;
     newCust.state = WAITING_IN_QUEUE;
     enqueue(customerQueue, &newCust);
@@ -44,6 +37,7 @@ void spawn_customer(queue *customerQueue, int msgQueueID, int custID) {
         snprintf(id_buf, sizeof(id_buf), "%d", msgQueueID);
         snprintf(cust_buf, sizeof(cust_buf), "%d", custID);
         if (execl("./customer", "./customer", id_buf, cust_buf, NULL) == -1) {
+
             perror("execl failed");
             exit(EXIT_FAILURE);
         }        
@@ -57,7 +51,8 @@ void handle_queue(queue *q) {
         dequeue(q, &temp);
 
         int complaintRisk = rand() % 10;
-        if (shared_game->num_complained_customers >= MAX_COMPLAINT_THRESHOLD && complaintRisk < 5) {
+        if (shared_game->num_complained_customers >= shared_game->config.COMPLAINED_CUSTOMERS &&
+            complaintRisk < 5) {
             printf("Customer %d saw too many complaints and left.\n", temp.id);
             shared_game->num_customers_missing++;
             continue;
@@ -85,7 +80,7 @@ int main() {
         exit(1);
     }
 
-    for (int i = 0; i < MAX_CUSTOMERS; i++) {
+    for (int i = 0; i < shared_game->config.MAX_CUSTOMERS; i++) {
         sleep(rand() % 3 + 2);
         spawn_customer(customerQueue, msgQueueID, i + 1);
         handle_queue(customerQueue);
