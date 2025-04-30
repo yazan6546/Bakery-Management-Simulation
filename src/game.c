@@ -4,12 +4,11 @@
 
 #include "game.h"
 #include "inventory.h"
-#include <message.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "config.h"
-#include "common.h"
+#include "unistd.h"
 #include <string.h>
 
 
@@ -23,7 +22,7 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
 
 
     char *binary_paths[] = {
-        // "./graphics",
+        "./graphics",
         "./chefs",
         "./bakers",
         "./sellers",
@@ -96,126 +95,6 @@ pid_t start_process(const char *binary, int shared_mem_fd) {
     return pid;
 }
 
-//
-// Team simulate_round(int pipe_fds_team_A[], int pipe_fds_team_B[], const Config *config, Game *game) {
-//     float total_effort_A = 0, total_effort_B = 0;
-//     char output_buffer[4096] = "";  // Large buffer for all output
-//     char temp_buffer[256];          // Temporary buffer for formatting
-//
-//     strcat(output_buffer, "\n");
-//
-//     // Process Team A efforts
-//     for (int i = 0; i < config->NUM_PLAYERS/2; i++) {
-//         Message message;
-//         int index_pipe = game->players_teamA[i].number;
-//         ssize_t bytes = read(pipe_fds_team_A[index_pipe], &message, sizeof(Message));
-//
-//         if (bytes == sizeof(Message) || bytes == 0) {
-//             snprintf(temp_buffer, sizeof(temp_buffer),
-//                      "Team A - Player %d effort: %.2f\n", game->players_teamA[i].number, message.effort);
-//             strcat(output_buffer, temp_buffer);
-//             total_effort_A += message.effort;
-//             game->players_teamA[i].attributes.energy = message.effort / game->players_teamA[i].position;
-//             game->players_teamA[i].state = message.state;
-//         }
-//         else {
-//             perror("read");
-//             fflush(stderr);
-//             usleep(10000);
-//             // Sleep briefly to allow output to be written
-//             exit(1);
-//         }
-//
-//     }
-//
-//     // Process Team B efforts
-//     for (int i = 0; i < config->NUM_PLAYERS/2; i++) {
-//         Message message;
-//         int index_pipe = game->players_teamB[i].number;
-//         ssize_t bytes = read(pipe_fds_team_B[index_pipe], &message, sizeof(Message));
-//
-//         if (bytes == sizeof(Message) || bytes == 0) {
-//             snprintf(temp_buffer, sizeof(temp_buffer),
-//                      "Team B - Player %d effort: %.2f\n", game->players_teamB[i].number, message.effort);
-//             strcat(output_buffer, temp_buffer);
-//             total_effort_B += message.effort;
-//             game->players_teamB[i].attributes.energy = message.effort / game->players_teamB[i].position;
-//             game->players_teamB[i].state = message.state;
-//         }
-//         else {
-//             perror("read");
-//             fflush(stderr);
-//             usleep(10000);
-//             // Sleep briefly to allow output to be written
-//             exit(1);
-//         }
-//     }
-//
-//     // Calculate round score and add totals
-//     game->round_score = total_effort_A - total_effort_B;
-//     game->total_effort_A = total_effort_A;
-//     game->total_effort_B = total_effort_B;
-//     snprintf(temp_buffer, sizeof(temp_buffer),
-//              "\nTotal Effort A: %.2f | Total Effort B: %.2f | Score: %.2f\n\n",
-//              total_effort_A, total_effort_B, game->round_score);
-//     strcat(output_buffer, temp_buffer);
-//
-//     // Determine winner
-//     Team winner = NONE;
-//
-//     if (game->round_score >= config->WINNING_THRESHOLD) {
-//         strcat(output_buffer, "🏆 Team A wins!\n");
-//         strcat(output_buffer, "Round score exceeded threshold!\n");
-//         game->team_wins_A++;
-//         winner = TEAM_A;
-//     }
-//     else if (game->round_score <= -config->WINNING_THRESHOLD) {
-//         strcat(output_buffer, "🏆 Team B wins!\n");
-//         strcat(output_buffer, "Round score exceeded threshold!\n");
-//         game->team_wins_B++;
-//         winner = TEAM_B;
-//     }
-//     else if (game->round_time > config->MAX_ROUND_TIME) {
-//         if (game->round_score > 0) {
-//
-//             strcat(output_buffer, "🏆 Team A wins!\n");
-//             game->team_wins_A++;
-//             winner = TEAM_A;
-//         }
-//         else if (game->round_score < 0) {
-//             strcat(output_buffer, "🏆 Team B wins!\n");
-//             game->team_wins_B++;
-//             winner = TEAM_B;
-//         }
-//         else {
-//             strcat(output_buffer, "It's a draw!\n");
-//         }
-//
-//         strcat(output_buffer, "Round Time is up!\n");
-//     }
-//     else if (game->elapsed_time > config->MAX_TIME) {
-//         if (game->round_score > 0) {
-//             strcat(output_buffer, "🏆 Team A wins!\n");
-//             game->team_wins_A++;
-//             winner = TEAM_A;
-//         } else if (game->round_score < 0) {
-//             strcat(output_buffer, "🏆 Team B wins!\n");
-//             game->team_wins_B++;
-//             winner = TEAM_B;
-//         }
-//         else {
-//             strcat(output_buffer, "It's a draw!\n");
-//         }
-//
-//         strcat(output_buffer, "Game time is up!\n");
-//     }
-//
-//     // Print everything at once with timestamp
-//     print_with_time1(game, "%s", output_buffer);
-//     fflush(stdout);
-//
-//     return winner;
-// }
 
 int check_game_conditions(const Game *game) {
 
