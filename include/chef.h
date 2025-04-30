@@ -6,6 +6,7 @@
 #define CHEF_H
 
 #include <semaphore.h>
+#include <inventory.h>
 
 // Message structure for restock requests
 typedef struct {
