@@ -15,6 +15,7 @@ typedef struct {
     int urgency; // 0-10 scale, 10 being most urgent
 } RestockRequest;
 
+
 // Message structure for restock confirmations
 typedef struct {
     long mtype;
