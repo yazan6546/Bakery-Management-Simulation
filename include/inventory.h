@@ -57,30 +57,26 @@ typedef struct {
     int max_capacity;
 } ReadyProducts;
 
-// Shared memory globals
-extern sem_t* inventory_sem;
-extern sem_t* ready_products_sem;
-
 // Function prototypes for inventory operations
 void init_inventory(Inventory *inventory);
-void add_ingredient(Inventory *inventory, IngredientType type, int quantity);
-void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]);
-int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]);
-void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]);
-void restock_ingredients(Inventory *inventory);
+void add_ingredient(Inventory *inventory, IngredientType type, int quantity, sem_t* sem);
+void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
+int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
+void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
+void restock_ingredients(Inventory *inventory, sem_t* sem);
 
 // Function prototypes for shared memory and semaphores
-int setup_inventory_semaphore(void);
-void lock_inventory(void);
-void unlock_inventory(void);
-void cleanup_resources(void);
+sem_t* setup_inventory_semaphore(void);
+void lock_inventory(sem_t* sem);
+void unlock_inventory(sem_t* sem);
+void cleanup_resources(sem_t* inventory_sem, sem_t* ready_products_sem);
 
 // Function prototypes for ready products
-int setup_ready_products_semaphore(void);
+sem_t* setup_ready_products_semaphore(void);
 void init_ready_products(ReadyProducts *ready_products);
-void add_ready_product(ReadyProducts *ready_products, ProductType type, int quantity);
-int get_ready_product(ReadyProducts *ready_products, ProductType type, int quantity);
-void lock_ready_products(void);
-void unlock_ready_products(void);
+void add_ready_product(ReadyProducts *ready_products, ProductType type, int quantity, sem_t* sem);
+int get_ready_product(ReadyProducts *ready_products, ProductType type, int quantity, sem_t* sem);
+void lock_ready_products(sem_t* sem);
+void unlock_ready_products(sem_t* sem);
 
 #endif //INVENTORY_H

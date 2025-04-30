@@ -19,6 +19,8 @@ add_executable(chefs src/chefs/chef.c)
 add_executable(sellers src/sellers/seller.c)
 add_executable(supply_chain src/supply_chains/supply_chain.c)
 add_executable(customers src/customers/customer.c)
+add_executable(inventory-semaphore-test tests/inventory-semaphore-test.c src/inventory.c)
+target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
 
 add_executable(bakers
     src/bakers/baker.c
@@ -37,8 +39,6 @@ add_executable(baker_teams
         src/bakers/baker_utils.c
         src/utils/random.c
 )
-
-
 
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
 include_directories(include)
