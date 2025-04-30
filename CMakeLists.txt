@@ -12,24 +12,10 @@ file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/s
 add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
-add_executable(queue-test queue_test.c)
 add_executable(chefs src/chefs/chef.c src/inventory.c)
 add_executable(sellers src/sellers/seller.c)
 add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c)
 add_executable(customers src/customers/customer.c)
-add_executable(inventory-semaphore-test tests/inventory-semaphore-test.c src/inventory.c)
-target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
-
-# Add chef-supply-chain test
-add_executable(chef-supply-chain-test 
-    tests/chef-supply-chain-test.c 
-    src/inventory.c
-    src/utils/config.c
-    src/game.c
-    src/chefs/chef_functions.c
-    src/supply_chains/supply_chain_functions.c
-)
-target_link_libraries(chef-supply-chain-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
 
 add_executable(bakers
     src/bakers/baker.c
@@ -55,7 +41,7 @@ target_include_directories(graphics PRIVATE include/lib/raylib)
 target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 
-set (need_queue main bakers customers graphics queue-test) # List of executables that need the queue library
+set (need_queue main bakers customers graphics) # List of executables that need the queue library
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
     message("Adding ${need} to the main executable")
     target_include_directories(${need} PRIVATE include/lib/queue) # Add the source files for each executable to the main executable
@@ -72,3 +58,6 @@ else()
     target_compile_definitions(graphics PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") # Set the asset path macro to the absolute path on the dev machine
     target_compile_definitions(main PUBLIC CONFIG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/config.txt") # Set the config path macro to the absolute path on the dev machine
 endif()
+
+
+add_subdirectory(tests)
