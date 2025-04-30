@@ -4,9 +4,9 @@
 
 
 typedef enum Team {
-    BREAD = 0,
-    CAKE_AND_SWEETS = 1,
-    PASTRIES = 2
+    BREAD_BAKERS = 0,
+    CAKE_AND_SWEETS_BAKERS = 1,
+    PASTRIES_BAKERS = 2
 } Team;
 
 typedef struct {
