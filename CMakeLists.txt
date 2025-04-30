@@ -13,9 +13,9 @@ add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 add_executable(queue-test queue_test.c)
-add_executable(chefs src/chefs/chef.c)
+add_executable(chefs src/chefs/chef.c src/inventory.c)
 add_executable(sellers src/sellers/seller.c)
-add_executable(supply_chain src/supply_chains/supply_chain.c)
+add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c)
 add_executable(customers src/customers/customer.c)
 add_executable(inventory-semaphore-test tests/inventory-semaphore-test.c src/inventory.c)
 target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
