@@ -16,13 +16,14 @@ struct msgbuf {
 };
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) exit(EXIT_FAILURE);
+    if (argc < 3)
+        exit(EXIT_FAILURE);
 
     int msgID = atoi(argv[1]);
     int custID = atoi(argv[2]);
 
     // Attach to shared memory (Game)
-    int shm_fd = shm_open("/game_shm", O_RDWR, 0666);
+    int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
         exit(EXIT_FAILURE);
@@ -34,14 +35,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     close(shm_fd);
-
-    srand(time(NULL) ^ (custID << 8)); // Better randomness
-
-    Customer customer;
-    customer.id = custID;
-    customer.patience = rand() % 10 + 5;
-    customer.has_complained = 0;
-    customer.state = WALKING;
 
     int waitTime = rand() % 10 + 1;
 

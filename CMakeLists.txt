@@ -18,7 +18,7 @@ add_executable(queue-test queue_test.c)
 add_executable(chefs src/chefs/chef.c)
 add_executable(sellers src/sellers/seller.c)
 add_executable(supply_chain src/supply_chains/supply_chain.c)
-add_executable(customer src/customers/customer.c)
+add_executable(customer src/customers/customer.c src/customers/customer_utils.c)
 
 add_executable(bakers
     src/bakers/baker.c

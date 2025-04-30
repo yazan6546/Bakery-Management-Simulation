@@ -21,8 +21,9 @@ typedef enum {
 } CustomerState;
 
 typedef struct {
-    int id;
-    int patience;  // in seconds
+    pid_t pid;
+    float patience;  // in seconds
+    float patience_decay;  // in seconds
     bool has_complained;
     CustomerState state;
 } Customer;
