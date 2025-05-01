@@ -46,7 +46,4 @@ void print_config(Config *config);
 int check_parameter_correctness(const Config *config);
 void serialize_config(Config *config, char *buffer);
 void deserialize_config(const char *buffer, Config *config);
-ProductType get_product_type_from_string(const char* name);
-IngredientType get_ingredient_type_from_string(const char* name);
-
 #endif // CONFIG_H
