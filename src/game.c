@@ -25,13 +25,12 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
         //"./graphics",
         //"./chefs",
         "./bakers",
-        "./baker_worker",
         //"./sellers",
         //"./supply_chain",
         //"./customers"
     };
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 1; i++) {
         processes[i] = start_process(binary_paths[i], shared_mem_fd);
     }
 

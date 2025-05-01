@@ -38,7 +38,7 @@ ProductType infer_product_type(BakeryItem *item) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
+    if (argc != 3) {
         fprintf(stderr, "Usage: %s <mqid> <team_enum>\n", argv[0]);
         return 1;
     }
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     Team my_team = (Team)atoi(argv[2]);
 
     // Connect to shared memory
-    int shm_fd = shm_open("/game_shm", O_RDWR, 0666);
+    int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
         exit(1);
