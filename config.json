@@ -9,8 +9,7 @@
         "ingredients": [
           {"name": "wheat", "quantity": 2},
           {"name": "yeast", "quantity": 1},
-          {"name": "salt", "quantity": 0.5},
-          {"name": "water", "quantity": 1}
+          {"name": "salt", "quantity": 0.5}
         ]
       },
       {

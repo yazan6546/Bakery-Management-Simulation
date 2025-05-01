@@ -34,6 +34,13 @@ typedef enum {
     PASTE_INGREDIENTS,
     CHOCOLATE,
     FLOUR,
+    VANILLA,
+    CUSTARD,
+    EGGS,
+    VEGETABLES,
+    BREAD_ING,
+    CREAM,
+    FRUITS,
     NUM_INGREDIENTS  // This will automatically equal the number of ingredients
 } IngredientType;
 

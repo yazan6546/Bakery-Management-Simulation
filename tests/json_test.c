@@ -151,7 +151,7 @@ int main() {
 
     // Step 1: Create a test JSON file
     printf("Creating test JSON file: %s\n", test_filename);
-    create_test_json_file(test_filename);
+//    create_test_json_file(test_filename);
 
     // Step 2: Test enum conversion functions
     test_enum_conversions();
