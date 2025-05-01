@@ -64,6 +64,7 @@ else()
     message("Debug build")
     target_compile_definitions(graphics PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/") # Set the asset path macro to the absolute path on the dev machine
     target_compile_definitions(main PUBLIC CONFIG_PATH="${CMAKE_CURRENT_SOURCE_DIR}/config.txt") # Set the config path macro to the absolute path on the dev machine
+    target_compile_definitions(main PUBLIC CONFIG_PATH_JSON="${CMAKE_CURRENT_SOURCE_DIR}/config.json") # Set the config path macro to the absolute path on the dev machine
 endif()
 
 
