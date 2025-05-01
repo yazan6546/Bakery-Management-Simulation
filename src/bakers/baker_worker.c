@@ -13,7 +13,6 @@
 #include "BakerTeam.h"
 #include "bakery_utils.h"
 
-
 typedef struct {
     long mtype;
     BakeryItem item;
@@ -21,7 +20,7 @@ typedef struct {
 
 Game *game;
 
-// 🔁 NEW: infer product type from both team and name
+// Infer product type based on team and name
 ProductType infer_product_type(BakeryItem *item) {
     if (strstr(item->team_name, "Bread")) {
         return BREAD;
@@ -46,7 +45,6 @@ int main(int argc, char *argv[]) {
     int mqid = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
 
-    // Connect to shared memory
     int shm_fd = shm_open("/game_shm", O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
@@ -61,48 +59,56 @@ int main(int argc, char *argv[]) {
     close(shm_fd);
 
     setup_ready_products_semaphore();
+    setup_oven_semaphores(game->config.NUM_OVENS);
     init_random();
 
     while (1) {
+        // Tick ovens before checking messages
+        for (int i = 0; i < game->config.NUM_OVENS; i++) {
+            oven_tick(&game->ovens[i]);
+        }
+
         Message msg;
-        if (msgrcv(mqid, &msg, sizeof(BakeryItem), 0, 0) >= 0) {
+        if (msgrcv(mqid, &msg, sizeof(BakeryItem), 0, IPC_NOWAIT) >= 0) {
             if (!is_team_item(&msg.item, my_team)) {
-                // Not my team’s responsibility
                 msgsnd(mqid, &msg, sizeof(BakeryItem), 0);
-                usleep(10000); // small wait to avoid busy loop
+                usleep(10000);
                 continue;
             }
 
-            int prep_time = (int)random_float(game->config.MIN_BAKE_TIME,game->config.MAX_BAKE_TIME);
+            int prep_time = (int)random_float(game->config.MIN_BAKE_TIME, game->config.MAX_BAKE_TIME);
             printf("[Baker %s] Preparing %s for %d seconds...\n",
                    get_team_name_str(my_team), msg.item.name, prep_time);
             sleep(prep_time);
 
-            // 🔄 Try placing into oven
             int baked = 0;
             while (!baked) {
                 for (int i = 0; i < game->config.NUM_OVENS; i++) {
                     if (!game->ovens[i].is_busy) {
                         int bake_time = game->config.MIN_OVEN_TIME +
-                            rand() % (game->config.MAX_OVEN_TIME - game->config.MIN_OVEN_TIME + 1);
+                                        rand() % (game->config.MAX_OVEN_TIME - game->config.MIN_OVEN_TIME + 1);
                         put_item_in_oven(&game->ovens[i], msg.item.name, msg.item.team_name, bake_time);
 
                         printf("[Baker %s] Placed %s in Oven %d for %d sec\n",
                                get_team_name_str(my_team), msg.item.name, i, bake_time);
 
-                        sleep(bake_time); // simulate oven baking
-                        printf("[Baker %s] Finished baking %s in Oven %d\n",
-                               get_team_name_str(my_team), msg.item.name, i);
-
-                        
                         ProductType ptype = infer_product_type(&msg.item);
-                        add_ready_product(&game->readyProducts, ptype, 1);
+                        add_ready_product(&game->ready_products, ptype, 1);
+
                         baked = 1;
                         break;
                     }
                 }
-                if (!baked) sleep(1); // wait for an oven to become free
+
+                if (!baked) {
+                    for (int i = 0; i < game->config.NUM_OVENS; i++) {
+                        oven_tick(&game->ovens[i]);
+                    }
+                    sleep(1);
+                }
             }
+        } else {
+            usleep(50000); // slight sleep to reduce CPU usage when queue is empty
         }
     }
 
