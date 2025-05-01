@@ -10,7 +10,7 @@ find_package(json-c REQUIRED) # Find the json-c package
 # Declaring our executable
 
 add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c
-    src/utils/products_utils.c)
+    src/utils/products_utils.c src/utils/json-config.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 add_executable(chefs src/chefs/chef.c src/inventory.c)
@@ -39,7 +39,7 @@ add_executable(baker_teams
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
 include_directories(include)
 target_include_directories(graphics PRIVATE include/lib/raylib)
-target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
+target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread json-c::json-c) # Link the raylib static library and other required libraries
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
 
 set (need_queue main bakers customers graphics) # List of executables that need the queue library
@@ -50,11 +50,6 @@ foreach (need IN LISTS need_queue) # Loop through each executable that needs the
 endforeach()
 
 set (need_json main)
-
-foreach (need IN LISTS need_json) # Loop through each executable that needs the json library
-    message("Adding ${need} to the main executable")
-    target_link_libraries(${need} PRIVATE json-c::json-c) # Add dependencies for the main executable
-endforeach ()
 # Setting ASSETS_PATH
 
 if (CMAKE_RELEASE_BUILD)
