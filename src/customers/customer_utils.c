@@ -13,7 +13,7 @@ void create_random_customer(Customer *customer, Config *config) {
     if (!customer)
         return;
     customer->patience = random_float(config->MIN_PATIENCE, config->MAX_PATIENCE);
-    customer->patience_decay -= random_float(config->MIN_PATIENCE_DECAY, config->MAX_PATIENCE_DECAY);
+    customer->patience_decay = random_float(config->MIN_PATIENCE_DECAY, config->MAX_PATIENCE_DECAY);
     customer->has_complained = false;
     customer->state = WALKING;
 }

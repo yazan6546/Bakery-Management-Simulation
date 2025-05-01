@@ -69,7 +69,7 @@ void handle_alarm(int sig) {
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
             // Update game stats
             shared_game->num_frustrated_customers++;
-            leave_restaurant(FRUSTRATED);
+//            leave_restaurant(FRUSTRATED);
         }
     }
 
@@ -127,15 +127,16 @@ int main(int argc, char *argv[]) {
     customer_queue = (queue_shm*)queue_ptr;
     close(queue_fd);
 
-    printf("customer count : %zu\n", customer_queue->count);
-//    for (size_t i = 0; i < customer_queue->count; i++) {
-//        queue_shm *q = customer_queue;
-//        Customer *temp = (Customer *) q->elements;
-//        print_customer(temp + i);
-//    }
+    // Fix pointer arithmetic - correct way to access the element at queue_offset
+    my_entry = &((Customer*)customer_queue->elements)[queue_offset];
 
-    // Get direct pointer to our entry in the queue
-    my_entry = (Customer*)(customer_queue->elements + queue_offset);
+    // When printing the queue for debugging
+    for (size_t i = 0; i < customer_queue->count; i++) {
+        Customer *customer = &((Customer*)customer_queue->elements)[i];
+        // Print customer details
+        printf("Queue[%zu]: State=%d, PID=%d, Patience=%.2f\n",
+               i, customer->state, customer->pid, customer->patience);
+    }
 
     // Set up signal handlers
     signal(SIGALRM, handle_alarm);
@@ -175,7 +176,7 @@ int main(int argc, char *argv[]) {
                 if (random_float(0, 1) < 0.1) {
                     printf("Customer %d: Order is missing!\n", customer_id);
                     shared_game->num_customers_missing++;
-                    leave_restaurant(WAITING_FOR_ORDER);
+//                    leave_restaurant(WAITING_FOR_ORDER);
                 }
 
                 // 20% chance of complaining
@@ -183,20 +184,20 @@ int main(int argc, char *argv[]) {
                     printf("Customer %d is complaining about the order\n", customer_id);
                     my_entry->has_complained = true;
                     shared_game->num_complained_customers++;
-                    leave_restaurant(COMPLAINING);
+//                    leave_restaurant(COMPLAINING);
                 }
 
                 // Happy customer
                 printf("Customer %d is happy with the order and leaves\n", customer_id);
-                leave_restaurant(WAITING_FOR_ORDER);
+//                leave_restaurant(WAITING_FOR_ORDER);
                 break;
 
             case FRUSTRATED:
-                leave_restaurant(FRUSTRATED);
+//                leave_restaurant(FRUSTRATED);
                 break;
 
             case COMPLAINING:
-                leave_restaurant(COMPLAINING);
+//                leave_restaurant(COMPLAINING);
                 break;
 
             default:
