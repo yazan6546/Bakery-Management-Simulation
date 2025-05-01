@@ -94,8 +94,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("oifewiojfweoifjwen\n");
-
     // Parse arguments
     msg_queue_id = atoi(argv[1]);
     customer_id = atoi(argv[2]);
@@ -125,10 +123,16 @@ int main(int argc, char *argv[]) {
 
     size_t queue_size = queueShmSize(sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
     void* queue_ptr = mmap(NULL, queue_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
+    fcntl(queue_fd, F_SETFD, fcntl(queue_fd, F_GETFD) & ~FD_CLOEXEC);
     customer_queue = (queue_shm*)queue_ptr;
     close(queue_fd);
 
-    print_config(&shared_game->config);
+    printf("customer count : %zu\n", customer_queue->count);
+//    for (size_t i = 0; i < customer_queue->count; i++) {
+//        queue_shm *q = customer_queue;
+//        Customer *temp = (Customer *) q->elements;
+//        print_customer(temp + i);
+//    }
 
     // Get direct pointer to our entry in the queue
     my_entry = (Customer*)(customer_queue->elements + queue_offset);
@@ -137,8 +141,8 @@ int main(int argc, char *argv[]) {
     signal(SIGALRM, handle_alarm);
     signal(SIGUSR1, handle_seller_signal);
 
-    printf("Customer %d created with patience %.1f, decay %.1f\n",
-           customer_id, my_entry->patience, my_entry->patience_decay);
+    printf("Customer %d created with patience offset : %zu %.1f, decay %.1f\n",
+           customer_id, queue_offset, my_entry->patience, my_entry->patience_decay);
 
     // Start patience decay timer
     alarm(1);
