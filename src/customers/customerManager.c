@@ -4,8 +4,6 @@
 #include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
-#include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -149,7 +147,7 @@ int main(int argc, char *argv[]) {
     int next_customer_id = 0;
 
     // Main loop
-    while (check_game_conditions(shared_game)) {
+    while (1) {
 
         // Spawn new customers if we're below max
         if (active_customers < shared_game->config.MAX_CUSTOMERS) {

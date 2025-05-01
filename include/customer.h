@@ -17,6 +17,7 @@
 typedef enum {
     WALKING,
     WAITING_IN_QUEUE,
+    WAITING_FOR_ORDER,
     ORDERING,
     FRUSTRATED,
     COMPLAINING
@@ -31,7 +32,7 @@ typedef struct {
 } Customer;
 
 
-Customer* create_random_customer(Customer *customer, Config *config);
+void create_random_customer(Customer *customer, Config *config);
 void deserialize_customer(Customer *customer, char *buffer);
 void serialize_customer(Customer *customer, char *buffer);
 void free_customer(Customer *customer);

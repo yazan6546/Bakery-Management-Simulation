@@ -4,16 +4,14 @@
 
 #include "customer.h"
 #include "config.h"
-#include "customer_utils.h"
 #include "game.h"
 #include "random.h"
 #include "queue.h"
 
 void create_random_customer(Customer *customer, Config *config) {
-    if (!customer) {
-        perror("Failed to allocate memory for customer");
-        return NULL;
-    }
+
+    if (!customer)
+        return;
     customer->patience = random_float(config->MIN_PATIENCE, config->MAX_PATIENCE);
     customer->patience_decay -= random_float(config->MIN_PATIENCE_DECAY, config->MAX_PATIENCE_DECAY);
     customer->has_complained = false;

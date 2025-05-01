@@ -40,8 +40,6 @@ void update_patience(float new_patience) {
 
 // Notify manager and exit
 void leave_restaurant(CustomerState final_state) {
-    // Update final state
-    my_entry->state = final_state;
 
     // Send leave notification to manager
     LeaveMessage msg;
