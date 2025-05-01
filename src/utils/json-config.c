@@ -3,7 +3,10 @@
 //
 
 #include <json-c/json.h>
+#include <stdio.h>
+#include <string.h>
 #include "products.h"
+
 
 int load_product_catalog(const char *filename, ProductCatalog *catalog) {
     struct json_object *parsed_json;
