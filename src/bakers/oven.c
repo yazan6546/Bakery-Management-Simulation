@@ -12,9 +12,9 @@ void init_oven(Oven *oven, int id) {
 }
 
 int put_item_in_oven(Oven *oven, const char *item_name, const char *team_name, int baking_time) {
+
     if (oven->is_busy)
         return 0;
-
     oven->is_busy = 1;
     oven->time_left = baking_time;
     strcpy(oven->item_name, item_name);
@@ -23,6 +23,9 @@ int put_item_in_oven(Oven *oven, const char *item_name, const char *team_name, i
 }
 
 int oven_tick(Oven *oven) {
+
+
+
     if (oven->is_busy) {
         oven->time_left--;
         if (oven->time_left <= 0) {
@@ -33,6 +36,7 @@ int oven_tick(Oven *oven) {
             return 1;
         }
     }
+
     return 0;
 }
 

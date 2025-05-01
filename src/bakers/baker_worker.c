@@ -12,6 +12,7 @@
 #include "random.h"
 #include "BakerTeam.h"
 #include "bakery_utils.h"
+#include <semaphore.h>
 
 
 typedef struct {
@@ -42,6 +43,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s <mqid> <team_enum>\n", argv[0]);
         return 1;
     }
+
+    sem_t *ready_products_sem = setup_ready_products_semaphore();
 
     int mqid = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
@@ -85,6 +88,8 @@ int main(int argc, char *argv[]) {
                     if (!game->ovens[i].is_busy) {
                         int bake_time = game->config.MIN_OVEN_TIME +
                             rand() % (game->config.MAX_OVEN_TIME - game->config.MIN_OVEN_TIME + 1);
+
+
                         put_item_in_oven(&game->ovens[i], msg.item.name, msg.item.team_name, bake_time);
 
                         printf("[Baker %s] Placed %s in Oven %d for %d sec\n",
@@ -96,7 +101,7 @@ int main(int argc, char *argv[]) {
 
                         
                         ProductType ptype = infer_product_type(&msg.item);
-                        add_ready_product(&game->readyProducts, ptype, 1);
+                        add_ready_product(&game->ready_products, ptype, 1, ready_products_sem);
                         baked = 1;
                         break;
                     }
