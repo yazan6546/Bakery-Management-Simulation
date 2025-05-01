@@ -9,8 +9,7 @@
 #include "random.h"
 #include "queue.h"
 
-Customer* create_random_customer(Config *config) {
-    Customer *customer = (Customer *)malloc(sizeof(Customer));
+void create_random_customer(Customer *customer, Config *config) {
     if (!customer) {
         perror("Failed to allocate memory for customer");
         return NULL;
@@ -19,7 +18,6 @@ Customer* create_random_customer(Config *config) {
     customer->patience_decay -= random_float(config->MIN_PATIENCE_DECAY, config->MAX_PATIENCE_DECAY);
     customer->has_complained = false;
     customer->state = WALKING;
-    return customer;
 }
 
 void serialize_customer(Customer *customer, char *buffer) {

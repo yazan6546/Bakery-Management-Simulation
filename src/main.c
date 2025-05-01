@@ -31,8 +31,6 @@ void cleanup_resources() {
         kill(processes[i], SIGINT);
     }
 
-    game_destroy(shm_fd, shared_game);
-
     printf("Cleanup complete\n");
     fflush(stdout);
 }

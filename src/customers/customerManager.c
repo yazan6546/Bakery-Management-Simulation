@@ -7,87 +7,161 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
+#include <string.h>
 #include "customer.h"
 #include "game.h"
 #include "queue.h"
 #include "random.h"
 
+// Global variables
+Game *shared_game;
+queue_shm *customer_queue;
+int msg_queue_id;
+int active_customers = 0;
 
-void spawn_customer(Config *config, queue_shm *customerQueue, int msgQueueID, int custID) {
-    Customer newCust;
-    newCust.patience = random_float(config->MIN_PATIENCE, config->MAX_PATIENCE);
-    newCust.has_complained = false;
-    newCust.state = WALKING;
-    queueShmEnqueue(customerQueue, &newCust);
+// Simplified message structure - only for leave notifications
+typedef struct {
+    long mtype;
+    pid_t customer_pid;
+} LeaveMessage;
 
+void cleanup_resources() {
+    // Clean up message queue
+    if (msg_queue_id > 0) {
+        msgctl(msg_queue_id, IPC_RMID, NULL);
+    }
+    // Kill any remaining customer processes
+    for (int i = 0; i < customer_queue->count; i++) {
+        Customer *c = (Customer*)(customer_queue->elements + (i * sizeof(Customer)));
+        if (c->pid > 0) {
+            kill(c->pid, SIGTERM);
+        }
+    }
+
+    // Detach shared memory
+    if (shared_game) {
+        munmap(shared_game, sizeof(Game));
+    }
+}
+
+// Handle customer leave notifications
+void handle_customer_message(int signum) {
+    LeaveMessage msg;
+
+    // Try to receive messages from customers (non-blocking)
+    while (msgrcv(msg_queue_id, &msg, sizeof(pid_t), 1, IPC_NOWAIT) != -1) {
+        pid_t pid = msg.customer_pid;
+
+
+            // Find and remove customer from queue
+        for (int i = 0; i < customer_queue->count; i++) {
+            Customer *c = (Customer*)(customer_queue->elements + (i * sizeof(Customer)));
+            if (c->pid == pid) {
+                printf("Removing customer (PID %d) from queue\n", pid);
+                queueShmRemoveAt(customer_queue, i);
+                break;
+            }
+        }
+        active_customers--;
+    }
+}
+
+
+void spawn_customer(int customer_id) {
+    if (active_customers >= shared_game->config.MAX_CUSTOMERS) {
+        return; // Don't spawn if we're at max capacity
+    }
+
+    Customer new_customer;
+    // Create a new customer with random attributes
+    create_random_customer(&new_customer, &shared_game->config);
+
+    // Add to queue first (safer to do this before fork)
+    if (!queueShmEnqueue(customer_queue, &new_customer)) {
+        printf("Failed to add customer to queue\n");
+        return;
+    }
+
+    // Get pointer to the customer in the queue
+    Customer* queue_customer = (Customer*)(customer_queue->elements +
+                                             ((customer_queue->count - 1) * sizeof(Customer)));
+
+    // Fork a new process for the customer
     pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("Failed to fork customer process");
+        queueShmDequeue(customer_queue, NULL);  // Remove from queue if fork failed
+        exit(EXIT_FAILURE);
+    }
+
     if (pid == 0) {
-        char id_buf[8];
-        char cust_buf[8];
-        snprintf(id_buf, sizeof(id_buf), "%d", msgQueueID);
-        snprintf(cust_buf, sizeof(cust_buf), "%d", custID);
-        if (execl("./customer", "./customer", id_buf, cust_buf, NULL) == -1) {
+        // Child process (customer)
+        char msg_id_str[16];
+        char cust_id_str[16];
+        char queue_offset_str[16];
 
-            perror("execl failed");
-            exit(EXIT_FAILURE);
-        }        
+        // Calculate offset of this customer in the queue
+        size_t offset = (queue_customer - (Customer*)customer_queue->elements);
+
+        snprintf(msg_id_str, sizeof(msg_id_str), "%d", msg_queue_id);
+        snprintf(cust_id_str, sizeof(cust_id_str), "%d", customer_id);
+        snprintf(queue_offset_str, sizeof(queue_offset_str), "%zu", offset);
+
+        execl("./customer", "./customer", msg_id_str, cust_id_str, queue_offset_str, NULL);
+
+        // If we reach here, execl failed
+        perror("execl failed");
+        exit(EXIT_FAILURE);
+    } else {
+        // Parent process (customer manager)
+        printf("Spawned customer %d with PID %d\n", customer_id, pid);
+
+        // Update customer PID in queue
+        queue_customer->pid = pid;
+        active_customers++;
     }
 }
 
-void handle_queue(queue_shm *q) {
-    size_t size = queueShmGetSize(q);
-    for (size_t i = 0; i < size; ++i) {
-        Customer temp;
-        queueShmDequeue(q, &temp);
+int main(int argc, char *argv[]) {
+    // Setup shared memory for game and customer queue
+    setup_shared_memory(&customer_queue, &shared_game);
 
-        int complaintRisk = rand() % 10;
-        if (shared_game->num_complained_customers >= shared_game->config.COMPLAINED_CUSTOMERS &&
-            complaintRisk < 5) {
-            printf("Customer %d saw too many complaints and left.\n", temp.id);
-            shared_game->num_customers_missing++;
-            continue;
+    // Initialize random number generator
+    init_random();
+
+    // Setup signal handler for customer messages
+    signal(SIGUSR1, handle_customer_message);
+
+    // Register cleanup handler
+    atexit(cleanup_resources);
+
+    // Create message queue for communication (only for leave notifications)
+    msg_queue_id = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    if (msg_queue_id == -1) {
+        perror("Failed to create message queue");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Customer Manager started. Message queue ID: %d\n", msg_queue_id);
+
+    int next_customer_id = 0;
+
+    // Main loop
+    while (check_game_conditions(shared_game)) {
+
+        // Spawn new customers if we're below max
+        if (active_customers < shared_game->config.MAX_CUSTOMERS) {
+            // Random chance to spawn a new customer
+            if (random_float(0, 1) < 0.3) { // 30% chance each iteration
+                spawn_customer(next_customer_id++);
+            }
         }
 
-        int waitTime = rand() % 10 + 1;
-        if (waitTime > temp.patience) {
-            printf("Customer %d got frustrated while waiting and left.\n", temp.id);
-            shared_game->num_frustrated_customers++;
-            continue;
-        }
-
-        enqueue(q, &temp); // Keep in queue if didn't leave
+        // Sleep for a random time between 1-3 seconds
+        sleep(1 + rand() % 3);
     }
-}
-
-int main() {
-    srand(time(NULL));
-    setup_shared_memory();
-
-    queue *customerQueue = createQueue(sizeof(Customer));
-    int msgQueueID = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    if (msgQueueID == -1) {
-        perror("msgget");
-        exit(1);
-    }
-
-    for (int i = 0; i < shared_game->config.MAX_CUSTOMERS; i++) {
-        sleep(rand() % 3 + 2);
-        spawn_customer(customerQueue, msgQueueID, i + 1);
-        handle_queue(customerQueue);
-    }
-
-    for (int i = 0; i < MAX_CUSTOMERS; i++) {
-        wait(NULL);
-    }
-
-    printf("\nFinal Game State:\n");
-    printf("Complaints: %d\n", shared_game->num_complained_customers);
-    printf("Frustrated & left: %d\n", shared_game->num_frustrated_customers);
-    printf("Left while queueing due to complaints: %d\n", shared_game->num_customers_missing);
-
-    destroyQueue(&customerQueue);
-    msgctl(msgQueueID, IPC_RMID, NULL);
-    shm_unlink("/game_shm");
 
     return 0;
 }
