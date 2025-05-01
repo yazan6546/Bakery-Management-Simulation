@@ -7,27 +7,13 @@ FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
-NUM_BREAD_CATEGORIES=3        # Number of bread categories
-NUM_SANDWICH_CATEGORIES=2        # Number of sandwich categories
-NUM_CAKE_FLAVORS=2          # Number of cake categories
-NUM_SWEET_CATEGORIES=2        # Number of sweet categories
-NUM_SWEET_FLAVORS=3          # Number of sweet flavors
-NUM_SAVORY_PATISSERIES=2        # Number of savory categories
-NUM_SWEET_PATISSERIES=2        # Number of sweet categories
 NUM_CHEFS=2            # Number of chefs
 NUM_BAKERS=6         # Number of bakers
 NUM_SELLERS=2           # Number of sellers
 NUM_SUPPLY_CHAIN=2        # Number of supply chain members
-NUM_PASTRY_CATEGORIES=2       # Number of pastry categories
 
 MIN_PURCHASE_QUANTITY=1        # Minimum purchase quantity
 MAX_PURCHASE_QUANTITY=5        # Maximum purchase quantity
-
-MIN_ITEM_PRICE=1.0        # Minimum item price
-MAX_ITEM_PRICE=10.0       # Maximum item price
-
-MIN_TIME_FRUSTRATED=1        # Minimum time to be frustrated
-MAX_TIME_FRUSTRATED=5        # Maximum time to be frustrated
 
 MIN_OVEN_TIME=1        # should be changed later for each type
 MAX_OVEN_TIME=5        # should be changed later for each type

@@ -1,5 +1,6 @@
 #include "config.h"
 #include <json-c/json.h>
+#include "products.h"
 
 // Function to load configuration settings from a specified file
 int load_config(const char *filename, Config *config) {
@@ -114,323 +115,127 @@ fflush(stdout);
 
 }
 
-
-int load_config(const char *filename) {
-    FILE *fp;
-    char buffer[4096];
+int load_product_catalog(const char *filename, ProductCatalog *catalog) {
     struct json_object *parsed_json;
+    struct json_object *products_obj, *category_array, *product_obj;
+    struct json_object *ingredients_array, *ingredient_obj;
+    struct json_object *temp;
 
-    fp = fopen(filename, "r");
-    if (fp == NULL) {
-        perror("Failed to open config file");
+    // Initialize catalog
+    memset(catalog, 0, sizeof(ProductCatalog));
+
+    // Parse JSON file
+    parsed_json = json_object_from_file(filename);
+    if (!parsed_json) {
+        fprintf(stderr, "Failed to parse product JSON file: %s\n", filename);
         return -1;
     }
 
-    fread(buffer, sizeof(char), sizeof(buffer), fp);
-    fclose(fp);
-
-    parsed_json = json_tokener_parse(buffer);
-    if (parsed_json == NULL) {
-        fprintf(stderr, "Failed to parse JSON config\n");
+    // Get products object
+    if (!json_object_object_get_ex(parsed_json, "products", &products_obj)) {
+        fprintf(stderr, "No 'products' object found in JSON\n");
+        json_object_put(parsed_json);
         return -1;
     }
 
-    // Load simulation parameters
-    struct json_object *simulation, *max_runtime, *max_frustrated, *max_complaints,
-            *max_missing, *profit_target;
+    // Process each product category
+    catalog->category_count = 0;
+    json_object_object_foreach(products_obj, category_name, category_array) {
+        if (catalog->category_count >= NUM_PRODUCTS) {
+            fprintf(stderr, "Warning: Maximum number of categories reached\n");
+            break;
+        }
 
-    json_object_object_get_ex(parsed_json, "simulation", &simulation);
-    json_object_object_get_ex(simulation, "max_runtime_minutes", &max_runtime);
-    json_object_object_get_ex(simulation, "max_frustrated_customers", &max_frustrated);
-    json_object_object_get_ex(simulation, "max_complaints", &max_complaints);
-    json_object_object_get_ex(simulation, "max_missing_item_requests", &max_missing);
-    json_object_object_get_ex(simulation, "profit_target", &profit_target);
+        ProductCategory *current_category = &catalog->categories[catalog->category_count];
 
-    bakery_data->max_runtime_minutes = json_object_get_int(max_runtime);
-    bakery_data->max_frustrated_customers = json_object_get_int(max_frustrated);
-    bakery_data->max_complaints = json_object_get_int(max_complaints);
-    bakery_data->max_missing_item_requests = json_object_get_int(max_missing);
-    bakery_data->profit_target = json_object_get_double(profit_target);
+        // Convert category name to enum type
+        current_category->type = get_product_type_from_string(category_name);
+        if (current_category->type < 0) {
+            fprintf(stderr, "Skipping unknown category: %s\n", category_name);
+            continue;
+        }
 
-    // Load staff configuration
-    struct json_object *staff, *chefs, *bakers, *sellers, *supply_chain;
-    json_object_object_get_ex(parsed_json, "staff", &staff);
-    json_object_object_get_ex(staff, "chefs", &chefs);
-    json_object_object_get_ex(staff, "bakers", &bakers);
-    json_object_object_get_ex(staff, "sellers", &sellers);
-    json_object_object_get_ex(staff, "supply_chain", &supply_chain);
+        // Skip if not an array
+        if (!json_object_is_type(category_array, json_type_array)) {
+            continue;
+        }
 
-    // Load chef counts
-    struct json_object *paste_team, *cake_team, *sandwich_team, *sweets_team,
-            *sweet_patisserie_team, *savory_patisserie_team;
-    json_object_object_get_ex(chefs, "paste_team", &paste_team);
-    json_object_object_get_ex(chefs, "cake_team", &cake_team);
-    json_object_object_get_ex(chefs, "sandwich_team", &sandwich_team);
-    json_object_object_get_ex(chefs, "sweets_team", &sweets_team);
-    json_object_object_get_ex(chefs, "sweet_patisserie_team", &sweet_patisserie_team);
-    json_object_object_get_ex(chefs, "savory_patisserie_team", &savory_patisserie_team);
+        // Process products in this category
+        current_category->product_count = 0;
+        int array_len = json_object_array_length(category_array);
+        for (int i = 0; i < array_len; i++) {
+            if (current_category->product_count >= MAX_PRODUCTS_PER_CATEGORY) {
+                fprintf(stderr, "Warning: Maximum products per category reached for %s\n",
+                        category_name);
+                break;
+            }
 
-    bakery_data->worker_counts[CHEF_PASTE] = json_object_get_int(paste_team);
-    bakery_data->worker_counts[CHEF_CAKE] = json_object_get_int(cake_team);
-    bakery_data->worker_counts[CHEF_SANDWICH] = json_object_get_int(sandwich_team);
-    bakery_data->worker_counts[CHEF_SWEET] = json_object_get_int(sweets_team);
-    bakery_data->worker_counts[CHEF_SWEET_PATISSERIE] = json_object_get_int(sweet_patisserie_team);
-    bakery_data->worker_counts[CHEF_SAVORY_PATISSERIE] = json_object_get_int(savory_patisserie_team);
+            product_obj = json_object_array_get_idx(category_array, i);
+            Product *current_product = &current_category->products[current_category->product_count];
 
-    // Load baker counts
-    struct json_object *bread_team, *cake_sweets_team, *patisserie_team;
-    json_object_object_get_ex(bakers, "bread_team", &bread_team);
-    json_object_object_get_ex(bakers, "cake_sweets_team", &cake_sweets_team);
-    json_object_object_get_ex(bakers, "patisserie_team", &patisserie_team);
+            // Get product ID
+            if (json_object_object_get_ex(product_obj, "id", &temp)) {
+                strncpy(current_product->id, json_object_get_string(temp), MAX_NAME_LENGTH - 1);
+                current_product->id[MAX_NAME_LENGTH - 1] = '\0';
+            }
 
-    bakery_data->worker_counts[BAKER_BREAD] = json_object_get_int(bread_team);
-    bakery_data->worker_counts[BAKER_CAKE_SWEET] = json_object_get_int(cake_sweets_team);
-    bakery_data->worker_counts[BAKER_PATISSERIE] = json_object_get_int(patisserie_team);
+            // Get product name
+            if (json_object_object_get_ex(product_obj, "name", &temp)) {
+                strncpy(current_product->name, json_object_get_string(temp), MAX_NAME_LENGTH - 1);
+                current_product->name[MAX_NAME_LENGTH - 1] = '\0';
+            }
 
-    // Load sellers and supply chain
-    bakery_data->worker_counts[SELLER] = json_object_get_int(sellers);
-    bakery_data->worker_counts[SUPPLY_CHAIN] = json_object_get_int(supply_chain);
+            // Get product price
+            if (json_object_object_get_ex(product_obj, "price", &temp)) {
+                current_product->price = json_object_get_double(temp);
+            }
 
-    // Calculate total workers
-    bakery_data->total_workers = 0;
-    for (int i = 0; i < WORKER_TYPE_COUNT; i++) {
-        bakery_data->total_workers += bakery_data->worker_counts[i];
+            // Get preparation time
+            if (json_object_object_get_ex(product_obj, "preparation_time", &temp)) {
+                current_product->preparation_time = json_object_get_int(temp);
+            }
+
+            // Get ingredients
+            current_product->ingredient_count = 0;
+            if (json_object_object_get_ex(product_obj, "ingredients", &ingredients_array) &&
+                json_object_is_type(ingredients_array, json_type_array)) {
+
+                int ingredients_len = json_object_array_length(ingredients_array);
+                for (int j = 0; j < ingredients_len && j < MAX_INGREDIENTS; j++) {
+                    ingredient_obj = json_object_array_get_idx(ingredients_array, j);
+
+                    // Get ingredient name and convert to enum type
+                    if (json_object_object_get_ex(ingredient_obj, "name", &temp)) {
+                        const char* ingredient_name = json_object_get_string(temp);
+                        current_product->ingredients[j].type =
+                            get_ingredient_type_from_string(ingredient_name);
+
+                        if (current_product->ingredients[j].type < 0) {
+                            fprintf(stderr, "Unknown ingredient type: %s\n", ingredient_name);
+                            continue;
+                        }
+                    }
+
+                    // Get ingredient quantity
+                    if (json_object_object_get_ex(ingredient_obj, "quantity", &temp)) {
+                        current_product->ingredients[j].quantity = json_object_get_double(temp);
+                    }
+
+                    current_product->ingredient_count++;
+                }
+            }
+
+            current_category->product_count++;
+        }
+
+        catalog->category_count++;
     }
 
-    // Load products
-    struct json_object *products, *bread, *sandwiches, *cakes, *sweets,
-            *sweet_patisseries, *savory_patisseries;
-
-    json_object_object_get_ex(parsed_json, "products", &products);
-    json_object_object_get_ex(products, "bread", &bread);
-    json_object_object_get_ex(products, "sandwiches", &sandwiches);
-    json_object_object_get_ex(products, "cakes", &cakes);
-    json_object_object_get_ex(products, "sweets", &sweets);
-    json_object_object_get_ex(products, "sweet_patisseries", &sweet_patisseries);
-    json_object_object_get_ex(products, "savory_patisseries", &savory_patisseries);
-
-    // Load bread products
-    bakery_data->product_counts[BREAD] = json_object_array_length(bread);
-    for (int i = 0; i < bakery_data->product_counts[BREAD]; i++) {
-        struct json_object *item = json_object_array_get_idx(bread, i);
-        struct json_object *name, *price, *production_time;
-
-        json_object_object_get_ex(item, "name", &name);
-        json_object_object_get_ex(item, "price", &price);
-        json_object_object_get_ex(item, "production_time", &production_time);
-
-        strncpy(bakery_data->products[BREAD][i].name, json_object_get_string(name), MAX_PRODUCT_NAME_LENGTH - 1);
-        bakery_data->products[BREAD][i].price = json_object_get_double(price);
-        bakery_data->products[BREAD][i].production_time = json_object_get_int(production_time);
-        bakery_data->products[BREAD][i].available_quantity = 0;
-        bakery_data->products[BREAD][i].in_progress = 0;
-    }
-
-    // Load sandwich products
-    bakery_data->product_counts[SANDWICH] = json_object_array_length(sandwiches);
-    for (int i = 0; i < bakery_data->product_counts[SANDWICH]; i++) {
-        struct json_object *item = json_object_array_get_idx(sandwiches, i);
-        struct json_object *name, *price, *production_time;
-
-        json_object_object_get_ex(item, "name", &name);
-        json_object_object_get_ex(item, "price", &price);
-        json_object_object_get_ex(item, "production_time", &production_time);
-
-        strncpy(bakery_data->products[SANDWICH][i].name, json_object_get_string(name), MAX_PRODUCT_NAME_LENGTH - 1);
-        bakery_data->products[SANDWICH][i].price = json_object_get_double(price);
-        bakery_data->products[SANDWICH][i].production_time = json_object_get_int(production_time);
-        bakery_data->products[SANDWICH][i].available_quantity = 0;
-        bakery_data->products[SANDWICH][i].in_progress = 0;
-    }
-
-    // Load cake products
-    bakery_data->product_counts[CAKE] = json_object_array_length(cakes);
-    for (int i = 0; i < bakery_data->product_counts[CAKE]; i++) {
-        struct json_object *item = json_object_array_get_idx(cakes, i);
-        struct json_object *name, *price, *production_time;
-
-        json_object_object_get_ex(item, "name", &name);
-        json_object_object_get_ex(item, "price", &price);
-        json_object_object_get_ex(item, "production_time", &production_time);
-
-        strncpy(bakery_data->products[CAKE][i].name, json_object_get_string(name), MAX_PRODUCT_NAME_LENGTH - 1);
-        bakery_data->products[CAKE][i].price = json_object_get_double(price);
-        bakery_data->products[CAKE][i].production_time = json_object_get_int(production_time);
-        bakery_data->products[CAKE][i].available_quantity = 0;
-        bakery_data->products[CAKE][i].in_progress = 0;
-    }
-
-    // Load sweet products
-    bakery_data->product_counts[SWEET] = json_object_array_length(sweets);
-    for (int i = 0; i < bakery_data->product_counts[SWEET]; i++) {
-        struct json_object *item = json_object_array_get_idx(sweets, i);
-        struct json_object *name, *price, *production_time;
-
-        json_object_object_get_ex(item, "name", &name);
-        json_object_object_get_ex(item, "price", &price);
-        json_object_object_get_ex(item, "production_time", &production_time);
-
-        strncpy(bakery_data->products[SWEET][i].name, json_object_get_string(name), MAX_PRODUCT_NAME_LENGTH - 1);
-        bakery_data->products[SWEET][i].price = json_object_get_double(price);
-        bakery_data->products[SWEET][i].production_time = json_object_get_int(production_time);
-        bakery_data->products[SWEET][i].available_quantity = 0;
-        bakery_data->products[SWEET][i].in_progress = 0;
-    }
-
-    // Load sweet patisserie products
-    bakery_data->product_counts[SWEET_PATISSERIE] = json_object_array_length(sweet_patisseries);
-    for (int i = 0; i < bakery_data->product_counts[SWEET_PATISSERIE]; i++) {
-        struct json_object *item = json_object_array_get_idx(sweet_patisseries, i);
-        struct json_object *name, *price, *production_time;
-
-        json_object_object_get_ex(item, "name", &name);
-        json_object_object_get_ex(item, "price", &price);
-        json_object_object_get_ex(item, "production_time", &production_time);
-
-        strncpy(bakery_data->products[SWEET_PATISSERIE][i].name, json_object_get_string(name), MAX_PRODUCT_NAME_LENGTH - 1);
-        bakery_data->products[SWEET_PATISSERIE][i].price = json_object_get_double(price);
-        bakery_data->products[SWEET_PATISSERIE][i].production_time = json_object_get_int(production_time);
-        bakery_data->products[SWEET_PATISSERIE][i].available_quantity = 0;
-        bakery_data->products[SWEET_PATISSERIE][i].in_progress = 0;
-    }
-
-    // Load savory patisserie products
-    bakery_data->product_counts[SAVORY_PATISSERIE] = json_object_array_length(savory_patisseries);
-    for (int i = 0; i < bakery_data->product_counts[SAVORY_PATISSERIE]; i++) {
-        struct json_object *item = json_object_array_get_idx(savory_patisseries, i);
-        struct json_object *name, *price, *production_time;
-
-        json_object_object_get_ex(item, "name", &name);
-        json_object_object_get_ex(item, "price", &price);
-        json_object_object_get_ex(item, "production_time", &production_time);
-
-        strncpy(bakery_data->products[SAVORY_PATISSERIE][i].name, json_object_get_string(name), MAX_PRODUCT_NAME_LENGTH - 1);
-        bakery_data->products[SAVORY_PATISSERIE][i].price = json_object_get_double(price);
-        bakery_data->products[SAVORY_PATISSERIE][i].production_time = json_object_get_int(production_time);
-        bakery_data->products[SAVORY_PATISSERIE][i].available_quantity = 0;
-        bakery_data->products[SAVORY_PATISSERIE][i].in_progress = 0;
-    }
-
-    // Load ingredients
-    struct json_object *ingredients, *wheat, *yeast, *butter, *milk, *sugar, *salt,
-            *sweet_items, *cheese, *salami;
-
-    json_object_object_get_ex(parsed_json, "ingredients", &ingredients);
-    json_object_object_get_ex(ingredients, "wheat", &wheat);
-    json_object_object_get_ex(ingredients, "yeast", &yeast);
-    json_object_object_get_ex(ingredients, "butter", &butter);
-    json_object_object_get_ex(ingredients, "milk", &milk);
-    json_object_object_get_ex(ingredients, "sugar", &sugar);
-    json_object_object_get_ex(ingredients, "salt", &salt);
-    json_object_object_get_ex(ingredients, "sweet_items", &sweet_items);
-    json_object_object_get_ex(ingredients, "cheese", &cheese);
-    json_object_object_get_ex(ingredients, "salami", &salami);
-
-    // Load wheat
-    struct json_object *wheat_stock, *wheat_min, *wheat_max;
-    json_object_object_get_ex(wheat, "initial_stock", &wheat_stock);
-    json_object_object_get_ex(wheat, "restock_min", &wheat_min);
-    json_object_object_get_ex(wheat, "restock_max", &wheat_max);
-
-    strcpy(bakery_data->ingredients[WHEAT].name, "Wheat");
-    bakery_data->ingredients[WHEAT].quantity = json_object_get_int(wheat_stock);
-    bakery_data->ingredients[WHEAT].restock_min = json_object_get_int(wheat_min);
-    bakery_data->ingredients[WHEAT].restock_max = json_object_get_int(wheat_max);
-
-    // Load yeast
-    struct json_object *yeast_stock, *yeast_min, *yeast_max;
-    json_object_object_get_ex(yeast, "initial_stock", &yeast_stock);
-    json_object_object_get_ex(yeast, "restock_min", &yeast_min);
-    json_object_object_get_ex(yeast, "restock_max", &yeast_max);
-
-    strcpy(bakery_data->ingredients[YEAST].name, "Yeast");
-    bakery_data->ingredients[YEAST].quantity = json_object_get_int(yeast_stock);
-    bakery_data->ingredients[YEAST].restock_min = json_object_get_int(yeast_min);
-    bakery_data->ingredients[YEAST].restock_max = json_object_get_int(yeast_max);
-
-    // Load butter
-    struct json_object *butter_stock, *butter_min, *butter_max;
-    json_object_object_get_ex(butter, "initial_stock", &butter_stock);
-    json_object_object_get_ex(butter, "restock_min", &butter_min);
-    json_object_object_get_ex(butter, "restock_max", &butter_max);
-
-    strcpy(bakery_data->ingredients[BUTTER].name, "Butter");
-    bakery_data->ingredients[BUTTER].quantity = json_object_get_int(butter_stock);
-    bakery_data->ingredients[BUTTER].restock_min = json_object_get_int(butter_min);
-    bakery_data->ingredients[BUTTER].restock_max = json_object_get_int(butter_max);
-
-    // Load milk
-    struct json_object *milk_stock, *milk_min, *milk_max;
-    json_object_object_get_ex(milk, "initial_stock", &milk_stock);
-    json_object_object_get_ex(milk, "restock_min", &milk_min);
-    json_object_object_get_ex(milk, "restock_max", &milk_max);
-
-    strcpy(bakery_data->ingredients[MILK].name, "Milk");
-    bakery_data->ingredients[MILK].quantity = json_object_get_int(milk_stock);
-    bakery_data->ingredients[MILK].restock_min = json_object_get_int(milk_min);
-    bakery_data->ingredients[MILK].restock_max = json_object_get_int(milk_max);
-
-    // Load sugar
-    struct json_object *sugar_stock, *sugar_min, *sugar_max;
-    json_object_object_get_ex(sugar, "initial_stock", &sugar_stock);
-    json_object_object_get_ex(sugar, "restock_min", &sugar_min);
-    json_object_object_get_ex(sugar, "restock_max", &sugar_max);
-
-    strcpy(bakery_data->ingredients[SUGAR].name, "Sugar");
-    bakery_data->ingredients[SUGAR].quantity = json_object_get_int(sugar_stock);
-    bakery_data->ingredients[SUGAR].restock_min = json_object_get_int(sugar_min);
-    bakery_data->ingredients[SUGAR].restock_max = json_object_get_int(sugar_max);
-
-    // Load salt
-    struct json_object *salt_stock, *salt_min, *salt_max;
-    json_object_object_get_ex(salt, "initial_stock", &salt_stock);
-    json_object_object_get_ex(salt, "restock_min", &salt_min);
-    json_object_object_get_ex(salt, "restock_max", &salt_max);
-
-    strcpy(bakery_data->ingredients[SALT].name, "Salt");
-    bakery_data->ingredients[SALT].quantity = json_object_get_int(salt_stock);
-    bakery_data->ingredients[SALT].restock_min = json_object_get_int(salt_min);
-    bakery_data->ingredients[SALT].restock_max = json_object_get_int(salt_max);
-
-    // Load sweet items
-    struct json_object *sweet_items_stock, *sweet_items_min, *sweet_items_max;
-    json_object_object_get_ex(sweet_items, "initial_stock", &sweet_items_stock);
-    json_object_object_get_ex(sweet_items, "restock_min", &sweet_items_min);
-    json_object_object_get_ex(sweet_items, "restock_max", &sweet_items_max);
-
-    strcpy(bakery_data->ingredients[SWEET_ITEMS].name, "Sweet Items");
-    bakery_data->ingredients[SWEET_ITEMS].quantity = json_object_get_int(sweet_items_stock);
-    bakery_data->ingredients[SWEET_ITEMS].restock_min = json_object_get_int(sweet_items_min);
-    bakery_data->ingredients[SWEET_ITEMS].restock_max = json_object_get_int(sweet_items_max);
-
-    // Load cheese
-    struct json_object *cheese_stock, *cheese_min, *cheese_max;
-    json_object_object_get_ex(cheese, "initial_stock", &cheese_stock);
-    json_object_object_get_ex(cheese, "restock_min", &cheese_min);
-    json_object_object_get_ex(cheese, "restock_max", &cheese_max);
-
-    strcpy(bakery_data->ingredients[CHEESE].name, "Cheese");
-    bakery_data->ingredients[CHEESE].quantity = json_object_get_int(cheese_stock);
-    bakery_data->ingredients[CHEESE].restock_min = json_object_get_int(cheese_min);
-    bakery_data->ingredients[CHEESE].restock_max = json_object_get_int(cheese_max);
-
-    // Load salami
-    struct json_object *salami_stock, *salami_min, *salami_max;
-    json_object_object_get_ex(salami, "initial_stock", &salami_stock);
-    json_object_object_get_ex(salami, "restock_min", &salami_min);
-    json_object_object_get_ex(salami, "restock_max", &salami_max);
-
-    strcpy(bakery_data->ingredients[SALAMI].name, "Salami");
-    bakery_data->ingredients[SALAMI].quantity = json_object_get_int(salami_stock);
-    bakery_data->ingredients[SALAMI].restock_min = json_object_get_int(salami_min);
-    bakery_data->ingredients[SALAMI].restock_max = json_object_get_int(salami_max);
-
-    // Free the JSON object
+    // Free JSON object
     json_object_put(parsed_json);
 
     return 0;
 }
-
 
 void print_config(Config *config) {
     printf("Config values: \n");
@@ -596,4 +401,34 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->NUM_OVENS,
             &config->MIN_BAKE_TIME,
             &config->MAX_BAKE_TIME);
+}
+
+// Utility function to convert string to ProductType enum
+ProductType get_product_type_from_string(const char* name) {
+    if (strcasecmp(name, "bread") == 0) return BREAD;
+    if (strcasecmp(name, "cake") == 0) return CAKE;
+    if (strcasecmp(name, "sandwiches") == 0 || strcasecmp(name, "sandwich") == 0) return SANDWICH;
+    if (strcasecmp(name, "sweets") == 0 || strcasecmp(name, "sweet") == 0) return SWEET;
+    if (strcasecmp(name, "sweet_patisseries") == 0) return SWEET_PATISSERIES;
+    if (strcasecmp(name, "savory_patisseries") == 0) return SAVORY_PATISSERIES;
+
+    fprintf(stderr, "Unknown product type: %s\n", name);
+    return -1; // Invalid type
+}
+
+// Utility function to convert string to IngredientType enum
+IngredientType get_ingredient_type_from_string(const char* name) {
+    if (strcasecmp(name, "wheat") == 0) return WHEAT;
+    if (strcasecmp(name, "yeast") == 0) return YEAST;
+    if (strcasecmp(name, "butter") == 0) return BUTTER;
+    if (strcasecmp(name, "milk") == 0) return MILK;
+    if (strcasecmp(name, "sugar") == 0) return SUGAR;
+    if (strcasecmp(name, "salt") == 0) return SALT;
+    if (strcasecmp(name, "sweet_items") == 0) return SWEET_ITEMS;
+    if (strcasecmp(name, "cheese") == 0) return CHEESE;
+    if (strcasecmp(name, "salami") == 0) return SALAMI;
+    if (strcasecmp(name, "paste_ingredients") == 0) return PASTE_INGREDIENTS;
+
+    fprintf(stderr, "Unknown ingredient type: %s\n", name);
+    return -1; // Invalid type
 }
