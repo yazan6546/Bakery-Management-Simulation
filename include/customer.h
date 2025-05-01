@@ -36,5 +36,6 @@ void create_random_customer(Customer *customer, Config *config);
 void deserialize_customer(Customer *customer, char *buffer);
 void serialize_customer(Customer *customer, char *buffer);
 void free_customer(Customer *customer);
+void print_customer(Customer *customer);
 void setup_shared_memory(queue_shm **customer_queue, Game **shared_game);
 #endif // CUSTOMER_H

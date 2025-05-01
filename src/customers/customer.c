@@ -94,6 +94,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    printf("oifewiojfweoifjwen\n");
+
     // Parse arguments
     msg_queue_id = atoi(argv[1]);
     customer_id = atoi(argv[2]);
@@ -110,6 +112,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
+
     close(shm_fd);
 
     // Attach to queue shared memory
@@ -123,6 +127,8 @@ int main(int argc, char *argv[]) {
     void* queue_ptr = mmap(NULL, queue_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
     customer_queue = (queue_shm*)queue_ptr;
     close(queue_fd);
+
+    print_config(&shared_game->config);
 
     // Get direct pointer to our entry in the queue
     my_entry = (Customer*)(customer_queue->elements + queue_offset);

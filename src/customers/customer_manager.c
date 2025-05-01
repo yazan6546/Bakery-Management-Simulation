@@ -26,6 +26,8 @@ typedef struct {
 
 void cleanup_resources() {
     // Clean up message queue
+
+    printf("Cleaning up resources...in customer_manager\n");
     if (msg_queue_id > 0) {
         msgctl(msg_queue_id, IPC_RMID, NULL);
     }
@@ -37,10 +39,11 @@ void cleanup_resources() {
         }
     }
 
-    // Detach shared memory
-    if (shared_game) {
-        munmap(shared_game, sizeof(Game));
-    }
+    msgctl(msg_queue_id, IPC_RMID, NULL);
+}
+
+void handle_sigint(int signum) {
+    exit(0);
 }
 
 // Handle customer leave notifications
@@ -76,7 +79,7 @@ void spawn_customer(int customer_id) {
     create_random_customer(&new_customer, &shared_game->config);
 
     // Add to queue first (safer to do this before fork)
-    if (!queueShmEnqueue(customer_queue, &new_customer)) {
+    if (queueShmEnqueue(customer_queue, &new_customer) == -1) {
         printf("Failed to add customer to queue\n");
         return;
     }
@@ -107,7 +110,7 @@ void spawn_customer(int customer_id) {
         snprintf(cust_id_str, sizeof(cust_id_str), "%d", customer_id);
         snprintf(queue_offset_str, sizeof(queue_offset_str), "%zu", offset);
 
-        execl("./customer", "./customer", msg_id_str, cust_id_str, queue_offset_str, NULL);
+        execl("./customers", "./customers", msg_id_str, cust_id_str, queue_offset_str, NULL);
 
         // If we reach here, execl failed
         perror("execl failed");
@@ -131,6 +134,7 @@ int main(int argc, char *argv[]) {
 
     // Setup signal handler for customer messages
     signal(SIGUSR1, handle_customer_message);
+    signal(SIGINT, handle_sigint);
 
     // Register cleanup handler
     atexit(cleanup_resources);
@@ -152,13 +156,13 @@ int main(int argc, char *argv[]) {
         // Spawn new customers if we're below max
         if (active_customers < shared_game->config.MAX_CUSTOMERS) {
             // Random chance to spawn a new customer
-            if (random_float(0, 1) < 0.3) { // 30% chance each iteration
+            if (random_float(0, 1)) { // 30% chance each iteration
                 spawn_customer(next_customer_id++);
             }
         }
 
-        // Sleep for a random time between 1-3 seconds
-        sleep(1 + rand() % 3);
+        // Sleep for a random time between 2-4 seconds
+        sleep(2 + rand() % 3);
     }
 
     return 0;

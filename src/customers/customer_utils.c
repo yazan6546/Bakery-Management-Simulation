@@ -49,6 +49,8 @@ void setup_shared_memory(queue_shm **customer_queue, Game **shared_game) {
         perror("Failed to map shared memory");
         exit(EXIT_FAILURE);
     }
+    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
+
 
     // Setup queue shared memory
     const char* queue_shm_name = "/customer_queue_shm";
@@ -59,8 +61,14 @@ void setup_shared_memory(queue_shm **customer_queue, Game **shared_game) {
     int queue_fd = shm_open(queue_shm_name, O_CREAT | O_RDWR, 0666);
     ftruncate(queue_fd, (long) shm_size);
     void* queue_shm_ptr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
+    fcntl(queue_fd, F_SETFD, fcntl(queue_fd, F_GETFD) & ~FD_CLOEXEC);
     close(queue_fd);
 
     // Initialize queue in shared memory
     *customer_queue = initQueueShm(queue_shm_ptr, elemSize, capacity);
+}
+
+void print_customer(Customer *customer) {
+    printf("Customer: %f %f %d %d\n", customer->patience, customer->patience_decay, customer->has_complained, customer->state);
+
 }

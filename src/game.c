@@ -30,7 +30,7 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
         "./customer_manager"
     };
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 1; i++) {
         processes[i] = start_process(binary_paths[i], shared_mem_fd);
     }
 

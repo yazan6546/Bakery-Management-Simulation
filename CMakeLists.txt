@@ -16,7 +16,7 @@ target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c
 #add_executable(chefs src/chefs/chef.c src/inventory.c)
 add_executable(sellers src/sellers/seller.c)
 add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c)
-add_executable(customers src/customers/customer.c src/utils/random.c)
+add_executable(customers src/customers/customer.c src/utils/random.c src/utils/config.c)
 
 add_executable(bakers
     src/bakers/baker.c
@@ -37,7 +37,7 @@ add_executable(baker_teams
 )
 
 add_executable(customer_manager
-        src/customers/customerManager.c
+        src/customers/customer_manager.c
         src/customers/customer_utils.c
         src/utils/config.c
         src/utils/random.c
