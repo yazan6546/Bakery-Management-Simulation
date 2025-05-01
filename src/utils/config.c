@@ -115,128 +115,6 @@ fflush(stdout);
 
 }
 
-int load_product_catalog(const char *filename, ProductCatalog *catalog) {
-    struct json_object *parsed_json;
-    struct json_object *products_obj, *product_obj;
-    struct json_object *ingredients_array, *ingredient_obj;
-    struct json_object *temp;
-
-    // Initialize catalog
-    memset(catalog, 0, sizeof(ProductCatalog));
-
-    // Parse JSON file
-    parsed_json = json_object_from_file(filename);
-    if (!parsed_json) {
-        fprintf(stderr, "Failed to parse product JSON file: %s\n", filename);
-        return -1;
-    }
-
-    // Get products object
-    if (!json_object_object_get_ex(parsed_json, "products", &products_obj)) {
-        fprintf(stderr, "No 'products' object found in JSON\n");
-        json_object_put(parsed_json);
-        return -1;
-    }
-
-    // Process each product category
-    catalog->category_count = 0;
-    json_object_object_foreach(products_obj, category_name, category_array) {
-        if (catalog->category_count >= NUM_PRODUCTS) {
-            fprintf(stderr, "Warning: Maximum number of categories reached\n");
-            break;
-        }
-
-        ProductCategory *current_category = &catalog->categories[catalog->category_count];
-
-        // Convert category name to enum type
-        current_category->type = get_product_type_from_string(category_name);
-        if (current_category->type < 0) {
-            fprintf(stderr, "Skipping unknown category: %s\n", category_name);
-            continue;
-        }
-
-        // Skip if not an array
-        if (!json_object_is_type(category_array, json_type_array)) {
-            continue;
-        }
-
-        // Process products in this category
-        current_category->product_count = 0;
-        int array_len = json_object_array_length(category_array);
-        for (int i = 0; i < array_len; i++) {
-            if (current_category->product_count >= MAX_PRODUCTS_PER_CATEGORY) {
-                fprintf(stderr, "Warning: Maximum products per category reached for %s\n",
-                        category_name);
-                break;
-            }
-
-            product_obj = json_object_array_get_idx(category_array, i);
-            Product *current_product = &current_category->products[current_category->product_count];
-
-            // Get product ID
-            if (json_object_object_get_ex(product_obj, "id", &temp)) {
-                strncpy(current_product->id, json_object_get_string(temp), MAX_NAME_LENGTH - 1);
-                current_product->id[MAX_NAME_LENGTH - 1] = '\0';
-            }
-
-            // Get product name
-            if (json_object_object_get_ex(product_obj, "name", &temp)) {
-                strncpy(current_product->name, json_object_get_string(temp), MAX_NAME_LENGTH - 1);
-                current_product->name[MAX_NAME_LENGTH - 1] = '\0';
-            }
-
-            // Get product price
-            if (json_object_object_get_ex(product_obj, "price", &temp)) {
-                current_product->price = json_object_get_double(temp);
-            }
-
-            // Get preparation time
-            if (json_object_object_get_ex(product_obj, "preparation_time", &temp)) {
-                current_product->preparation_time = json_object_get_int(temp);
-            }
-
-            // Get ingredients
-            current_product->ingredient_count = 0;
-            if (json_object_object_get_ex(product_obj, "ingredients", &ingredients_array) &&
-                json_object_is_type(ingredients_array, json_type_array)) {
-
-                int ingredients_len = json_object_array_length(ingredients_array);
-                for (int j = 0; j < ingredients_len && j < MAX_INGREDIENTS; j++) {
-                    ingredient_obj = json_object_array_get_idx(ingredients_array, j);
-
-                    // Get ingredient name and convert to enum type
-                    if (json_object_object_get_ex(ingredient_obj, "name", &temp)) {
-                        const char* ingredient_name = json_object_get_string(temp);
-                        current_product->ingredients[j].type =
-                            get_ingredient_type_from_string(ingredient_name);
-
-                        if (current_product->ingredients[j].type < 0) {
-                            fprintf(stderr, "Unknown ingredient type: %s\n", ingredient_name);
-                            continue;
-                        }
-                    }
-
-                    // Get ingredient quantity
-                    if (json_object_object_get_ex(ingredient_obj, "quantity", &temp)) {
-                        current_product->ingredients[j].quantity = json_object_get_double(temp);
-                    }
-
-                    current_product->ingredient_count++;
-                }
-            }
-
-            current_category->product_count++;
-        }
-
-        catalog->category_count++;
-    }
-
-    // Free JSON object
-    json_object_put(parsed_json);
-
-    return 0;
-}
-
 void print_config(Config *config) {
     printf("Config values: \n");
     printf("MAX_TIME: %d\n", config->MAX_TIME);
@@ -340,28 +218,18 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d %d %d",
+    sprintf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
             config->MAX_TIME,
             config->FRUSTRATED_CUSTOMERS,
             config->COMPLAINED_CUSTOMERS,
             config->CUSTOMERS_MISSING,
             config->DAILY_PROFIT,
-            config->NUM_BREAD_CATEGORIES,
-            config->NUM_SANDWICH_CATEGORIES,
-            config->NUM_CAKE_FLAVORS,
-            config->NUM_SWEET_CATEGORIES,
-            config->NUM_SWEET_FLAVORS,
-            config->NUM_SAVORY_PATISSERIES,
-            config->NUM_SWEET_PATISSERIES,
             config->NUM_CHEFS,
             config->NUM_BAKERS,
             config->NUM_SELLERS,
             config->NUM_SUPPLY_CHAIN,
-            config->NUM_PASTRY_CATEGORIES,
             config->MIN_PURCHASE_QUANTITY,
             config->MAX_PURCHASE_QUANTITY,
-            config->MIN_ITEM_PRICE,
-            config->MAX_ITEM_PRICE,
             config->MIN_TIME_FRUSTRATED,
             config->MAX_TIME_FRUSTRATED,
             config->MIN_OVEN_TIME,
@@ -372,28 +240,18 @@ void serialize_config(Config *config, char *buffer) {
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %f %f %d %d %d %d %d %d %d",
+    sscanf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
             &config->MAX_TIME,
             &config->FRUSTRATED_CUSTOMERS,
             &config->COMPLAINED_CUSTOMERS,
             &config->CUSTOMERS_MISSING,
             &config->DAILY_PROFIT,
-            &config->NUM_BREAD_CATEGORIES,
-            &config->NUM_SANDWICH_CATEGORIES,
-            &config->NUM_CAKE_FLAVORS,
-            &config->NUM_SWEET_CATEGORIES,
-            &config->NUM_SWEET_FLAVORS,
-            &config->NUM_SAVORY_PATISSERIES,
-            &config->NUM_SWEET_PATISSERIES,
             &config->NUM_CHEFS,
             &config->NUM_BAKERS,
             &config->NUM_SELLERS,
             &config->NUM_SUPPLY_CHAIN,
-            &config->NUM_PASTRY_CATEGORIES,
             &config->MIN_PURCHASE_QUANTITY,
             &config->MAX_PURCHASE_QUANTITY,
-            &config->MIN_ITEM_PRICE,
-            &config->MAX_ITEM_PRICE,
             &config->MIN_TIME_FRUSTRATED,
             &config->MAX_TIME_FRUSTRATED,
             &config->MIN_OVEN_TIME,
@@ -401,36 +259,4 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->NUM_OVENS,
             &config->MIN_BAKE_TIME,
             &config->MAX_BAKE_TIME);
-}
-
-// Utility function to convert string to ProductType enum
-ProductType get_product_type_from_string(const char* name) {
-    if (strcasecmp(name, "bread") == 0) return BREAD;
-    if (strcasecmp(name, "cake") == 0) return CAKE;
-    if (strcasecmp(name, "sandwiches") == 0 || strcasecmp(name, "sandwich") == 0) return SANDWICH;
-    if (strcasecmp(name, "sweets") == 0 || strcasecmp(name, "sweet") == 0) return SWEET;
-    if (strcasecmp(name, "sweet_patisseries") == 0) return SWEET_PATISSERIES;
-    if (strcasecmp(name, "savory_patisseries") == 0) return SAVORY_PATISSERIES;
-
-    fprintf(stderr, "Unknown product type: %s\n", name);
-    return -1; // Invalid type
-}
-
-// Utility function to convert string to IngredientType enum
-IngredientType get_ingredient_type_from_string(const char* name) {
-    if (strcasecmp(name, "wheat") == 0) return WHEAT;
-    if (strcasecmp(name, "flour") == 0) return FLOUR;
-    if (strcasecmp(name, "chocolate") == 0) return CHOCOLATE;
-    if (strcasecmp(name, "yeast") == 0) return YEAST;
-    if (strcasecmp(name, "butter") == 0) return BUTTER;
-    if (strcasecmp(name, "milk") == 0) return MILK;
-    if (strcasecmp(name, "sugar") == 0) return SUGAR;
-    if (strcasecmp(name, "salt") == 0) return SALT;
-    if (strcasecmp(name, "sweet_items") == 0) return SWEET_ITEMS;
-    if (strcasecmp(name, "cheese") == 0) return CHEESE;
-    if (strcasecmp(name, "salami") == 0) return SALAMI;
-    if (strcasecmp(name, "paste_ingredients") == 0) return PASTE_INGREDIENTS;
-
-    fprintf(stderr, "Unknown ingredient type: %s\n", name);
-    return -1; // Invalid type
 }

@@ -43,4 +43,6 @@ typedef struct {
 } ProductCatalog;
 
 
+ProductType get_product_type_from_string(const char* name);
+IngredientType get_ingredient_type_from_string(const char* name);
 #endif //PRODUCTS_H

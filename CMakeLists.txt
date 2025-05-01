@@ -6,10 +6,11 @@ set(LIBRARY_DIR "${CMAKE_CURRENT_LIST_DIR}/lib")
 
 # Adding our source files
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/sources/*.c") # Define PROJECT_SOURCES as a list of all source files
-
+find_package(json-c REQUIRED) # Find the json-c package
 # Declaring our executable
 
-add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c)
+add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c
+    src/utils/products_utils.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 add_executable(chefs src/chefs/chef.c src/inventory.c)
@@ -48,6 +49,12 @@ foreach (need IN LISTS need_queue) # Loop through each executable that needs the
     target_link_libraries(${need} PRIVATE ${LIBRARY_DIR}/libgenericQueue.a) # Add dependencies for the main executable
 endforeach()
 
+set (need_json main)
+
+foreach (need IN LISTS need_json) # Loop through each executable that needs the json library
+    message("Adding ${need} to the main executable")
+    target_link_libraries(${need} PRIVATE json-c::json-c) # Add dependencies for the main executable
+endforeach ()
 # Setting ASSETS_PATH
 
 if (CMAKE_RELEASE_BUILD)

@@ -41,6 +41,7 @@ typedef struct {
 } Config;
 
 int load_config(const char *filename, Config *config);
+int load_product_catalog(const char *filename, ProductCatalog *catalog);
 void print_config(Config *config);
 int check_parameter_correctness(const Config *config);
 void serialize_config(Config *config, char *buffer);
