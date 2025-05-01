@@ -14,6 +14,7 @@
 #include "random.h"
 #include "bakery_utils.h"
 
+
 typedef struct {
     long mtype;
     BakeryItem item;
@@ -43,25 +44,37 @@ int main(int argc, char *argv[]) {
         init_oven(&game->ovens[i], i);
     }
 
-    int mqid_bread = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_cakesweets = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_patisseries = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-
-    if (mqid_bread == -1 || mqid_cakesweets == -1 || mqid_patisseries == -1 || mqid_ready == -1) {
-        perror("msgget failed");
+    int mqid_global = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    if (mqid_global == -1) {
+        perror("msgget global failed");
         exit(1);
     }
 
     BakerTeam teams[3];
     distribute_bakers_locally(&config, teams);
 
-    start_process_baker("baker_teams", &teams[0], &config, mqid_bread, mqid_ready);
-    start_process_baker("baker_teams", &teams[1], &config, mqid_cakesweets, mqid_ready);
-    start_process_baker("baker_teams", &teams[2], &config, mqid_patisseries, mqid_ready);
+    // Start a separate process for each individual baker
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < teams[i].number_of_bakers; j++) {
+            pid_t pid = fork();
+            if (pid == 0) {
+                // Child baker process
+                char mqid_str[16], team_str[8];
+                snprintf(mqid_str, sizeof(mqid_str), "%d", mqid_global);
+                snprintf(team_str, sizeof(team_str), "%d", teams[i].team_name);
 
-    for (int t = 0;; t++) {
-        printf("\n=== Main Time Step %d ===\n", t + 1);
+                execl("./baker_worker","baker_worker", mqid_str, team_str, NULL);
+
+                perror("execl failed");
+                exit(1);
+            }
+        }
+    }
+
+    // Produce random items every second
+    int t = 0;
+    while (1) {
+        printf("\n=== Time Step %d ===\n", ++t);
 
         if (rand() % 2 == 0) {
             char item_name[50];
@@ -76,45 +89,11 @@ int main(int argc, char *argv[]) {
             else
                 backery_item_create(&item, item_name, "Bake Sweet and Savory Patisseries");
 
-            Message msg;
-            msg.mtype = 1;
-            msg.item = item;
-
-            int target_mqid = (team == 0) ? mqid_bread : (team == 1) ? mqid_cakesweets : mqid_patisseries;
-
-            if (msgsnd(target_mqid, &msg, sizeof(BakeryItem), 0) == -1) {
-                perror("msgsnd main->team failed");
+            Message msg = {1, item};
+            if (msgsnd(mqid_global, &msg, sizeof(BakeryItem), 0) == -1) {
+                perror("msgsnd failed");
             } else {
-                printf("Main produced: %s (%s)\n", item.name, item.team_name);
-            }
-        }
-
-        Message ready_msg;
-        while (msgrcv(mqid_ready, &ready_msg, sizeof(BakeryItem), 0, IPC_NOWAIT) >= 0) {
-            BakeryItem *ready_item = &ready_msg.item;
-            int placed = 0;
-
-            for (int j = 0; j < config.NUM_OVENS; j++) {
-                if (!game->ovens[j].is_busy) {
-                    int baking_time = config.MIN_OVEN_TIME + rand() % (config.MAX_OVEN_TIME - config.MIN_OVEN_TIME + 1);
-                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, baking_time);
-                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, baking_time);
-                    placed = 1;
-                    break;
-                }
-            }
-
-            if (!placed) {
-                if (msgsnd(mqid_ready, &ready_msg, sizeof(BakeryItem), 0) == -1) {
-                    perror("msgsnd requeue ready failed");
-                }
-                break;
-            }
-        }
-
-        for (int j = 0; j < config.NUM_OVENS; j++) {
-            if (oven_tick(&game->ovens[j])) {
-                printf("Oven %d finished baking %s\n", game->ovens[j].id, game->ovens[j].item_name);
+                printf("Produced: %s (%s)\n", item.name, item.team_name);
             }
         }
 

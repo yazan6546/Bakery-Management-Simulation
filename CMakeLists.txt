@@ -23,19 +23,24 @@ add_executable(customers src/customers/customer.c)
 add_executable(bakers
     src/bakers/baker.c
     src/bakers/oven.c
-        src/bakers/BakeryItem.c
-        src/utils/random.c
+    src/bakers/BakeryItem.c
+    src/utils/random.c
     src/utils/config.c
     src/game.c
     src/inventory.c
-        src/bakers/baker_utils.c
+    src/bakers/baker_utils.c
 )
 
-add_executable(baker_teams
-    src/bakers/baker_teams.c
-   src/utils/config.c
-        src/bakers/baker_utils.c
-        src/utils/random.c
+
+add_executable(baker_worker
+    src/bakers/baker_worker.c
+    src/bakers/oven.c
+    src/bakers/BakeryItem.c
+    src/utils/random.c
+    src/utils/config.c
+    src/game.c
+    src/inventory.c
+    src/bakers/baker_utils.c
 )
 
 

@@ -19,6 +19,7 @@ typedef struct Game {
 
     Config config;
     Inventory inventory;
+    ReadyProducts readyProducts;
 
     Oven ovens[MAX_OVENS]; // Shared ovens
 } Game;

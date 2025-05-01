@@ -22,12 +22,13 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
 
 
     char *binary_paths[] = {
-        "./graphics",
-        "./chefs",
+        //"./graphics",
+        //"./chefs",
         "./bakers",
-        "./sellers",
-        "./supply_chain",
-        "./customers"
+        "./baker_worker",
+        //"./sellers",
+        //"./supply_chain",
+        //"./customers"
     };
 
     for (int i = 0; i < 6; i++) {
