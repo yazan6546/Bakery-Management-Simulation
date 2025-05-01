@@ -5,8 +5,9 @@
 #include "customer.h"
 #include "config.h"
 #include "customer_utils.h"
-
+#include "game.h"
 #include "random.h"
+#include "queue.h"
 
 Customer* create_random_customer(Config *config) {
     Customer *customer = (Customer *)malloc(sizeof(Customer));
@@ -40,4 +41,30 @@ void free_customer(Customer *customer) {
     if (customer) {
         free(customer);
     }
+}
+
+void setup_shared_memory(queue_shm **customer_queue, Game **shared_game) {
+    // Setup game shared memory as before
+    int shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
+    ftruncate(shm_fd, sizeof(Game));
+    *shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    close(shm_fd);
+    if (shared_game == MAP_FAILED) {
+        perror("Failed to map shared memory");
+        exit(EXIT_FAILURE);
+    }
+
+    // Setup queue shared memory
+    const char* queue_shm_name = "/customer_queue_shm";
+    size_t elemSize = sizeof(Customer);
+    size_t capacity = (*shared_game)->config.MAX_CUSTOMERS;
+    size_t shm_size = queueShmSize(elemSize, capacity);
+
+    int queue_fd = shm_open(queue_shm_name, O_CREAT | O_RDWR, 0666);
+    ftruncate(queue_fd, (long) shm_size);
+    void* queue_shm_ptr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
+    close(queue_fd);
+
+    // Initialize queue in shared memory
+    *customer_queue = initQueueShm(queue_shm_ptr, elemSize, capacity);
 }

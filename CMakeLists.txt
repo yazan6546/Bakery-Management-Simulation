@@ -38,6 +38,7 @@ add_executable(baker_teams
 
 add_executable(customer_manager
         src/customers/customerManager.c
+        src/customers/customer_utils.c
         src/game.c
         src/inventory.c
 )

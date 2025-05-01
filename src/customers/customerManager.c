@@ -1,34 +1,24 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <sys/ipc.h>
-#include <sys/msg.h>
 #include <sys/mman.h>
-#include <fcntl.h>
+#include <sys/msg.h>
+#include <sys/wait.h>
 #include <time.h>
-#include "queue.h"
+#include <unistd.h>
 #include "customer.h"
 #include "game.h"
+#include "queue.h"
+#include "random.h"
 
-#define MAX_CUSTOMERS 20
 
-Game *shared_game;
-
-void setup_shared_memory() {
-    int shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, sizeof(Game));
-    shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    close(shm_fd);
-}
-
-void spawn_customer(queue *customerQueue, int msgQueueID, int custID) {
+void spawn_customer(Config *config, queue_shm *customerQueue, int msgQueueID, int custID) {
     Customer newCust;
-    newCust.id = custID;
-    newCust.patience =
-    newCust.has_complained = 0;
-    newCust.state = WAITING_IN_QUEUE;
-    enqueue(customerQueue, &newCust);
+    newCust.patience = random_float(config->MIN_PATIENCE, config->MAX_PATIENCE);
+    newCust.has_complained = false;
+    newCust.state = WALKING;
+    queueShmEnqueue(customerQueue, &newCust);
 
     pid_t pid = fork();
     if (pid == 0) {
@@ -44,11 +34,11 @@ void spawn_customer(queue *customerQueue, int msgQueueID, int custID) {
     }
 }
 
-void handle_queue(queue *q) {
-    size_t size = getSize(q);
+void handle_queue(queue_shm *q) {
+    size_t size = queueShmGetSize(q);
     for (size_t i = 0; i < size; ++i) {
         Customer temp;
-        dequeue(q, &temp);
+        queueShmDequeue(q, &temp);
 
         int complaintRisk = rand() % 10;
         if (shared_game->num_complained_customers >= shared_game->config.COMPLAINED_CUSTOMERS &&
