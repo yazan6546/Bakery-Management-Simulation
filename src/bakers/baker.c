@@ -14,6 +14,8 @@
 #include "random.h"
 #include "bakery_utils.h"
 
+#define TEAM_COUNT 3
+
 typedef struct {
     long mtype;
     BakeryItem item;
@@ -22,7 +24,7 @@ typedef struct {
 Game *game;
 
 int main(int argc, char *argv[]) {
-    int fd = shm_open("/game_shm", O_RDWR, 0666);
+    int fd = shm_open("/game_shared_mem", O_RDWR, 0666);
     if (fd == -1) {
         perror("shm_open failed");
         exit(1);
@@ -44,28 +46,24 @@ int main(int argc, char *argv[]) {
         init_oven(&game->ovens[i], i);
     }
 
-    int mqid_bread = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_cakesweets = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_patisseries = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-
-    if (mqid_bread == -1 || mqid_cakesweets == -1 || mqid_patisseries == -1) {
-        perror("msgget failed");
-        exit(1);
+    int mqids[TEAM_COUNT];
+    for (int i = 0; i < TEAM_COUNT; i++) {
+        mqids[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+        if (mqids[i] == -1) {
+            perror("msgget failed");
+            exit(1);
+        }
     }
 
-    BakerTeam teams[3];
+    BakerTeam teams[TEAM_COUNT];
     distribute_bakers_locally(&config, teams);
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < TEAM_COUNT; i++) {
         for (int j = 0; j < teams[i].number_of_bakers; j++) {
             pid_t pid = fork();
             if (pid == 0) {
                 char mqid_str[16], team_str[8];
-                int mqid = (teams[i].team_name == BREAD_BAKERS) ? mqid_bread :
-                           (teams[i].team_name == CAKE_AND_SWEETS_BAKERS) ? mqid_cakesweets :
-                           mqid_patisseries;
-
-                snprintf(mqid_str, sizeof(mqid_str), "%d", mqid);
+                snprintf(mqid_str, sizeof(mqid_str), "%d", mqids[i]);
                 snprintf(team_str, sizeof(team_str), "%d", teams[i].team_name);
 
                 execl("./baker_worker", "baker_worker", mqid_str, team_str, NULL);
@@ -78,12 +76,13 @@ int main(int argc, char *argv[]) {
     int t = 0;
     while (1) {
         printf("\n=== Time Step %d ===\n", ++t);
+
         if (rand() % 2 == 0) {
             char item_name[50];
             sprintf(item_name, "Item-%d", rand() % 100);
 
             BakeryItem item;
-            int team = rand() % 3;
+            int team = rand() % TEAM_COUNT;
             if (team == 0)
                 backery_item_create(&item, item_name, "Bake Bread");
             else if (team == 1)
@@ -92,11 +91,7 @@ int main(int argc, char *argv[]) {
                 backery_item_create(&item, item_name, "Bake Sweet and Savory Patisseries");
 
             Message msg = {1, item};
-
-            int target_mqid = (team == 0) ? mqid_bread :
-                              (team == 1) ? mqid_cakesweets : mqid_patisseries;
-
-            if (msgsnd(target_mqid, &msg, sizeof(BakeryItem), 0) == -1) {
+            if (msgsnd(mqids[team], &msg, sizeof(BakeryItem), 0) == -1) {
                 perror("msgsnd failed");
             } else {
                 printf("Produced: %s (%s)\n", item.name, item.team_name);

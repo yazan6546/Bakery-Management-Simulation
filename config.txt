@@ -29,10 +29,10 @@ MAX_ITEM_PRICE=10.0       # Maximum item price
 MIN_TIME_FRUSTRATED=1        # Minimum time to be frustrated
 MAX_TIME_FRUSTRATED=5        # Maximum time to be frustrated
 
-MIN_OVEN_TIME=8        # should be changed later for each type
-MAX_OVEN_TIME=13       # should be changed later for each type
+MIN_OVEN_TIME=3       # should be changed later for each type
+MAX_OVEN_TIME=6       # should be changed later for each type
 
-MIN_BAKE_TIME=10        # Minimum bake time
-MAX_BAKE_TIME=20        # Maximum bake time
+MIN_BAKE_TIME=5        # Minimum bake time
+MAX_BAKE_TIME=8        # Maximum bake time
 
 NUM_OVENS=2            # Number of ovens

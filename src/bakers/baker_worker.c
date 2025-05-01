@@ -1,9 +1,12 @@
+// ===== baker_worker.c =====
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/msg.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <semaphore.h>
 
 #include "BakeryItem.h"
 #include "oven.h"
@@ -12,7 +15,6 @@
 #include "random.h"
 #include "BakerTeam.h"
 #include "bakery_utils.h"
-#include <semaphore.h>
 
 typedef struct {
     long mtype;
@@ -21,11 +23,10 @@ typedef struct {
 
 Game *game;
 
-// Infer product type based on team and name
+typedef enum { IDLE, BUSY } BakerState;
+
 ProductType infer_product_type(BakeryItem *item) {
-    if (strstr(item->team_name, "Bread")) {
-        return BREAD;
-    }
+    if (strstr(item->team_name, "Bread")) return BREAD;
     if (strstr(item->team_name, "Cakes and Sweets")) {
         if (strstr(item->name, "Cake")) return CAKE;
         return SWEET;
@@ -34,7 +35,7 @@ ProductType infer_product_type(BakeryItem *item) {
         if (strstr(item->name, "Savory")) return SAVORY_PATISSERIES;
         return SWEET_PATISSERIES;
     }
-    return BREAD; // fallback
+    return BREAD;
 }
 
 int main(int argc, char *argv[]) {
@@ -43,77 +44,75 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    sem_t *ready_products_sem = setup_ready_products_semaphore();
-
     int mqid = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
 
-    // Connect to shared memory
     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("shm_open failed");
-        exit(1);
-    }
-
+    if (shm_fd == -1) { perror("shm_open failed"); exit(1); }
     game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
+    if (game == MAP_FAILED) { perror("mmap failed"); exit(1); }
     close(shm_fd);
 
-    setup_ready_products_semaphore();
+    sem_t *ready_products_sem = setup_ready_products_semaphore();
     setup_oven_semaphores(game->config.NUM_OVENS);
     init_random();
 
-    while (1) {
-        // Tick ovens before checking messages
-        for (int i = 0; i < game->config.NUM_OVENS; i++) {
-            oven_tick(&game->ovens[i]);
-        }
+    BakerState state = IDLE;
+    BakeryItem current_item;
+    int oven_index = -1;
+    int oven_time_left = 0;
 
-        Message msg;
-        if (msgrcv(mqid, &msg, sizeof(BakeryItem), 0, IPC_NOWAIT) >= 0) {
-            if (!is_team_item(&msg.item, my_team)) {
-                msgsnd(mqid, &msg, sizeof(BakeryItem), 0);
-                usleep(10000);
+    while (1) {
+        // Tick oven time
+        if (state == BUSY && oven_index != -1) {
+            oven_tick(&game->ovens[oven_index]);
+            if (!game->ovens[oven_index].is_busy) {
+                ProductType ptype = infer_product_type(&current_item);
+                add_ready_product(&game->ready_products, ptype, 1, ready_products_sem);
+                printf("[Baker %s] Finished baking %s in Oven %d\n", get_team_name_str(my_team), current_item.name, oven_index);
+                state = IDLE;
+                oven_index = -1;
+            } else {
+                sleep(1);
                 continue;
             }
+        }
 
-            int prep_time = (int)random_float(game->config.MIN_BAKE_TIME, game->config.MAX_BAKE_TIME);
-            printf("[Baker %s] Preparing %s for %d seconds...\n",
-                   get_team_name_str(my_team), msg.item.name, prep_time);
-            sleep(prep_time);
+        if (state == IDLE) {
+            Message msg;
+            if (msgrcv(mqid, &msg, sizeof(BakeryItem), 0, 0) >= 0) {
+                if (!is_team_item(&msg.item, my_team)) {
+                    msgsnd(mqid, &msg, sizeof(BakeryItem), 0);
+                    usleep(10000);
+                    continue;
+                }
 
-            int baked = 0;
-            while (!baked) {
+                current_item = msg.item;
+                int prep_time = (int)random_float(game->config.MIN_BAKE_TIME, game->config.MAX_BAKE_TIME);
+                printf("[Baker %s] Preparing %s for %d seconds...\n", get_team_name_str(my_team), current_item.name, prep_time);
+                sleep(prep_time);
+
+                int placed = 0;
                 for (int i = 0; i < game->config.NUM_OVENS; i++) {
-                    if (!game->ovens[i].is_busy) {
-                        int bake_time = game->config.MIN_OVEN_TIME +
-                                        rand() % (game->config.MAX_OVEN_TIME - game->config.MIN_OVEN_TIME + 1);
-                        put_item_in_oven(&game->ovens[i], msg.item.name, msg.item.team_name, bake_time);
-
-                        printf("[Baker %s] Placed %s in Oven %d for %d sec\n",
-                               get_team_name_str(my_team), msg.item.name, i, bake_time);
-
-                        ProductType ptype = infer_product_type(&msg.item);
-                        add_ready_product(&game->ready_products, ptype, 1, ready_products_sem);
-                        baked = 1;
+                    if (put_item_in_oven(&game->ovens[i], current_item.name, current_item.team_name,
+                                         game->config.MIN_OVEN_TIME + rand() % (game->config.MAX_OVEN_TIME - game->config.MIN_OVEN_TIME + 1))) {
+                        oven_index = i;
+                        state = BUSY;
+                        printf("[Baker %s] Placed %s in Oven %d\n", get_team_name_str(my_team), current_item.name, oven_index);
+                        placed = 1;
                         break;
                     }
                 }
 
-                if (!baked) {
-                    for (int i = 0; i < game->config.NUM_OVENS; i++) {
-                        oven_tick(&game->ovens[i]);
-                    }
+                if (!placed) {
+                    printf("[Baker %s] No oven available. Requeuing %s\n", get_team_name_str(my_team), current_item.name);
+                    msgsnd(mqid, &msg, sizeof(BakeryItem), 0);
                     sleep(1);
                 }
+            } else {
+                usleep(50000);
             }
-        } else {
-            usleep(50000); // slight sleep to reduce CPU usage when queue is empty
         }
     }
-
     return 0;
 }
