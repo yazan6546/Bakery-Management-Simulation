@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
     printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);
 
+
     // execlp("pwd", "pwd", NULL);
     // Register cleanup function with atexit
     atexit(cleanup_resources);
@@ -60,6 +61,10 @@ int main(int argc, char *argv[]) {
 
     if (load_config(CONFIG_PATH, &shared_game->config) == -1) {
         printf("Config file failed");
+        return 1;
+    }
+    if (load_product_catalog(CONFIG_PATH_JSON, &shared_game->productCatalog) == -1) {
+        printf("Product catalog file failed");
         return 1;
     }
 
