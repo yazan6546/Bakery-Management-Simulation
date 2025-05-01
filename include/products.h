@@ -5,13 +5,48 @@
 #ifndef PRODUCTS_H
 #define PRODUCTS_H
 
-#include "inventory.h"
 
 
 #define MAX_NAME_LENGTH 64
 #define MAX_INGREDIENTS 10
 #define MAX_PRODUCTS_PER_CATEGORY 20
 #define MAX_CATEGORIES 10
+
+
+// Define enum for ingredient types
+typedef enum {
+    WHEAT,
+    YEAST,
+    BUTTER,
+    MILK,
+    SUGAR,
+    SALT,
+    SWEET_ITEMS,
+    CHEESE,
+    SALAMI,
+    PASTE_INGREDIENTS,
+    CHOCOLATE,
+    FLOUR,
+    VANILLA,
+    CUSTARD,
+    EGGS,
+    VEGETABLES,
+    BREAD_ING,
+    CREAM,
+    FRUITS,
+    NUM_INGREDIENTS  // This will automatically equal the number of ingredients
+} IngredientType;
+
+typedef enum {
+    BREAD,
+    CAKE,
+    SANDWICH,
+    SWEET,
+    SWEET_PATISSERIES,
+    SAVORY_PATISSERIES,
+    NUM_PRODUCTS  // This will automatically equal the number of products
+} ProductType;
+
 
 // Struct for an ingredient with quantity
 typedef struct {

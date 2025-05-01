@@ -4,6 +4,7 @@
 
 #include "products.h"
 #include "string.h"
+#include <stdio.h>
 
 
 // Utility function to convert string to ProductType enum
