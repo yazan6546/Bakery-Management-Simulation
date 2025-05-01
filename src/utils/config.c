@@ -117,7 +117,7 @@ fflush(stdout);
 
 int load_product_catalog(const char *filename, ProductCatalog *catalog) {
     struct json_object *parsed_json;
-    struct json_object *products_obj, *category_array, *product_obj;
+    struct json_object *products_obj, *product_obj;
     struct json_object *ingredients_array, *ingredient_obj;
     struct json_object *temp;
 
@@ -419,6 +419,8 @@ ProductType get_product_type_from_string(const char* name) {
 // Utility function to convert string to IngredientType enum
 IngredientType get_ingredient_type_from_string(const char* name) {
     if (strcasecmp(name, "wheat") == 0) return WHEAT;
+    if (strcasecmp(name, "flour") == 0) return FLOUR;
+    if (strcasecmp(name, "chocolate") == 0) return CHOCOLATE;
     if (strcasecmp(name, "yeast") == 0) return YEAST;
     if (strcasecmp(name, "butter") == 0) return BUTTER;
     if (strcasecmp(name, "milk") == 0) return MILK;

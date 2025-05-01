@@ -16,3 +16,5 @@ target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-ti
 add_executable(queue-test queue_test.c)
 target_include_directories(queue-test PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
 target_link_libraries(queue-test PRIVATE ${LIBRARY_DIR}/libgenericQueue.a) # Add dependencies for the main executable
+
+add_executable(json-test json_test.c ${CMAKE_SOURCE_DIR}/src/utils/config.c)
