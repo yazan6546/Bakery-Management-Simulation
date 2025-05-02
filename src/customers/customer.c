@@ -1,58 +1,159 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/ipc.h>
 #include <sys/msg.h>
-#include <string.h>
-#include <time.h>
-#include <fcntl.h>
-#include <sys/mman.h>
+#include "bakery_message.h"
 #include <signal.h>
 #include "customer.h"
-#include "game.h"
 #include "random.h"
 
 // Global variables
 int customer_id;
 pid_t my_pid;
 int msg_queue_id;
-Game *shared_game;
-queue_shm *customer_queue;
-Customer *my_entry;  // Direct pointer to our entry in shared memory
+float original_patience;
+Customer *my_entry;
 
-// Simplified message structure - just for leave notifications
-typedef struct {
-    long mtype;
-    pid_t customer_pid;
-} LeaveMessage;
+void handle_state(CustomerState state);
+void handle_seller_signal(int sig);
+void send_status_message(int action_type);
+void update_state(CustomerState new_state);
+void update_patience(float new_patience);
+void leave_restaurant(CustomerState final_state, int action_type);
+void handle_alarm(int sig);
+
+// Send status update to manager
+
+int main(int argc, char *argv[]) {
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s <msg_queue_id> <customer_id> <queue_offset>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // Parse arguments
+    msg_queue_id = atoi(argv[1]);
+    customer_id = atoi(argv[2]);
+    char *customer_buffer = argv[3];
+
+    deserialize_customer(my_entry, customer_buffer);
+    original_patience = my_entry->patience;
+    my_pid = getpid();
+
+    // Initialize random number generator
+    init_random();
+
+    // Set up signal handlers
+    signal(SIGALRM, handle_alarm);
+    signal(SIGUSR1, handle_seller_signal);
+
+    // Initial status notification
+    send_status_message(0);
+
+    // Start patience decay timer
+    alarm(1);
+
+    // Customer state machine
+    while (1) {
+        handle_state(my_entry->state);
+        pause();
+    }
+
+    return 0;
+}
+
+void handle_state(CustomerState state) {
+    switch (state) {
+        case WALKING:
+            printf("Customer %d is walking...\n", customer_id);
+            sleep(1 + rand() % 3);
+            update_state(WAITING_IN_QUEUE);
+            break;
+
+        case WAITING_IN_QUEUE:
+            printf("Customer %d is waiting in queue...\n", customer_id);
+            sleep(2);
+            break;
+
+        case ORDERING:
+            printf("Customer %d is ordering...\n", customer_id);
+            sleep(2);
+            update_state(WAITING_FOR_ORDER);
+            break;
+
+        case WAITING_FOR_ORDER:
+            printf("Customer %d is waiting for order...\n", customer_id);
+            sleep(3);
+
+            // 10% chance of missing order
+            if (random_float(0, 1) < 0.1) {
+                printf("Customer %d: Order is missing!\n", customer_id);
+                leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
+                break;
+            }
+
+            // 20% chance of complaining
+            if (random_float(0, 1) < 0.2) {
+                printf("Customer %d is complaining about the order\n", customer_id);
+                my_entry->has_complained = true;
+                leave_restaurant(COMPLAINING, 3); // 3 = complained
+                break;
+            }
+
+            // Happy customer
+            printf("Customer %d is happy with the order and leaves\n", customer_id);
+            leave_restaurant(WAITING_FOR_ORDER, 1); // 1 = normal leaving
+            break;
+
+        case FRUSTRATED:
+            leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
+            break;
+
+        case COMPLAINING:
+            leave_restaurant(COMPLAINING, 3); // 3 = complained
+            break;
+
+        default:
+            break;
+    }
+}
+
+
+void send_status_message(int action_type) {
+    CustomerStatusMsg msg;
+    msg.mtype = 1;  // To manager
+    msg.customer_pid = my_pid;
+    msg.customer_id = customer_id;
+    msg.patience = my_entry->patience;
+    msg.state = my_entry->state;
+    msg.action = action_type;
+
+    if (msgsnd(msg_queue_id, &msg, sizeof(CustomerStatusMsg) - sizeof(long), 0) == -1) {
+        perror("Failed to send status message");
+    }
+
+    // Signal manager to check message queue
+    kill(getppid(), SIGUSR1);
+}
 
 // Update customer state directly in shared memory
 void update_state(CustomerState new_state) {
-    // Directly update our entry in shared memory - no locking needed!
     my_entry->state = new_state;
     printf("Customer %d updated state to %d\n", customer_id, new_state);
+
+    // Send status update after state change
+    send_status_message(0);
 }
 
 // Update patience directly in shared memory
 void update_patience(float new_patience) {
     my_entry->patience = new_patience;
+    // No need to notify manager for every patience update
 }
 
 // Notify manager and exit
-void leave_restaurant(CustomerState final_state) {
-
-    // Send leave notification to manager
-    LeaveMessage msg;
-    msg.mtype = 1;  // To manager
-    msg.customer_pid = my_pid;
-
-    if (msgsnd(msg_queue_id, &msg, sizeof(pid_t), 0) == -1) {
-        perror("Failed to send leave message");
-    }
-
-    // Notify manager to check message queue
-    kill(getppid(), SIGUSR1);
-
+void leave_restaurant(CustomerState final_state, int action_type) {
+    update_state(final_state);
+    send_status_message(action_type);
     exit(EXIT_SUCCESS);
 }
 
@@ -60,16 +161,19 @@ void leave_restaurant(CustomerState final_state) {
 void handle_alarm(int sig) {
     // Only decay patience if not ordering
     if (my_entry->state != ORDERING) {
-        float new_patience = my_entry->patience - my_entry->patience_decay;
-        update_patience(new_patience);
+        my_entry->patience -= my_entry->patience_decay;
+        printf("Customer %d patience: %.1f\n", customer_id, my_entry->patience);
 
-        printf("Customer %d patience: %.1f\n", customer_id, new_patience);
+        // Send periodic patience updates (every 3 seconds to avoid flooding)
+        static int update_counter = 0;
+        if (++update_counter % 3 == 0) {
+            send_status_message(0);
+        }
 
-        if (new_patience <= 0) {
+        if (my_entry->patience <= 0) {
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
-            // Update game stats
-            shared_game->num_frustrated_customers++;
-//            leave_restaurant(FRUSTRATED);
+            // Let manager update game stats
+            leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
         }
     }
 
@@ -84,128 +188,6 @@ void handle_seller_signal(int sig) {
         update_state(ORDERING);
 
         // Reset patience when it's our turn
-        update_patience(shared_game->config.MAX_PATIENCE);
+        update_patience(original_patience);
     }
-}
-
-int main(int argc, char *argv[]) {
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s <msg_queue_id> <customer_id> <queue_offset>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    // Parse arguments
-    msg_queue_id = atoi(argv[1]);
-    customer_id = atoi(argv[2]);
-    size_t queue_offset = atoi(argv[3]);
-    my_pid = getpid();
-
-    // Initialize random number generator
-    srand(time(NULL) ^ my_pid);
-
-    // Attach to game shared memory
-    int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("shm_open failed for game");
-        exit(EXIT_FAILURE);
-    }
-    shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
-
-    close(shm_fd);
-
-    // Attach to queue shared memory
-    int queue_fd = shm_open("/customer_queue_shm", O_RDWR, 0666);
-    if (queue_fd == -1) {
-        perror("shm_open failed for queue");
-        exit(EXIT_FAILURE);
-    }
-
-    size_t queue_size = queueShmSize(sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
-    void* queue_ptr = mmap(NULL, queue_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
-    fcntl(queue_fd, F_SETFD, fcntl(queue_fd, F_GETFD) & ~FD_CLOEXEC);
-    customer_queue = (queue_shm*)queue_ptr;
-    close(queue_fd);
-
-    // Fix pointer arithmetic - correct way to access the element at queue_offset
-    my_entry = &((Customer*)customer_queue->elements)[queue_offset];
-
-    // When printing the queue for debugging
-    for (size_t i = 0; i < customer_queue->count; i++) {
-        Customer *customer = &((Customer*)customer_queue->elements)[i];
-        // Print customer details
-        printf("Queue[%zu]: State=%d, PID=%d, Patience=%.2f\n",
-               i, customer->state, customer->pid, customer->patience);
-    }
-
-    // Set up signal handlers
-    signal(SIGALRM, handle_alarm);
-    signal(SIGUSR1, handle_seller_signal);
-
-    printf("Customer %d created with patience offset : %zu %.1f, decay %.1f\n",
-           customer_id, queue_offset, my_entry->patience, my_entry->patience_decay);
-
-    // Start patience decay timer
-    alarm(1);
-
-    // Customer state machine
-    while (1) {
-        switch (my_entry->state) {
-            case WALKING:
-                printf("Customer %d is walking...\n", customer_id);
-                sleep(1 + rand() % 3);
-                update_state(WAITING_IN_QUEUE);
-                break;
-
-            case WAITING_IN_QUEUE:
-                printf("Customer %d is waiting in queue...\n", customer_id);
-                sleep(2);
-                break;
-
-            case ORDERING:
-                printf("Customer %d is ordering...\n", customer_id);
-                sleep(2);
-                update_state(WAITING_FOR_ORDER);
-                break;
-
-            case WAITING_FOR_ORDER:
-                printf("Customer %d is waiting for order...\n", customer_id);
-                sleep(3);
-
-                // 10% chance of missing order
-                if (random_float(0, 1) < 0.1) {
-                    printf("Customer %d: Order is missing!\n", customer_id);
-                    shared_game->num_customers_missing++;
-//                    leave_restaurant(WAITING_FOR_ORDER);
-                }
-
-                // 20% chance of complaining
-                if (random_float(0, 1) < 0.2) {
-                    printf("Customer %d is complaining about the order\n", customer_id);
-                    my_entry->has_complained = true;
-                    shared_game->num_complained_customers++;
-//                    leave_restaurant(COMPLAINING);
-                }
-
-                // Happy customer
-                printf("Customer %d is happy with the order and leaves\n", customer_id);
-//                leave_restaurant(WAITING_FOR_ORDER);
-                break;
-
-            case FRUSTRATED:
-//                leave_restaurant(FRUSTRATED);
-                break;
-
-            case COMPLAINING:
-//                leave_restaurant(COMPLAINING);
-                break;
-
-            default:
-                break;
-        }
-
-        sleep(1);
-    }
-
-    return 0;
 }
