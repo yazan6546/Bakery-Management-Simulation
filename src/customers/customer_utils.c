@@ -45,7 +45,7 @@ void setup_shared_memory(queue_shm **customer_queue, Game **shared_game) {
     ftruncate(shm_fd, sizeof(Game));
     *shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     close(shm_fd);
-    if (shared_game == MAP_FAILED) {
+    if (*shared_game == MAP_FAILED) {
         perror("Failed to map shared memory");
         exit(EXIT_FAILURE);
     }
