@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
         // Spawn new customers if we're below max
         if (active_customers < shared_game->config.MAX_CUSTOMERS) {
             // Random chance to spawn a new customer
-            if (random_float(0, 1) < 0.5) { // 30% chance each iteration
+            if (random_float(0, 1) < shared_game->config.CUSTOMER_PROBABILITY) { // 30% chance each iteration
                 spawn_customer(next_customer_id++);
             }
         }

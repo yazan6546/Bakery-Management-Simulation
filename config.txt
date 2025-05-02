@@ -33,4 +33,7 @@ MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
 
 CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
 
+MIN_ORDER_ITEMS=1        # Minimum number of items in an order
+MAX_ORDER_ITEMS=5        # Maximum number of items in an order
+
 NUM_OVENS=2            # Number of ovens

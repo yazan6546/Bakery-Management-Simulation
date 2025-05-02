@@ -5,6 +5,7 @@
 #include "bakery_message.h"
 #include <signal.h>
 #include "customer.h"
+#include "products.h"
 #include "random.h"
 
 // Global variables
@@ -14,13 +15,14 @@ int msg_queue_id;
 float original_patience;
 Customer my_entry;
 
-void handle_state(CustomerState state);
+void handle_state(CustomerState state, Game *shared_game);
 void handle_seller_signal(int sig);
 void send_status_message(int action_type);
 void update_state(CustomerState new_state);
 void update_patience(float new_patience);
 void leave_restaurant(CustomerState final_state, int action_type);
 void handle_alarm(int sig);
+void handle_sigint(int sig);
 
 // Send status update to manager
 
@@ -29,6 +31,20 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s <msg_queue_id> <customer_id> <customer_buffer>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+
+    // Setup game shared memory as before
+    int shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
+    ftruncate(shm_fd, sizeof(Game));
+    Game *shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    close(shm_fd);
+    if (shared_game == MAP_FAILED) {
+        perror("Failed to map shared memory");
+        exit(EXIT_FAILURE);
+    }
+    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
+
+    close(shm_fd);
+    // Initialize game state
 
     // Parse arguments
     msg_queue_id = atoi(argv[1]);
@@ -55,14 +71,14 @@ int main(int argc, char *argv[]) {
     // Customer state machine
     while (1) {
         printf("Customer %d patience : %.4f\n", customer_id, my_entry.patience);
-        handle_state(my_entry.state);
+        handle_state(my_entry.state, shared_game);
         pause();
     }
 
     return 0;
 }
 
-void handle_state(CustomerState state) {
+void handle_state(CustomerState state, Game *shared_game) {
     switch (state) {
         case WALKING:
             printf("Customer %d is walking...\n", customer_id);
@@ -79,13 +95,15 @@ void handle_state(CustomerState state) {
         case ORDERING:
             printf("Customer %d is ordering...\n", customer_id);
             sleep(2);
+            CustomerOrder order;
+            generate_random_customer_order(&order, shared_game);
             update_state(WAITING_FOR_ORDER);
             break;
 
         case WAITING_FOR_ORDER:
             printf("Customer %d is waiting for order...\n", customer_id);
             sleep(3);
-
+            // send to seller here...
             // 10% chance of missing order
             if (random_float(0, 1) < 0.1) {
                 printf("Customer %d: Order is missing!\n", customer_id);
@@ -194,4 +212,10 @@ void handle_seller_signal(int sig) {
         // Reset patience when it's our turn
         update_patience(original_patience);
     }
+}
+
+void handle_sigint(int sig) {
+    printf("Customer %d received SIGINT, exiting...\n", customer_id);
+    shm_unlink("/game_shared_mem");
+    exit(EXIT_SUCCESS);
 }

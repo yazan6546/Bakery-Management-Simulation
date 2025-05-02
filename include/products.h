@@ -6,6 +6,7 @@
 #define PRODUCTS_H
 
 
+#define MAX_ORDER_ITEMS 5  // Maximum number of different products in an order
 
 #define MAX_NAME_LENGTH 64
 #define MAX_INGREDIENTS 10
@@ -77,6 +78,20 @@ typedef struct {
     int category_count;
 } ProductCatalog;
 
+
+
+// An item in the order (product + quantity)
+typedef struct {
+    Product product;
+    int quantity;
+} OrderItem;
+
+// The complete customer order
+typedef struct {
+    OrderItem items[MAX_ORDER_ITEMS];
+    int item_count;
+    float total_price;
+} CustomerOrder;
 
 ProductType get_product_type_from_string(const char* name);
 IngredientType get_ingredient_type_from_string(const char* name);
