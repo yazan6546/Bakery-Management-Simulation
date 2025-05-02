@@ -9,6 +9,8 @@
 // Feedback values
 #define FEEDBACK_GOOD 1
 #define FEEDBACK_BAD 2
+// Named semaphore for complaint synchronization
+#define COMPLAINT_SEM_NAME "/bakery_complaint_sem"
 
 #include "config.h"
 #include "game.h"

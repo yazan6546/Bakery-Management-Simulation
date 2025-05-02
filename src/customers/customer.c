@@ -15,6 +15,7 @@ pid_t my_pid;
 int msg_queue_id;
 float original_patience;
 Customer my_entry;
+sem_t *complaint_sem;
 
 void handle_state(CustomerState state, Game *shared_game);
 void handle_seller_signal(int sig);
@@ -42,6 +43,13 @@ int main(int argc, char *argv[]) {
         perror("Failed to map shared memory");
         exit(EXIT_FAILURE);
     }
+
+    complaint_sem = sem_open(COMPLAINT_SEM_NAME, O_CREAT, 0666, 1);
+    if (complaint_sem == SEM_FAILED) {
+        perror("Failed to open complaint semaphore");
+        exit(EXIT_FAILURE);
+    }
+
     fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
 
     close(shm_fd);
@@ -81,7 +89,11 @@ int main(int argc, char *argv[]) {
 
 void handle_state(CustomerState state, Game *shared_game) {
 
-    check_for_contagion(shared_game);
+    // Check for cascade effect in most states
+    if (state != COMPLAINING && state != FRUSTRATED && state != CONTAGION) {
+        check_for_contagion(shared_game);
+    }
+
     switch (state) {
         case WALKING:
             printf("Customer %d is walking...\n", customer_id);
@@ -223,7 +235,6 @@ void handle_sigint(int sig) {
     exit(EXIT_SUCCESS);
 }
 
-// Add a new function to check for contagion
 void check_for_contagion(Game *shared_game) {
     // Skip if we're the one complaining
     if (shared_game->complaining_customer_pid == my_pid || !shared_game->recent_complaint) {
@@ -243,4 +254,7 @@ void check_for_contagion(Game *shared_game) {
         }
     }
 }
+
+
+
 
