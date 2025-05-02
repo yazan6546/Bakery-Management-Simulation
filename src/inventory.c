@@ -221,3 +221,5 @@ void cleanup_semaphore_resources(sem_t* inventory_sem, sem_t* ready_products_sem
     }
 }
 
+
+
