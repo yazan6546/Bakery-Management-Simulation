@@ -45,7 +45,7 @@ void setup_shared_memory(queue_shm **customer_queue, Game **shared_game) {
     ftruncate(shm_fd, sizeof(Game));
     *shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     close(shm_fd);
-    if (shared_game == MAP_FAILED) {
+    if (*shared_game == MAP_FAILED) {
         perror("Failed to map shared memory");
         exit(EXIT_FAILURE);
     }
@@ -75,6 +75,9 @@ void print_customer(Customer *customer) {
 
 
 void generate_random_customer_order(CustomerOrder *order, Game *game) {
+
+    order->item_count = 0;
+    order->total_price = 0;
 
     int num_items = (int) random_float(game->config.MIN_ORDER_ITEMS, game->config.MAX_ORDER_ITEMS);  // Order 1-3 items
 
