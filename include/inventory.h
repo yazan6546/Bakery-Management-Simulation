@@ -44,7 +44,7 @@ void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]
 int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
 void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
 void restock_ingredients(Inventory *inventory, sem_t* sem);
-
+print_inventory(Inventory *inventory);
 
 
 

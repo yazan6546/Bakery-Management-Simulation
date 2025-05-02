@@ -21,6 +21,7 @@
 
 // Define message queue key (must match the one in supply_chain.c)
 #define SUPPLY_CHAIN_MSG_KEY 0x1234
+#define INGREDIENTS_TO_ORDER 3
 
 // Global variables
 Game* shared_game = NULL;
@@ -79,44 +80,29 @@ void cleanup_supply_chain_resources() {
 // Function to process messages from supply chains
 void process_supply_chain_messages() {
     SupplyChainMessage msg;
-    
-    // Try to receive message without blocking
-    int result = msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), 
-                         0, IPC_NOWAIT);
-    
-    if (result >= 0) {
-        // Message received, check ingredients array for updates
-        for (int i = 0; i < NUM_INGREDIENTS; i++) {
-            if (msg.ingredients[i].quantity > 0) {
-                const char* ingredient_name = get_ingredient_name(i);
-                // Found updated ingredient
-                printf("Supply Chain Manager: Received update for ingredient %s: Added %.1f units\n", 
-                       ingredient_name, msg.ingredients[i].quantity);
-                
-                // Check if inventory is low for this ingredient
-                sem_t* inventory_sem = setup_inventory_semaphore();
-                if (inventory_sem != NULL) {
-                    lock_inventory(inventory_sem);
-                    int current_level = shared_game->inventory.quantities[i];
-                    int max_level = shared_game->inventory.max_capacity;
-                    float percentage = (float)current_level / max_level * 100;
-                    
-                    if (percentage < 20) {
-                        printf("Supply Chain Manager: WARNING - %s stock is low (%.1f%%)\n",
-                               ingredient_name, percentage);
-                    } else if (percentage > 80) {
-                        printf("Supply Chain Manager: NOTICE - %s stock is high (%.1f%%)\n",
-                               ingredient_name, percentage);
-                    }
-                    
-                    unlock_inventory(inventory_sem);
-                }
+
+    for(int i = 0; i < INGREDIENTS_TO_ORDER; i++) {
+        int ingredient_type = rand() % NUM_INGREDIENTS;
+        // calculate percentage of this ingredient
+        int percentage = shared_game->inventory.quantities[ingredient_type] * 100.0 / shared_game->inventory.max_capacity;
+
+        if(percentage < 20) {
+            // Send message to supply chain
+            int pid_index = rand() % shared_game->config.NUM_SUPPLY_CHAIN;
+            msg.mtype = supply_chain_pids[pid_index];
+            msg.ingredients[i].type = ingredient_type;
+            msg.ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
+            
+            if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
+                perror("Failed to send message to supply chain");
+            } else {
+                printf("Supply Chain Manager: Sent order for %d units of %s to supply chain %d\n", 
+                       msg.ingredients[i].quantity, get_ingredient_name(ingredient_type), pid_index);
             }
         }
-    } else if (errno != ENOMSG) {
-        // Error other than "no message"
-        perror("Error receiving message");
     }
+    
+
 }
 
 void fork_supply_chain_process() {
