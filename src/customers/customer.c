@@ -7,6 +7,8 @@
 #include "customer.h"
 #include "products.h"
 #include "random.h"
+#include "time.h"
+#include "semaphores_utils.h"
 
 // Global variables
 int customer_id;
@@ -14,6 +16,7 @@ pid_t my_pid;
 int msg_queue_id;
 float original_patience;
 Customer my_entry;
+sem_t *complaint_sem;
 
 void handle_state(CustomerState state, Game *shared_game);
 void handle_seller_signal(int sig);
@@ -23,6 +26,7 @@ void update_patience(float new_patience);
 void leave_restaurant(CustomerState final_state, int action_type);
 void handle_alarm(int sig);
 void handle_sigint(int sig);
+void check_for_contagion(Game *shared_game);
 
 // Send status update to manager
 
@@ -40,6 +44,13 @@ int main(int argc, char *argv[]) {
         perror("Failed to map shared memory");
         exit(EXIT_FAILURE);
     }
+
+    complaint_sem = sem_open(COMPLAINT_SEM_NAME, O_CREAT, 0666, 1);
+    if (complaint_sem == SEM_FAILED) {
+        perror("Failed to open complaint semaphore");
+        exit(EXIT_FAILURE);
+    }
+
     fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
 
     close(shm_fd);
@@ -78,6 +89,12 @@ int main(int argc, char *argv[]) {
 }
 
 void handle_state(CustomerState state, Game *shared_game) {
+
+    // Check for cascade effect in most states
+    if (state != COMPLAINING && state != FRUSTRATED && state != CONTAGION) {
+        check_for_contagion(shared_game);
+    }
+
     switch (state) {
         case WALKING:
             printf("Customer %d is walking...\n", customer_id);
@@ -218,3 +235,32 @@ void handle_sigint(int sig) {
     shm_unlink("/game_shared_mem");
     exit(EXIT_SUCCESS);
 }
+
+
+void check_for_contagion(Game *shared_game) {
+
+    // Wait for semaphore before reading complaint data
+    sem_wait(complaint_sem);
+
+    // Read complaint data atomically
+    bool has_complaint = shared_game->recent_complaint;
+    pid_t complaining_pid = shared_game->complaining_customer_pid;
+
+    // Release semaphore
+    sem_post(complaint_sem);
+
+    // Skip if no complaints or we're the one complaining
+    if (!has_complaint || complaining_pid == my_pid) {
+        return;
+    }
+
+    // Check if the complaint is recent (within configured window)
+    float cascade_prob = shared_game->config.CUSTOMER_CASCADE_PROBABILITY;
+    if (random_float(0, 1) < cascade_prob) {printf("Customer %d saw customer %d complaining and decided to leave too!\n",
+                   customer_id, complaining_pid);
+
+        leave_restaurant(CONTAGION, 5); // 5 = cascade effect
+    }
+}
+
+

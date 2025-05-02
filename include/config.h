@@ -36,6 +36,8 @@ typedef struct {
     float CUSTOMER_PROBABILITY;
     int MIN_ORDER_ITEMS;
     int MAX_ORDER_ITEMS;
+    float CUSTOMER_CASCADE_PROBABILITY;
+    int CASCADE_WINDOW;
 } Config;
 
 int load_config(const char *filename, Config *config);
