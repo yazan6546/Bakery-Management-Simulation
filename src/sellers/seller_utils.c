@@ -27,19 +27,6 @@ void init_seller(Seller *seller, int id) {
     seller->state = IDLE;
 }
 
-// Create a message queue or get existing one
-int get_message_queue() {
-    key_t key = ftok(".", 'M');  // Use current directory for key generation
-    int msgid = msgget(key, 0666 | IPC_CREAT);
-    
-    if (msgid == -1) {
-        perror("Failed to create/access message queue");
-        return -1;
-    }
-    
-    return msgid;
-}
-
 // Send a completion message to a customer
 int send_completion_message(int msg_queue_id, pid_t customer_pid, float total_price, const char* status) {
     CompletionMessage msg;

@@ -35,4 +35,7 @@ typedef struct {
     float total_price;            // Final price
 } CompletionMessage;
 
+
+int get_message_queue();
+
 #endif // BAKERY_MESSAGE_H

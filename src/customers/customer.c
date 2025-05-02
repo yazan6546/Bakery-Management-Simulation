@@ -9,6 +9,7 @@
 #include "random.h"
 #include "time.h"
 #include "semaphores_utils.h"
+#include "shared_mem_utils.h"
 
 // Global variables
 int customer_id;
@@ -18,7 +19,7 @@ float original_patience;
 Customer my_entry;
 sem_t *complaint_sem;
 
-void handle_state(CustomerState state, Game *shared_game);
+void handle_state(CustomerState state, Game *shared_game, int gloabl_msg);
 void handle_seller_signal(int sig);
 void send_status_message(int action_type);
 void update_state(CustomerState new_state);
@@ -37,24 +38,14 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Setup game shared memory as before
-    int shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, sizeof(Game));
-    Game *shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shared_game == MAP_FAILED) {
-        perror("Failed to map shared memory");
-        exit(EXIT_FAILURE);
-    }
-
+    int global_msg = get_message_queue();
+    Game *shared_game;
+    setup_shared_memory(&shared_game);
     complaint_sem = sem_open(COMPLAINT_SEM_NAME, O_CREAT, 0666, 1);
     if (complaint_sem == SEM_FAILED) {
         perror("Failed to open complaint semaphore");
         exit(EXIT_FAILURE);
     }
-
-    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
-
-    close(shm_fd);
     // Initialize game state
 
     // Parse arguments
@@ -82,14 +73,14 @@ int main(int argc, char *argv[]) {
     // Customer state machine
     while (1) {
         printf("Customer %d patience : %.4f\n", customer_id, my_entry.patience);
-        handle_state(my_entry.state, shared_game);
+        handle_state(my_entry.state, shared_game, global_msg);
         pause();
     }
 
     return 0;
 }
 
-void handle_state(CustomerState state, Game *shared_game) {
+void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 
     // Check for cascade effect in most states
     if (state != COMPLAINING && state != FRUSTRATED && state != CONTAGION) {
@@ -114,6 +105,8 @@ void handle_state(CustomerState state, Game *shared_game) {
             sleep(2);
             CustomerOrder order;
             generate_random_customer_order(&order, shared_game);
+            get_message_queue();
+            send_order_message(gloabl_msg, &order); // send order to seller
             update_state(WAITING_FOR_ORDER);
             break;
 
@@ -271,7 +264,6 @@ void send_order_message(int msg_queue_id, CustomerOrder *order) {
     if (msgsnd(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), 0) == -1) {
         perror("Failed to send order message");
         leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
-        return ;
     }
 }
 
