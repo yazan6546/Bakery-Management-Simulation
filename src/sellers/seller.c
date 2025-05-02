@@ -17,8 +17,6 @@
 #include "bakery_message.h"
 #include "customer.h"
 
-#define QUEUE_SEM_NAME "/customer_queue_sem"
-
 // Global variables
 Seller seller;
 Game *shared_game;
@@ -129,20 +127,8 @@ int main(int argc, char *argv[]) {
     // Set up shared memory for game state
     setup_shared_memory(&shared_game);
 
-
-    // Get the size of the queue from shared memory attributes
-    struct stat sb;
-    fstat(queue_fd, &sb);
-    size_t shm_size = sb.st_size;
-
-    // Map the queue shared memory
-    customer_queue = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
-    close(queue_fd);
-
-    if (customer_queue == MAP_FAILED) {
-        perror("Failed to map queue shared memory");
-        exit(EXIT_FAILURE);
-    }
+    // Set up shared memory for customer queue
+    setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
 
     // Open the queue semaphore
     queue_sem = sem_open(QUEUE_SEM_NAME, O_CREAT, 0666, 1);

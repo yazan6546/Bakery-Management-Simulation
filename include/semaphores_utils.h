@@ -5,6 +5,7 @@
 #define SEM_NAME "/bakery_inventory_sem"
 #define READY_SEM_NAME "/bakery_ready_products_sem"
 #define COMPLAINT_SEM_NAME "/bakery_complaint_sem"
+#define QUEUE_SEM_NAME "/customer_queue_sem"
 
 
 sem_t* setup_inventory_semaphore(void);

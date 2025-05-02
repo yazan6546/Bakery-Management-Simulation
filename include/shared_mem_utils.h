@@ -11,7 +11,7 @@ void setup_shared_memory(Game **shared_game);
 
 void cleanup_shared_memory(Game *shared_game);
 
-void setup_queue_shared_memory(queue_shm **queue_shm);
+void setup_queue_shared_memory(queue_shm **queue_shm, size_t capacity);
 
 
 #endif // SHARED_MEM_UTILS_H
