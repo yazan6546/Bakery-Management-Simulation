@@ -6,8 +6,12 @@ set(LIBRARY_DIR "${CMAKE_CURRENT_LIST_DIR}/lib")
 
 # Adding our source files
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/sources/*.c") # Define PROJECT_SOURCES as a list of all source files
-find_package(json-c REQUIRED) # Find the json-c package
-# Declaring our executable
+
+# Add the path to your custom find modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# Use the standard package finding mechanism
+find_package(JSON-C REQUIRED)
 
 add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c
     src/utils/products_utils.c src/utils/json-config.c)
@@ -30,6 +34,7 @@ add_executable(bakers
     src/bakers/baker_utils.c
 )
 
+
 add_executable(baker_teams
     src/bakers/baker_teams.c
     src/utils/config.c
@@ -49,14 +54,15 @@ add_executable(customer_manager
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
 include_directories(include)
 target_include_directories(graphics PRIVATE include/lib/raylib)
-target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread json-c::json-c) # Link the raylib static library and other required libraries
-target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl pthread) # Link the raylib static library and other required libraries
+target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthread JSON-C::JSON-C) # Link the raylib static library and other required libraries
+target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthread) # Link the raylib static library and other required libraries
+target_link_libraries(supply_chain PRIVATE pthread)
 
 set (need_queue main bakers customer_manager customers graphics) # List of executables that need the queue library
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
     message("Adding ${need} to the main executable")
     target_include_directories(${need} PRIVATE include/lib/queue) # Add the source files for each executable to the main executable
-    target_link_libraries(${need} PRIVATE ${LIBRARY_DIR}/libgenericQueue.a) # Add dependencies for the main executable
+    target_link_libraries(${need} PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt pthread) # Add dependencies for the main executable
 endforeach()
 
 # Setting ASSETS_PATH

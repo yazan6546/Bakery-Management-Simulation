@@ -61,6 +61,8 @@ int main(int argc, char *argv[]) {
         printf("Config file failed");
         return 1;
     }
+
+    print_config(&shared_game->config);
     if (load_product_catalog(CONFIG_PATH_JSON, &shared_game->productCatalog) == -1) {
         printf("Product catalog file failed");
         return 1;
