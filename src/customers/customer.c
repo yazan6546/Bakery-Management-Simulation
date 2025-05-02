@@ -247,7 +247,6 @@ void check_for_contagion(Game *shared_game) {
 
     // Release semaphore
     sem_post(complaint_sem);
-    sem_close(complaint_sem);
 
     // Skip if no complaints or we're the one complaining
     if (!has_complaint || complaining_pid == my_pid) {
@@ -258,6 +257,7 @@ void check_for_contagion(Game *shared_game) {
     float cascade_prob = shared_game->config.CUSTOMER_CASCADE_PROBABILITY;
     if (random_float(0, 1) < cascade_prob) {printf("Customer %d saw customer %d complaining and decided to leave too!\n",
                    customer_id, complaining_pid);
+
         leave_restaurant(CONTAGION, 5); // 5 = cascade effect
     }
 }

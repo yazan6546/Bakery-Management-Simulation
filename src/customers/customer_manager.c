@@ -10,6 +10,7 @@
 #include "queue.h"
 #include "random.h"
 #include "bakery_message.h"
+#include "time.h"
 
 // Global variables
 Game *shared_game;
@@ -93,7 +94,13 @@ void handle_customer_message(int signum) {
 
                     case 3: // Complained
                         printf("Customer %d complained and left\n", cust_id);
+
+                        sem_wait(complaint_sem);
                         shared_game->num_complained_customers++;
+                        shared_game->recent_complaint = true;
+                        shared_game->complaining_customer_pid = c->pid;
+                        shared_game->last_complaint_time = time(NULL);
+                        sem_post(complaint_sem);
                         kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
@@ -110,7 +117,10 @@ void handle_customer_message(int signum) {
                     case 5: // Cascade effect
                         printf("Customer %d left due to cascade effect after seeing customer %d complain\n",
                               cust_id, shared_game->complaining_customer_pid);
+
+                        sem_wait(complaint_sem);
                         shared_game->num_customers_cascade++;
+                        sem_post(complaint_sem);
                         kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
