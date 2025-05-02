@@ -11,6 +11,7 @@
 #include "random.h"
 #include "bakery_message.h"
 #include "time.h"
+#include "semaphores_utils.h"
 
 // Global variables
 Game *shared_game;
@@ -132,17 +133,6 @@ void handle_customer_message(int signum) {
 
         if (!found && msg.customer_pid > 0) {
 //            kill(pid, SIGKILL); // Clean up the orphaned process
-
-            for (int j = 0; j < customer_queue->count; j++) {
-                size_t pos = (customer_queue->head + j) % customer_queue->capacity;
-                Customer *c = &((Customer*)customer_queue->elements)[pos];
-                printf("NFFFF : pid : %d\n", c->pid);
-            }
-
-            for (int j = 0; j < customer_queue->count; j++) {
-                Customer *c = &((Customer*)customer_queue->elements)[j];
-                printf("HAHAHA : pid : %d\n", c->pid);
-            }
             printf("Unknown sender, killing process: %d\n", pid);
         }
     }

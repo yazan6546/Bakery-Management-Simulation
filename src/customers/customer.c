@@ -8,6 +8,7 @@
 #include "products.h"
 #include "random.h"
 #include "time.h"
+#include "semaphores_utils.h"
 
 // Global variables
 int customer_id;
