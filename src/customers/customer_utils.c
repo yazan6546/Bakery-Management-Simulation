@@ -76,6 +76,9 @@ void print_customer(Customer *customer) {
 
 void generate_random_customer_order(CustomerOrder *order, Game *game) {
 
+    order->item_count = 0;
+    order->total_price = 0;
+
     int num_items = (int) random_float(game->config.MIN_ORDER_ITEMS, game->config.MAX_ORDER_ITEMS);  // Order 1-3 items
 
     // Generate each item in the order
