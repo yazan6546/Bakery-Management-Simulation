@@ -27,6 +27,7 @@ void leave_restaurant(CustomerState final_state, int action_type);
 void handle_alarm(int sig);
 void handle_sigint(int sig);
 void check_for_contagion(Game *shared_game);
+void send_order_message(int msg_queue_id, CustomerOrder *order);
 
 // Send status update to manager
 
@@ -222,7 +223,6 @@ void handle_alarm(int sig) {
 // Handle signals from seller
 void handle_seller_signal(int sig) {
     if (sig == SIGUSR1) {
-        printf("Customer %d: It's my turn to order!\n", customer_id);
         update_state(ORDERING);
 
         // Reset patience when it's our turn
@@ -260,6 +260,18 @@ void check_for_contagion(Game *shared_game) {
                    customer_id, complaining_pid);
 
         leave_restaurant(CONTAGION, 5); // 5 = cascade effect
+    }
+}
+
+void send_order_message(int msg_queue_id, CustomerOrder *order) {
+    OrderMessage order_msg;
+    order_msg.mtype = getpid();  // Use customer's PID as message type
+    order_msg.order = *order;
+
+    if (msgsnd(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), 0) == -1) {
+        perror("Failed to send order message");
+        leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
+        return ;
     }
 }
 

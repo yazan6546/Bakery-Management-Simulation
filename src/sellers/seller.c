@@ -88,7 +88,7 @@ void seller_loop() {
         // Lock the queue with semaphore
         sem_wait(queue_sem);
 
-        if (customer_queue->count > 0) {
+        if (!queueShmIsEmpty(customer_queue)) {
             // Dequeue a customer
             if (queueShmDequeue(customer_queue, &customer) == 0) {
                 printf("Seller %d: Dequeued customer with PID %d\n", seller.id, customer.pid);
@@ -151,7 +151,6 @@ int main(int argc, char *argv[]) {
     // Cleanup
     sem_close(queue_sem);
     munmap(shared_game, sizeof(Game));
-    munmap(customer_queue, shm_size);
 
     return 0;
 }

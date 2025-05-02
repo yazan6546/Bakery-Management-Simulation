@@ -118,5 +118,4 @@ void generate_random_customer_order(CustomerOrder *order, Game *game) {
 
         order->item_count++;
     }
-
 }
