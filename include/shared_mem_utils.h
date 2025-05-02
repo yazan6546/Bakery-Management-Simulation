@@ -1,12 +1,17 @@
 #ifndef SHARED_MEM_UTILS_H
 #define SHARED_MEM_UTILS_H
+#define GAME_SHM_NAME "/game_shared_mem"
+#define CUSTOMER_QUEUE_SHM_NAME "/customer_queue_shm"
 
 #include "game.h"
+#include "queue.h"
 
 
 void setup_shared_memory(Game **shared_game);
 
 void cleanup_shared_memory(Game *shared_game);
+
+void setup_queue_shared_memory(queue_shm **queue_shm);
 
 
 #endif // SHARED_MEM_UTILS_H

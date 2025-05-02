@@ -23,4 +23,16 @@ typedef struct {
     int action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
 } CustomerStatusMsg;
 
+// Add to bakery_message.h
+typedef struct {
+    long mtype;                    // Message type
+    CustomerOrder order;           // Order details
+} OrderMessage;
+
+typedef struct {
+    long mtype;                    // Message type
+    char status[50];              // Status message
+    float total_price;            // Final price
+} CompletionMessage;
+
 #endif // BAKERY_MESSAGE_H
