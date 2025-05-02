@@ -7,6 +7,7 @@
 #include "customer.h"
 #include "products.h"
 #include "random.h"
+#include "time.h"
 
 // Global variables
 int customer_id;
@@ -23,6 +24,7 @@ void update_patience(float new_patience);
 void leave_restaurant(CustomerState final_state, int action_type);
 void handle_alarm(int sig);
 void handle_sigint(int sig);
+void check_for_contagion(Game *shared_game);
 
 // Send status update to manager
 
@@ -78,6 +80,8 @@ int main(int argc, char *argv[]) {
 }
 
 void handle_state(CustomerState state, Game *shared_game) {
+
+    check_for_contagion(shared_game);
     switch (state) {
         case WALKING:
             printf("Customer %d is walking...\n", customer_id);
@@ -222,18 +226,19 @@ void handle_sigint(int sig) {
 // Add a new function to check for contagion
 void check_for_contagion(Game *shared_game) {
     // Skip if we're the one complaining
-    if (shared_game->complaining_customer == my_pid || shared_game->recent_complaint == 0) {
+    if (shared_game->complaining_customer_pid == my_pid || !shared_game->recent_complaint) {
         return;
     }
 
     // Check if the complaint is recent (within 30 seconds)
     time_t current_time = time(NULL);
-    if (current_time - shared_game->complaint_time <= MAX_CONTAGION_WINDOW) {
-        float contagion_prob = get_float_config("CONTAGION_PROBABILITY", 0.3); // Default 0.3
+    if (current_time - shared_game->last_complaint_time <=
+        shared_game->config.CASCADE_WINDOW) {
+        float contagion_prob = shared_game->config.CUSTOMER_CASCADE_PROBABILITY;
 
         if (random_float(0, 1) < contagion_prob) {
             printf("Customer %d saw customer %d complaining and decided to leave too!\n",
-                   customer_id, shared_game->complaining_customer);
+                   customer_id, shared_game->complaining_customer_pid);
             leave_restaurant(CONTAGION, 5); // 5 = contagion
         }
     }

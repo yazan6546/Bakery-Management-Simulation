@@ -7,6 +7,7 @@
 #include "config.h"
 #include "inventory.h"
 #include "oven.h"
+#include <stdbool.h>
 
 #define MAX_OVENS 10  // Max ovens allowed
 
@@ -21,6 +22,7 @@ typedef struct Game {
     int num_customers_served;
     int num_customers_cascade;
     float daily_profit;
+    bool recent_complaint;
 
     Config config;
     Inventory inventory;

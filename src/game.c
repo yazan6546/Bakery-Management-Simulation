@@ -10,6 +10,7 @@
 #include "config.h"
 #include "unistd.h"
 #include <string.h>
+#include <stdbool.h>
 
 
 int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
@@ -22,6 +23,7 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
     game->num_customers_cascade = 0;
     game->daily_profit = 0.0f;
     game->complaining_customer_pid = 0;
+    bool game->recent_complaint = false;
     init_inventory(&game->inventory);
 
 

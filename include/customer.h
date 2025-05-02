@@ -20,7 +20,8 @@ typedef enum {
     WAITING_FOR_ORDER,
     ORDERING,
     FRUSTRATED,
-    COMPLAINING
+    COMPLAINING,
+    CONTAGION
 } CustomerState;
 
 typedef struct {
