@@ -93,4 +93,5 @@ typedef struct {
 
 ProductType get_product_type_from_string(const char* name);
 IngredientType get_ingredient_type_from_string(const char* name);
+const char* get_ingredient_name(int ingredient_type);
 #endif //PRODUCTS_H

@@ -154,12 +154,10 @@ int get_ready_product(ReadyProducts *ready_products, ProductType type, int produ
     return result;
 }
 
-
-
-print_inventory(Inventory *inventory) {
-    printf("Inventory:\n");
+void print_inventory(Inventory *inventory) {
+    printf("Inventory Contents:\n");
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
-        printf("Ingredient %d: %d\n", i, inventory->quantities[i]);
+        printf("  %s: %d units\n", get_ingredient_name(i), inventory->quantities[i]);
     }
-    printf("Max Capacity: %d\n", inventory->max_capacity);
+    printf("-------------------------------\n");
 }

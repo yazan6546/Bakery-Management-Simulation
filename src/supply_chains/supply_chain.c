@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <time.h>
+#include <math.h>
 
 #include "game.h"
 #include "supply_chain.h"
@@ -56,6 +57,7 @@ void update_inventory() {
 
     // Simulate delivery time
     sleep(get_random_delay());
+    printf("Supply Chain %d: delivering after %d seconds\n", getpid(), get_random_delay());
     
     // Lock inventory for update
     lock_inventory(inventory_sem);
@@ -73,6 +75,8 @@ void update_inventory() {
     }
 
     unlock_inventory(inventory_sem);
+
+    print_inventory(&shared_game->inventory);
     
 }
 

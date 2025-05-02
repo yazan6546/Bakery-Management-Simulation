@@ -31,21 +31,6 @@ pid_t* supply_chain_pids = NULL;
 // Function prototypes
 void cleanup_supply_chain_resources(void);
 
-// Function to translate ingredient type to string
-const char* get_ingredient_name(int ingredient_type) {
-    static const char* ingredient_names[] = {
-        "Wheat", "Yeast", "Butter", "Milk", "Sugar", "Salt", "Sweet Items",
-        "Cheese", "Salami", "Paste Ingredients", "Chocolate", "Flour", "Vanilla",
-        "Custard", "Eggs", "Vegetables", "Bread Ingredients", "Cream", "Fruits"
-    };
-    
-    if (ingredient_type >= 0 && ingredient_type < NUM_INGREDIENTS) {
-        return ingredient_names[ingredient_type];
-    } else {
-        return "Unknown";
-    }
-}
-
 void handle_sigint(int sig) {
     exit(0);
 }
@@ -80,6 +65,9 @@ void cleanup_supply_chain_resources() {
 // Function to process messages from supply chains
 void process_supply_chain_messages() {
     SupplyChainMessage msg;
+    int pid_index = rand() % shared_game->config.NUM_SUPPLY_CHAIN;
+
+    printf("Supply Chain Manager: Processing messages from supply chain %d\n", pid_index);
 
     for(int i = 0; i < INGREDIENTS_TO_ORDER; i++) {
         int ingredient_type = rand() % NUM_INGREDIENTS;
@@ -88,20 +76,25 @@ void process_supply_chain_messages() {
 
         if(percentage < 20) {
             // Send message to supply chain
-            int pid_index = rand() % shared_game->config.NUM_SUPPLY_CHAIN;
+            
             msg.mtype = supply_chain_pids[pid_index];
             msg.ingredients[i].type = ingredient_type;
             msg.ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
+
+            printf("Supply Chain Manager: Ordering %d of %s\n", 
+                   msg.ingredients[i].quantity, get_ingredient_name(ingredient_type));
             
-            if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
-                perror("Failed to send message to supply chain");
-            } else {
-                printf("Supply Chain Manager: Sent order for %d units of %s to supply chain %d\n", 
-                       msg.ingredients[i].quantity, get_ingredient_name(ingredient_type), pid_index);
-            }
+        
         }
     }
-    
+
+    if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
+        perror("Failed to send message to supply chain");
+    } else {
+        printf("Supply Chain Manager: Sent order to supply chain %d", supply_chain_pids[pid_index]);
+    }
+
+    fflush(stdout);  
 
 }
 
@@ -181,10 +174,7 @@ int main(int argc, char *argv[]) {
         // Process messages from supply chains
         process_supply_chain_messages();
         
-        
-        
-        // Small delay to prevent busy waiting
-        usleep(100000); // 100ms
+        sleep(3); // Sleep for a while before processing again
     }
 
     return 0;
