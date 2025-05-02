@@ -28,7 +28,7 @@ MAX_TIME_FRUSTRATED=10
 MIN_PATIENCE=1        # Minimum patience level
 MAX_PATIENCE=5        # Maximum patience level
 
-MIN_PATIENCE_DECAY=0.01        # Minimum patience decay
-MAX_PATIENCE_DECAY=0.03        # Maximum patience decay
+MIN_PATIENCE_DECAY=0.2        # Minimum patience decay
+MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
 
 NUM_OVENS=2            # Number of ovens

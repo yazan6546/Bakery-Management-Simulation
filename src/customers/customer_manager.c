@@ -61,12 +61,13 @@ void handle_customer_message(int signum) {
                         // Just update our knowledge of customer state
                         c->patience = msg.patience;
                         c->state = msg.state;
-                        printf("Updated status for customer %d: patience=%.1f, state=%d\n",
+                        printf("Updated status for customer %d: patience=%.4f, state=%d\n",
                                cust_id, msg.patience, msg.state);
                         break;
 
                     case 1: // Normal leaving
                         printf("Customer %d is leaving normally\n", cust_id);
+                        kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, i);
                         active_customers--;
                         break;
@@ -74,6 +75,7 @@ void handle_customer_message(int signum) {
                     case 2: // Frustrated
                         printf("Customer %d left frustrated\n", cust_id);
                         shared_game->num_frustrated_customers++;
+                        kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, i);
                         active_customers--;
                         break;
@@ -81,6 +83,7 @@ void handle_customer_message(int signum) {
                     case 3: // Complained
                         printf("Customer %d complained and left\n", cust_id);
                         shared_game->num_complained_customers++;
+                        kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, i);
                         active_customers--;
                         break;
@@ -88,6 +91,7 @@ void handle_customer_message(int signum) {
                     case 4: // Missing order
                         printf("Customer %d had missing order\n", cust_id);
                         shared_game->num_customers_missing++;
+                        kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, i);
                         active_customers--;
                         break;
@@ -187,7 +191,7 @@ int main(int argc, char *argv[]) {
         // Spawn new customers if we're below max
         if (active_customers < shared_game->config.MAX_CUSTOMERS) {
             // Random chance to spawn a new customer
-            if (random_float(0, 1) < 0.3) { // 30% chance each iteration
+            if (random_float(0, 1) < 0.5) { // 30% chance each iteration
                 spawn_customer(next_customer_id++);
             }
         }

@@ -36,8 +36,6 @@ int main(int argc, char *argv[]) {
     char *customer_buffer = argv[3];
 
     deserialize_customer(&my_entry, customer_buffer);
-    print_customer(&my_entry);
-    printf("ookoko\n");
     original_patience = my_entry.patience;
     my_pid = getpid();
 
@@ -56,6 +54,7 @@ int main(int argc, char *argv[]) {
 
     // Customer state machine
     while (1) {
+        printf("Customer %d patience : %.4f\n", customer_id, my_entry.patience);
         handle_state(my_entry.state);
         pause();
     }
@@ -74,6 +73,7 @@ void handle_state(CustomerState state) {
         case WAITING_IN_QUEUE:
             printf("Customer %d is waiting in queue...\n", customer_id);
             sleep(2);
+            // pause until seller signals
             break;
 
         case ORDERING:
@@ -108,10 +108,12 @@ void handle_state(CustomerState state) {
 
         case FRUSTRATED:
             leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
+            pause();  // wait for manager to handle
             break;
 
         case COMPLAINING:
             leave_restaurant(COMPLAINING, 3); // 3 = complained
+            pause(); // wait for manager to handle
             break;
 
         default:
@@ -134,7 +136,7 @@ void send_status_message(int action_type) {
     }
 
     // Signal manager to check message queue
-    kill(getppid(), SIGUSR1);
+//    kill(getppid(), SIGUSR1);
 }
 
 // Update customer state directly in shared memory
@@ -164,7 +166,6 @@ void handle_alarm(int sig) {
     // Only decay patience if not ordering
     if (my_entry.state != ORDERING) {
         my_entry.patience -= my_entry.patience_decay;
-        printf("Customer %d patience: %.1f\n", customer_id, my_entry.patience);
 
         // Send periodic patience updates (every 3 seconds to avoid flooding)
         static int update_counter = 0;
@@ -175,7 +176,8 @@ void handle_alarm(int sig) {
         if (my_entry.patience <= 0) {
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
             // Let manager update game stats
-            leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
+            update_state(FRUSTRATED);
+            alarm(0); // Stop the timer
         }
     }
 

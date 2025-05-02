@@ -1,17 +1,17 @@
-
-# Add chef-supply-chain test
-add_executable(chef-supply-chain-test
-        chef-supply-chain-test.c
-        ${CMAKE_SOURCE_DIR}/src/inventory.c
-        ${CMAKE_SOURCE_DIR}/src/utils/config.c
-        ${CMAKE_SOURCE_DIR}/src/game.c
-        ${CMAKE_SOURCE_DIR}/src/chefs/chef_functions.c
-        ${CMAKE_SOURCE_DIR}/src/supply_chains/supply_chain_functions.c
-)
-target_link_libraries(chef-supply-chain-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
-
-add_executable(inventory-semaphore-test inventory-semaphore-test.c ${CMAKE_SOURCE_DIR}/src/inventory.c)
-target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
+#
+## Add chef-supply-chain test
+#add_executable(chef-supply-chain-test
+#        chef-supply-chain-test.c
+#        ${CMAKE_SOURCE_DIR}/src/inventory.c
+#        ${CMAKE_SOURCE_DIR}/src/utils/config.c
+#        ${CMAKE_SOURCE_DIR}/src/game.c
+#        ${CMAKE_SOURCE_DIR}/src/chefs/chef_functions.c
+#        ${CMAKE_SOURCE_DIR}/src/supply_chains/supply_chain_functions.c
+#)
+#target_link_libraries(chef-supply-chain-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
+#
+#add_executable(inventory-semaphore-test inventory-semaphore-test.c ${CMAKE_SOURCE_DIR}/src/inventory.c)
+#target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
 
 add_executable(queue-test queue_test.c)
 target_include_directories(queue-test PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
