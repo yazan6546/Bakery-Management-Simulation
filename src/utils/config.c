@@ -35,6 +35,7 @@ int load_config(const char *filename, Config *config) {
     config->MIN_PATIENCE = -1;
     config->MAX_PATIENCE_DECAY = -1;
     config->MIN_PATIENCE_DECAY = -1;
+    config->CUSTOMER_PROBABILITY = -1;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -71,6 +72,7 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "NUM_OVENS") == 0) config->NUM_OVENS = (int)value;
             else if (strcmp(key, "MIN_BAKE_TIME") == 0) config->MIN_BAKE_TIME = (int)value;
             else if (strcmp(key, "MAX_BAKE_TIME") == 0) config->MAX_BAKE_TIME = (int)value;
+            else if (strcmp(key, "CUSTOMER_PROBABILITY") == 0) config->CUSTOMER_PROBABILITY = value;
             else {
                 fprintf(stderr, "Unknown key: %s\n", key);
                 fclose(file);
@@ -130,6 +132,7 @@ void print_config(Config *config) {
     printf("MIN_PATIENCE_DECAY: %f\n", config->MIN_PATIENCE_DECAY);
     printf("MIN_BAKE_TIME: %d\n", config->MIN_BAKE_TIME);
     printf("MAX_BAKE_TIME: %d\n", config->MAX_BAKE_TIME);
+    printf("CUSTOMER_PROBABILITY: %f\n", config->CUSTOMER_PROBABILITY);
 
     fflush(stdout);
 }
@@ -148,7 +151,8 @@ int check_parameter_correctness(const Config *config) {
     }
 
     // Check that float parameters are non-negative
-    if (config->DAILY_PROFIT < 0) {
+    if (config->DAILY_PROFIT < 0 || config->MAX_PATIENCE < 0 || config->MIN_PATIENCE < 0 ||
+        config->MAX_PATIENCE_DECAY < 0 || config->MIN_PATIENCE_DECAY < 0 || config->CUSTOMER_PROBABILITY < 0){
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -188,7 +192,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -211,11 +215,12 @@ void serialize_config(Config *config, char *buffer) {
             config->MAX_OVEN_TIME,
             config->NUM_OVENS,
             config->MIN_BAKE_TIME,
-            config->MAX_BAKE_TIME);
+            config->MAX_BAKE_TIME,
+            config->CUSTOMER_PROBABILITY);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "\"%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
+    sscanf(buffer, "\"%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -238,5 +243,6 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->MAX_OVEN_TIME,
             &config->NUM_OVENS,
             &config->MIN_BAKE_TIME,
-            &config->MAX_BAKE_TIME);
+            &config->MAX_BAKE_TIME,
+           &config->CUSTOMER_PROBABILITY);
 }

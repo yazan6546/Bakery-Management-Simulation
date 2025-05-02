@@ -31,4 +31,6 @@ MAX_PATIENCE=5        # Maximum patience level
 MIN_PATIENCE_DECAY=0.2        # Minimum patience decay
 MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
 
+CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
+
 NUM_OVENS=2            # Number of ovens
