@@ -36,6 +36,8 @@ int load_config(const char *filename, Config *config) {
     config->MAX_PATIENCE_DECAY = -1;
     config->MIN_PATIENCE_DECAY = -1;
     config->CUSTOMER_PROBABILITY = -1;
+    config->MIN_ORDER_ITEMS = -1;
+    config->MAX_ORDER_ITEMS = -1;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -73,6 +75,9 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "MIN_BAKE_TIME") == 0) config->MIN_BAKE_TIME = (int)value;
             else if (strcmp(key, "MAX_BAKE_TIME") == 0) config->MAX_BAKE_TIME = (int)value;
             else if (strcmp(key, "CUSTOMER_PROBABILITY") == 0) config->CUSTOMER_PROBABILITY = value;
+            else if (strcmp(key, "MIN_ORDER_ITEMS") == 0) config->MIN_ORDER_ITEMS = (int)value;
+            else if (strcmp(key, "MAX_ORDER_ITEMS") == 0) config->MAX_ORDER_ITEMS = (int)value;
+
             else {
                 fprintf(stderr, "Unknown key: %s\n", key);
                 fclose(file);
@@ -133,6 +138,8 @@ void print_config(Config *config) {
     printf("MIN_BAKE_TIME: %d\n", config->MIN_BAKE_TIME);
     printf("MAX_BAKE_TIME: %d\n", config->MAX_BAKE_TIME);
     printf("CUSTOMER_PROBABILITY: %f\n", config->CUSTOMER_PROBABILITY);
+    printf("MIN_ORDER_ITEMS: %d\n", config->MIN_ORDER_ITEMS);
+    printf("MAX_ORDER_ITEMS: %d\n", config->MAX_ORDER_ITEMS);
 
     fflush(stdout);
 }
@@ -145,7 +152,7 @@ int check_parameter_correctness(const Config *config) {
         config->NUM_SUPPLY_CHAIN < 0 || config->MIN_PURCHASE_QUANTITY < 0 || config->MAX_PURCHASE_QUANTITY < 0 ||
         config->MIN_TIME_FRUSTRATED < 0 || config->MAX_TIME_FRUSTRATED < 0 || config->MIN_OVEN_TIME < 0 ||
         config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
-        config->MAX_CUSTOMERS < 0) {
+        config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -160,6 +167,11 @@ int check_parameter_correctness(const Config *config) {
     // Logical consistency checks for minimum and maximum pairs
     if (config->MIN_PURCHASE_QUANTITY > config->MAX_PURCHASE_QUANTITY) {
         fprintf(stderr, "MIN_PURCHASE_QUANTITY cannot be greater than MAX_PURCHASE_QUANTITY\n");
+        return -1;
+    }
+
+    if (config->MIN_ORDER_ITEMS > config->MAX_ORDER_ITEMS) {
+        fprintf(stderr, "MIN_ORDER_ITEMS cannot be greater than MAX_ORDER_ITEMS\n");
         return -1;
     }
 
@@ -192,7 +204,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -216,11 +228,13 @@ void serialize_config(Config *config, char *buffer) {
             config->NUM_OVENS,
             config->MIN_BAKE_TIME,
             config->MAX_BAKE_TIME,
-            config->CUSTOMER_PROBABILITY);
+            config->CUSTOMER_PROBABILITY,
+            config->MIN_ORDER_ITEMS,
+            config->MAX_ORDER_ITEMS);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "\"%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f",
+    sscanf(buffer, "\"%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -244,5 +258,7 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->NUM_OVENS,
             &config->MIN_BAKE_TIME,
             &config->MAX_BAKE_TIME,
-           &config->CUSTOMER_PROBABILITY);
+           &config->CUSTOMER_PROBABILITY,
+           &config->MIN_ORDER_ITEMS,
+            &config->MAX_ORDER_ITEMS);
 }

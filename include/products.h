@@ -5,9 +5,7 @@
 #ifndef PRODUCTS_H
 #define PRODUCTS_H
 
-
-#define MAX_ORDER_ITEMS 5  // Maximum number of different products in an order
-
+#define MAX_ORDER_ITEMS_ 10
 #define MAX_NAME_LENGTH 64
 #define MAX_INGREDIENTS 10
 #define MAX_PRODUCTS_PER_CATEGORY 20
@@ -88,7 +86,7 @@ typedef struct {
 
 // The complete customer order
 typedef struct {
-    OrderItem items[MAX_ORDER_ITEMS];
+    OrderItem items[MAX_ORDER_ITEMS_];
     int item_count;
     float total_price;
 } CustomerOrder;
