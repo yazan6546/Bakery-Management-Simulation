@@ -45,75 +45,39 @@ int get_random_quantity() {
     return (rand() % 10) + 5; // 5 to 14 units
 }
 
-// Function to send a message to supply chain manager
-void send_supply_update(IngredientType ingredient_type, float quantity) {
-    SupplyChainMessage msg;
-    
-    // Set message type
-    msg.mtype = 1; // Message type 1 for supply updates
-    
-    // Initialize all ingredients to 0
-    for (int i = 0; i < NUM_INGREDIENTS; i++) {
-        msg.ingredients[i].type = i;
-        msg.ingredients[i].quantity = 0.0;
-    }
-    
-    // Set only the specific ingredient that was updated
-    msg.ingredients[ingredient_type].type = ingredient_type;
-    msg.ingredients[ingredient_type].quantity = quantity;
-    
-    // Send message to queue
-    if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), 0) == -1) {
-        perror("Failed to send message");
-    } else {
-        printf("Supply Chain %d: Sent supply update message (Ingredient %d, Qty %.1f)\n", 
-               supply_chain_id, ingredient_type, quantity);
-    }
-}
+
 
 // Function to update inventory based on supply chain type
 void update_inventory() {
-    int quantity = get_random_quantity();
-    IngredientType ingredient_type = supply_chain_id;
+    
+    SupplyChainMessage msg;
+    msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), IPC_NOWAIT);
+
+
+    // Simulate delivery time
+    sleep(get_random_delay());
     
     // Lock inventory for update
-    sem_wait(inventory_sem);
+    lock_inventory(inventory_sem);
     
-    // Update inventory for the specific ingredient
-    shared_game->inventory.quantities[ingredient_type] += quantity;
-    printf("Supply Chain %d: Added %d units of ingredient %d, new total: %d\n", 
-           supply_chain_id, quantity, ingredient_type, 
-           shared_game->inventory.quantities[ingredient_type]);
+    // Update inventory in shared memory
+    for (int i = 0; i < NUM_INGREDIENTS; i++)
+    {
+        // Update the inventory in shared memory 
+        shared_game->inventory.quantities[i] = 
+        fmin(shared_game->inventory.quantities[i] + msg.ingredients[i].quantity,
+             shared_game->inventory.max_capacity);
+           
+        printf("Supply Chain %d: Updated inventory for ingredient %d: %.1f\n", 
+               supply_chain_id, i, shared_game->inventory.quantities[i]);
+    }
+
+    unlock_inventory(inventory_sem);
     
-    // Release inventory
-    sem_post(inventory_sem);
-    
-    // Send update to manager
-    send_supply_update(ingredient_type, (float)quantity);
 }
 
 int main(int argc, char *argv[]) {
-    // Check arguments
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <supply_chain_id>\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-    
-    // Get supply chain ID from command line
-    supply_chain_id = atoi(argv[1]);
-    
-    // Verify supply chain ID is valid
-    if (supply_chain_id < 0 || supply_chain_id >= NUM_INGREDIENTS) {
-        fprintf(stderr, "Error: Supply chain ID must be between 0 and %d\n", NUM_INGREDIENTS - 1);
-        return EXIT_FAILURE;
-    }
-    
-    // Register signal handlers
-    signal(SIGINT, handle_signal);
-    signal(SIGTERM, handle_signal);
-    
-    // Seed random number generator
-    srand(time(NULL) ^ getpid());
+  
     
     // Setup shared memory
     setup_shared_memory(&shared_game);
@@ -136,15 +100,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     
-    printf("Supply Chain %d: Started successfully (managing ingredient type %d)\n", 
-           supply_chain_id, supply_chain_id);
     
     // Main loop
     while (1) {
         // Random delay between deliveries
-        int delay = get_random_delay();
-        printf("Supply Chain %d: Next delivery in %d seconds\n", supply_chain_id, delay);
-        sleep(delay);
+        
         
         // Update inventory with new supplies
         update_inventory();

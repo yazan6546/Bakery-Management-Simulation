@@ -96,7 +96,7 @@ void process_supply_chain_messages() {
                 // Check if inventory is low for this ingredient
                 sem_t* inventory_sem = setup_inventory_semaphore();
                 if (inventory_sem != NULL) {
-                    sem_wait(inventory_sem);
+                    lock_inventory(inventory_sem);
                     int current_level = shared_game->inventory.quantities[i];
                     int max_level = shared_game->inventory.max_capacity;
                     float percentage = (float)current_level / max_level * 100;
@@ -109,7 +109,7 @@ void process_supply_chain_messages() {
                                ingredient_name, percentage);
                     }
                     
-                    sem_post(inventory_sem);
+                    unlock_inventory(inventory_sem);
                 }
             }
         }
