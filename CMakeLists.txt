@@ -18,10 +18,13 @@ add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 #add_executable(chefs src/chefs/chef.c src/inventory.c)
-add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c src/utils/semaphores_utils.c)
+add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c
+        src/utils/semaphores_utils.c src/utils/shared_mem_utils.c
+        src/sellers/seller_utils.c
+src/utils/message_queue_utils.c)
 add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c src/utils/semaphores_utils.c)
 add_executable(customers src/customers/customer.c src/utils/random.c src/utils/config.c
-src/customers/customer_utils.c)
+src/customers/customer_utils.c src/utils/message_queue_utils.c src/utils/shared_mem_utils.c)
 
 add_executable(bakers
     src/bakers/baker.c
@@ -50,6 +53,7 @@ add_executable(customer_manager
         src/utils/random.c
         src/inventory.c
         src/utils/semaphores_utils.c
+        src/utils/shared_mem_utils.c
 )
 
 

@@ -96,16 +96,14 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 
         case WAITING_IN_QUEUE:
             printf("Customer %d is waiting in queue...\n", customer_id);
-            sleep(2);
-            // pause until seller signals
+            pause(); // pause until seller signals
             break;
 
         case ORDERING:
             printf("Customer %d is ordering...\n", customer_id);
-            sleep(2);
+            sleep(2); // simulate ordering time
             CustomerOrder order;
             generate_random_customer_order(&order, shared_game);
-            get_message_queue();
             send_order_message(gloabl_msg, &order); // send order to seller
             update_state(WAITING_FOR_ORDER);
             break;
@@ -206,6 +204,7 @@ void handle_alarm(int sig) {
             // Let manager update game stats
             update_state(FRUSTRATED);
             alarm(0); // Stop the timer
+            return;
         }
     }
 

@@ -138,12 +138,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Get the global message queue ID - use the same one as customer_manager
-    key_t key = ftok(".", 'M');  // Generate key based on current directory
-    msg_queue_id = msgget(key, 0666 | IPC_CREAT);
-    if (msg_queue_id == -1) {
-        perror("Failed to access global message queue");
-        exit(EXIT_FAILURE);
-    }
+    int msg_queue_id = get_message_queue();
 
     // Start seller loop
     seller_loop();
