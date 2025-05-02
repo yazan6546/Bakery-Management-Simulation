@@ -19,7 +19,7 @@ add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 #add_executable(chefs src/chefs/chef.c src/inventory.c)
 add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c src/utils/semaphores_utils.c)
-add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c src/utils/semaphores_utils.c)
+add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c src/utils/semaphores_utils.c src/utils/random.c src/utils/shared_mem_utils.c)
 add_executable(customers src/customers/customer.c src/utils/random.c src/utils/config.c
 src/customers/customer_utils.c)
 
@@ -43,6 +43,15 @@ add_executable(baker_teams
     src/utils/random.c
 )
 
+add_executable(supply_chain_manager
+    src/supply_chains/supply_chain_manager.c
+    src/utils/config.c
+    src/utils/random.c
+    src/inventory.c
+    src/utils/semaphores_utils.c
+    src/utils/shared_mem_utils.c
+)
+
 add_executable(customer_manager
         src/customers/customer_manager.c
         src/customers/customer_utils.c
@@ -58,7 +67,8 @@ include_directories(include)
 target_include_directories(graphics PRIVATE include/lib/raylib)
 target_link_libraries(main PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthread JSON-C::JSON-C) # Link the raylib static library and other required libraries
 target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthread) # Link the raylib static library and other required libraries
-target_link_libraries(supply_chain PRIVATE pthread)
+target_link_libraries(supply_chain PRIVATE pthread rt)
+target_link_libraries(supply_chain_manager PRIVATE pthread rt)
 
 set (need_queue main bakers customer_manager customers graphics) # List of executables that need the queue library
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
