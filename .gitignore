@@ -6,7 +6,6 @@ config.txt.*
 .vscode
 .cache
 *.o
-*.a
 *.so
 *.exe
 *.dll

@@ -3,36 +3,37 @@
 ## Game settings
 
 MAX_TIME=50            # Maximum time for the game (in minutes)
+MAX_CUSTOMERS=10          # Maximum number of customers at once
 FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
-NUM_BREAD_CATEGORIES=3        # Number of bread categories
-NUM_SANDWICH_CATEGORIES=2        # Number of sandwich categories
-NUM_CAKE_FLAVORS=2          # Number of cake categories
-NUM_SWEET_CATEGORIES=2        # Number of sweet categories
-NUM_SWEET_FLAVORS=3          # Number of sweet flavors
-NUM_SAVORY_PATISSERIES=2        # Number of savory categories
-NUM_SWEET_PATISSERIES=2        # Number of sweet categories
 NUM_CHEFS=2            # Number of chefs
 NUM_BAKERS=6         # Number of bakers
 NUM_SELLERS=2           # Number of sellers
 NUM_SUPPLY_CHAIN=2        # Number of supply chain members
-NUM_PASTRY_CATEGORIES=2       # Number of pastry categories
 
 MIN_PURCHASE_QUANTITY=1        # Minimum purchase quantity
 MAX_PURCHASE_QUANTITY=5        # Maximum purchase quantity
 
-MIN_ITEM_PRICE=1.0        # Minimum item price
-MAX_ITEM_PRICE=10.0       # Maximum item price
-
-MIN_TIME_FRUSTRATED=1        # Minimum time to be frustrated
-MAX_TIME_FRUSTRATED=5        # Maximum time to be frustrated
-
-MIN_OVEN_TIME=3       # should be changed later for each type
-MAX_OVEN_TIME=6       # should be changed later for each type
+MIN_OVEN_TIME=1        # should be changed later for each type
+MAX_OVEN_TIME=5        # should be changed later for each type
 
 MIN_BAKE_TIME=5        # Minimum bake time
 MAX_BAKE_TIME=8        # Maximum bake time
+
+MIN_TIME_FRUSTRATED=5
+MAX_TIME_FRUSTRATED=10
+
+MIN_PATIENCE=1        # Minimum patience level
+MAX_PATIENCE=5        # Maximum patience level
+
+MIN_PATIENCE_DECAY=0.2        # Minimum patience decay
+MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
+
+CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
+
+MIN_ORDER_ITEMS=1        # Minimum number of items in an order
+MAX_ORDER_ITEMS=5        # Maximum number of items in an order
 
 NUM_OVENS=2            # Number of ovens

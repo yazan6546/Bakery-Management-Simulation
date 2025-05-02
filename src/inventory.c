@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 // Setup semaphore using POSIX semaphores
-sem_t* setup_inventory_semaphore(void) {
+sem_t* setup_inventory_semaphore() {
     // Create or open the semaphore
     sem_t* sem = sem_open(SEM_NAME, O_CREAT, 0666, 1); // Initial value 1
     if (sem == SEM_FAILED) {
@@ -70,10 +70,14 @@ void init_inventory(Inventory *inventory) {
 
 // Initialize ready products
 void init_ready_products(ReadyProducts *ready_products) {
-    // Initialize all quantities to zero
+    // Initialize all categories and their quantities to zero
     for (int i = 0; i < NUM_PRODUCTS; i++) {
-        ready_products->quantities[i] = 0;
+        ready_products->categories[i].product_count = 0;
+        for (int j = 0; j < MAX_PRODUCTS_PER_CATEGORY; j++) {
+            ready_products->categories[i].quantities[j] = 0;
+        }
     }
+    ready_products->total_count = 0;
     ready_products->max_capacity = 50; // Set a default max capacity
 }
 
@@ -85,7 +89,7 @@ void add_ingredient(Inventory *inventory, IngredientType type, int quantity, sem
     
     lock_inventory(sem);
     
-    if (type >= 0 && type < NUM_INGREDIENTS) {
+    if ((type >= 0) && (type < NUM_INGREDIENTS)) {
         inventory->quantities[type] += quantity;
     }
     
@@ -159,41 +163,49 @@ void restock_ingredients(Inventory *inventory, sem_t* sem) {
     unlock_inventory(sem);
 }
 
+
 // Add ready product with thread safety
-void add_ready_product(ReadyProducts *ready_products, ProductType type, int quantity, sem_t* sem) {
+void add_ready_product(ReadyProducts *ready_products, ProductType type, int product_index, int quantity, sem_t* sem) {
     if (!sem) {
         sem = setup_ready_products_semaphore();
     }
-    
+
     lock_ready_products(sem);
-    
-    if (type >= 0 && type < NUM_PRODUCTS) {
-        ready_products->quantities[type] += quantity;
+
+    if (type >= 0 && type < NUM_PRODUCTS &&
+        product_index >= 0 && product_index < MAX_PRODUCTS_PER_CATEGORY) {
+        ready_products->categories[type].quantities[product_index] += quantity;
+        ready_products->total_count += quantity;
     }
-    
+
     unlock_ready_products(sem);
 }
 
 // Get ready product with thread safety
 // Returns 1 if successful, 0 if not enough products
-int get_ready_product(ReadyProducts *ready_products, ProductType type, int quantity, sem_t* sem) {
+int get_ready_product(ReadyProducts *ready_products, ProductType type, int product_index, int quantity, sem_t* sem) {
     if (!sem) {
         sem = setup_ready_products_semaphore();
     }
-    
+
     int result = 0;
-    
+
     lock_ready_products(sem);
-    
-    if (type >= 0 && type < NUM_PRODUCTS && ready_products->quantities[type] >= quantity) {
-        ready_products->quantities[type] -= quantity;
+
+    if (type >= 0 && type < NUM_PRODUCTS &&
+        product_index >= 0 && product_index < MAX_PRODUCTS_PER_CATEGORY &&
+        ready_products->categories[type].quantities[product_index] >= quantity) {
+
+        ready_products->categories[type].quantities[product_index] -= quantity;
+        ready_products->total_count -= quantity;
         result = 1;
     }
-    
+
     unlock_ready_products(sem);
-    
+
     return result;
 }
+
 
 // Cleanup resources
 void cleanup_semaphore_resources(sem_t* inventory_sem, sem_t* ready_products_sem) {
@@ -208,4 +220,6 @@ void cleanup_semaphore_resources(sem_t* inventory_sem, sem_t* ready_products_sem
         sem_unlink(READY_SEM_NAME);
     }
 }
+
+
 

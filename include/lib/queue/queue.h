@@ -96,6 +96,13 @@ void queueShmClear(queue_shm* q);
  */
 int queueShmRemoveElement(queue_shm* q, const void* data);
 
+/**
+ * Remove an element from the queue at a specified index
+ * @param q Pointer to the queue
+ * @param index Index of the element to remove (0-based, from front of queue)
+ * @return 0 on success, -1 if index is invalid or error
+ */
+int queueShmRemoveAt(queue_shm* q, size_t index);
 #ifdef __cplusplus
 }
 #endif

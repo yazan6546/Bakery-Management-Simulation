@@ -57,6 +57,8 @@ void game_create(int *shm_fd, Game **shared_game) {
     }
 
     fcntl(*shm_fd, F_SETFD, fcntl(*shm_fd, F_GETFD) & ~FD_CLOEXEC);
+
+
 }
 
 void game_destroy(const int shm_fd, Game *shared_game) {
