@@ -235,26 +235,31 @@ void handle_sigint(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+
 void check_for_contagion(Game *shared_game) {
-    // Skip if we're the one complaining
-    if (shared_game->complaining_customer_pid == my_pid || !shared_game->recent_complaint) {
+
+    // Wait for semaphore before reading complaint data
+    sem_wait(complaint_sem);
+
+    // Read complaint data atomically
+    bool has_complaint = shared_game->recent_complaint;
+    pid_t complaining_pid = shared_game->complaining_customer_pid;
+
+    // Release semaphore
+    sem_post(complaint_sem);
+    sem_close(complaint_sem);
+
+    // Skip if no complaints or we're the one complaining
+    if (!has_complaint || complaining_pid == my_pid) {
         return;
     }
 
-    // Check if the complaint is recent (within 30 seconds)
-    time_t current_time = time(NULL);
-    if (current_time - shared_game->last_complaint_time <=
-        shared_game->config.CASCADE_WINDOW) {
-        float contagion_prob = shared_game->config.CUSTOMER_CASCADE_PROBABILITY;
-
-        if (random_float(0, 1) < contagion_prob) {
-            printf("Customer %d saw customer %d complaining and decided to leave too!\n",
-                   customer_id, shared_game->complaining_customer_pid);
-            leave_restaurant(CONTAGION, 5); // 5 = contagion
-        }
+    // Check if the complaint is recent (within configured window)
+    float cascade_prob = shared_game->config.CUSTOMER_CASCADE_PROBABILITY;
+    if (random_float(0, 1) < cascade_prob) {printf("Customer %d saw customer %d complaining and decided to leave too!\n",
+                   customer_id, complaining_pid);
+        leave_restaurant(CONTAGION, 5); // 5 = cascade effect
     }
 }
-
-
 
 
