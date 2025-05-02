@@ -234,7 +234,7 @@ void serialize_config(Config *config, char *buffer) {
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "\"%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
