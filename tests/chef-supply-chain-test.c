@@ -67,7 +67,8 @@ void cleanup_handler(int signum) {
     
     // Clean up semaphores
     if (inventory_sem && ready_products_sem) {
-        cleanup_semaphore_resources(inventory_sem, ready_products_sem);
+        cleanup_inventory_semaphore_resources(inventory_sem);
+        cleanup_ready_products_semaphore_resources(ready_products_sem);
     }
     
     // Clean up shared memory
