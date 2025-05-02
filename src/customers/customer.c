@@ -12,7 +12,7 @@ int customer_id;
 pid_t my_pid;
 int msg_queue_id;
 float original_patience;
-Customer *my_entry;
+Customer my_entry;
 
 void handle_state(CustomerState state);
 void handle_seller_signal(int sig);
@@ -26,7 +26,7 @@ void handle_alarm(int sig);
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        fprintf(stderr, "Usage: %s <msg_queue_id> <customer_id> <queue_offset>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <msg_queue_id> <customer_id> <customer_buffer>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -35,8 +35,10 @@ int main(int argc, char *argv[]) {
     customer_id = atoi(argv[2]);
     char *customer_buffer = argv[3];
 
-    deserialize_customer(my_entry, customer_buffer);
-    original_patience = my_entry->patience;
+    deserialize_customer(&my_entry, customer_buffer);
+    print_customer(&my_entry);
+    printf("ookoko\n");
+    original_patience = my_entry.patience;
     my_pid = getpid();
 
     // Initialize random number generator
@@ -54,7 +56,7 @@ int main(int argc, char *argv[]) {
 
     // Customer state machine
     while (1) {
-        handle_state(my_entry->state);
+        handle_state(my_entry.state);
         pause();
     }
 
@@ -94,7 +96,7 @@ void handle_state(CustomerState state) {
             // 20% chance of complaining
             if (random_float(0, 1) < 0.2) {
                 printf("Customer %d is complaining about the order\n", customer_id);
-                my_entry->has_complained = true;
+                my_entry.has_complained = true;
                 leave_restaurant(COMPLAINING, 3); // 3 = complained
                 break;
             }
@@ -123,8 +125,8 @@ void send_status_message(int action_type) {
     msg.mtype = 1;  // To manager
     msg.customer_pid = my_pid;
     msg.customer_id = customer_id;
-    msg.patience = my_entry->patience;
-    msg.state = my_entry->state;
+    msg.patience = my_entry.patience;
+    msg.state = my_entry.state;
     msg.action = action_type;
 
     if (msgsnd(msg_queue_id, &msg, sizeof(CustomerStatusMsg) - sizeof(long), 0) == -1) {
@@ -137,7 +139,7 @@ void send_status_message(int action_type) {
 
 // Update customer state directly in shared memory
 void update_state(CustomerState new_state) {
-    my_entry->state = new_state;
+    my_entry.state = new_state;
     printf("Customer %d updated state to %d\n", customer_id, new_state);
 
     // Send status update after state change
@@ -146,7 +148,7 @@ void update_state(CustomerState new_state) {
 
 // Update patience directly in shared memory
 void update_patience(float new_patience) {
-    my_entry->patience = new_patience;
+    my_entry.patience = new_patience;
     // No need to notify manager for every patience update
 }
 
@@ -160,9 +162,9 @@ void leave_restaurant(CustomerState final_state, int action_type) {
 // Handle patience decay
 void handle_alarm(int sig) {
     // Only decay patience if not ordering
-    if (my_entry->state != ORDERING) {
-        my_entry->patience -= my_entry->patience_decay;
-        printf("Customer %d patience: %.1f\n", customer_id, my_entry->patience);
+    if (my_entry.state != ORDERING) {
+        my_entry.patience -= my_entry.patience_decay;
+        printf("Customer %d patience: %.1f\n", customer_id, my_entry.patience);
 
         // Send periodic patience updates (every 3 seconds to avoid flooding)
         static int update_counter = 0;
@@ -170,7 +172,7 @@ void handle_alarm(int sig) {
             send_status_message(0);
         }
 
-        if (my_entry->patience <= 0) {
+        if (my_entry.patience <= 0) {
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
             // Let manager update game stats
             leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
