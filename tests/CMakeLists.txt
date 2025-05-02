@@ -15,16 +15,17 @@
 
 add_executable(queue-test queue_test.c)
 target_include_directories(queue-test PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
-target_link_libraries(queue-test PRIVATE ${LIBRARY_DIR}/libgenericQueue.a) # Add dependencies for the main executable
+target_link_libraries(queue-test PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt) # Add dependencies for the main executable
+
+find_package(JSON-C REQUIRED)
 
 add_executable(json-test json_test.c ${CMAKE_SOURCE_DIR}/src/utils/products_utils.c
 ${CMAKE_SOURCE_DIR}/src/utils/json-config.c)
 target_include_directories(json-test PRIVATE ${CMAKE_SOURCE_DIR}/include) # Add the source files for each executable to the main executable
-find_package(json-c REQUIRED)
-target_link_libraries(json-test PRIVATE json-c::json-c) # Add dependencies for the main
+target_link_libraries(json-test PRIVATE JSON-C::JSON-C) # Add dependencies for the main
 
 add_executable(test-queue-removal test_queue_removal.c
 ${CMAKE_SOURCE_DIR}/src/customers/customer_utils.c
 ${CMAKE_SOURCE_DIR}/src/utils/random.c)
 target_include_directories(test-queue-removal PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
-target_link_libraries(test-queue-removal PRIVATE ${LIBRARY_DIR}/libgenericQueue.a) # Add dependencies for the main executable
+target_link_libraries(test-queue-removal PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt) # Add dependencies for the main executable
