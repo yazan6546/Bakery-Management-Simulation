@@ -169,7 +169,7 @@ void handle_alarm(int sig) {
 
         // Send periodic patience updates (every 3 seconds to avoid flooding)
         static int update_counter = 0;
-        if (++update_counter % 3 == 0) {
+        if (++update_counter % 2 == 0) {
             send_status_message(0);
         }
 

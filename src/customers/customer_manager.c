@@ -50,7 +50,9 @@ void handle_customer_message(int signum) {
 
         // Find the customer in the queue
         int found = 0;
-        for (int i = 0; i < customer_queue->count; i++) {
+        for (int temp = 0; temp < customer_queue->count; temp++) {
+
+            int i = (customer_queue->head + temp) % customer_queue->capacity;
             Customer *c = &((Customer*)customer_queue->elements)[i];
             if (c->pid == pid) {
                 found = 1;
@@ -68,7 +70,7 @@ void handle_customer_message(int signum) {
                     case 1: // Normal leaving
                         printf("Customer %d is leaving normally\n", cust_id);
                         kill(c->pid, SIGKILL);
-                        queueShmRemoveAt(customer_queue, i);
+                        queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
 
@@ -76,7 +78,7 @@ void handle_customer_message(int signum) {
                         printf("Customer %d left frustrated\n", cust_id);
                         shared_game->num_frustrated_customers++;
                         kill(c->pid, SIGKILL);
-                        queueShmRemoveAt(customer_queue, i);
+                        queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
 
@@ -84,7 +86,7 @@ void handle_customer_message(int signum) {
                         printf("Customer %d complained and left\n", cust_id);
                         shared_game->num_complained_customers++;
                         kill(c->pid, SIGKILL);
-                        queueShmRemoveAt(customer_queue, i);
+                        queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
 
@@ -92,7 +94,7 @@ void handle_customer_message(int signum) {
                         printf("Customer %d had missing order\n", cust_id);
                         shared_game->num_customers_missing++;
                         kill(c->pid, SIGKILL);
-                        queueShmRemoveAt(customer_queue, i);
+                        queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
                 }
@@ -100,8 +102,20 @@ void handle_customer_message(int signum) {
             }
         }
 
-        if (!found) {
-            printf("Warning: Got message from unknown customer PID %d\n", pid);
+        if (!found && msg.customer_pid > 0) {
+//            kill(pid, SIGKILL); // Clean up the orphaned process
+
+            for (int j = 0; j < customer_queue->count; j++) {
+                size_t pos = (customer_queue->head + j) % customer_queue->capacity;
+                Customer *c = &((Customer*)customer_queue->elements)[pos];
+                printf("NFFFF : pid : %d\n", c->pid);
+            }
+
+            for (int j = 0; j < customer_queue->count; j++) {
+                Customer *c = &((Customer*)customer_queue->elements)[j];
+                printf("HAHAHA : pid : %d\n", c->pid);
+            }
+            printf("Unknown sender, killing process: %d\n", pid);
         }
     }
 }
@@ -121,12 +135,8 @@ void spawn_customer(int customer_id) {
         return;
     }
 
-    // Calculate queue offset for this customer
-    size_t queue_offset = customer_queue->count - 1;
-
-    // Get pointer to the customer in the queue
-    Customer* queue_customer = &((Customer*)customer_queue->elements)[queue_offset];
-
+    size_t pos = (customer_queue->head + customer_queue->count - 1) % customer_queue->capacity;
+    Customer *queue_customer = &((Customer*)customer_queue->elements)[pos];
     // Fork a new process for the customer
     pid_t pid = fork();
 
@@ -195,6 +205,14 @@ int main(int argc, char *argv[]) {
                 spawn_customer(next_customer_id++);
             }
         }
+
+        printf("\n\n------------------------------\n");
+        for (int j = 0; j < customer_queue->count; j++) {
+            size_t pos = (customer_queue->head + j) % customer_queue->capacity;
+            Customer *c = &((Customer*)customer_queue->elements)[pos];
+            printf("MAIN : pid : %d\n", c->pid);
+        }
+        printf("------------------------------\n\n");
 
         // Process any pending messages (in case SIGUSR1 was missed)
         handle_customer_message(SIGUSR1);
