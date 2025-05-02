@@ -36,4 +36,7 @@ CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
 MIN_ORDER_ITEMS=1        # Minimum number of items in an order
 MAX_ORDER_ITEMS=5        # Maximum number of items in an order
 
+CUSTOMER_CASCADE_PROBABILITY=0.1        # Probability of a customer cascade (every sec)
+CASCADE_WINDOW=5        # Time window for customer cascade (in seconds)
+
 NUM_OVENS=2            # Number of ovens

@@ -11,10 +11,15 @@
 #define MAX_OVENS 10  // Max ovens allowed
 
 typedef struct Game {
+
+    pid_t complaining_customer_pid;
+    int last_complaint_time;
     int elapsed_time;
     int num_frustrated_customers;
     int num_complained_customers;
     int num_customers_missing;
+    int num_customers_served;
+    int num_customers_cascade;
     float daily_profit;
 
     Config config;

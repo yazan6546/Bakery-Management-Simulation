@@ -218,3 +218,24 @@ void handle_sigint(int sig) {
     shm_unlink("/game_shared_mem");
     exit(EXIT_SUCCESS);
 }
+
+// Add a new function to check for contagion
+void check_for_contagion(Game *shared_game) {
+    // Skip if we're the one complaining
+    if (shared_game->complaining_customer == my_pid || shared_game->recent_complaint == 0) {
+        return;
+    }
+
+    // Check if the complaint is recent (within 30 seconds)
+    time_t current_time = time(NULL);
+    if (current_time - shared_game->complaint_time <= MAX_CONTAGION_WINDOW) {
+        float contagion_prob = get_float_config("CONTAGION_PROBABILITY", 0.3); // Default 0.3
+
+        if (random_float(0, 1) < contagion_prob) {
+            printf("Customer %d saw customer %d complaining and decided to leave too!\n",
+                   customer_id, shared_game->complaining_customer);
+            leave_restaurant(CONTAGION, 5); // 5 = contagion
+        }
+    }
+}
+
