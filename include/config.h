@@ -11,6 +11,11 @@
 
 typedef struct {
     int MAX_TIME;
+    int MAX_CUSTOMERS;
+    float MAX_PATIENCE;
+    float MIN_PATIENCE;
+    float MAX_PATIENCE_DECAY;
+    float MIN_PATIENCE_DECAY;
     int FRUSTRATED_CUSTOMERS;
     int COMPLAINED_CUSTOMERS;
     int CUSTOMERS_MISSING;

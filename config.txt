@@ -3,6 +3,7 @@
 ## Game settings
 
 MAX_TIME=50            # Maximum time for the game (in minutes)
+MAX_CUSTOMERS=10          # Maximum number of customers at once
 FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
@@ -23,5 +24,11 @@ MAX_BAKE_TIME=20        # Maximum bake time
 
 MIN_TIME_FRUSTRATED=5
 MAX_TIME_FRUSTRATED=10
+
+MIN_PATIENCE=1        # Minimum patience level
+MAX_PATIENCE=5        # Maximum patience level
+
+MIN_PATIENCE_DECAY=0.2        # Minimum patience decay
+MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
 
 NUM_OVENS=2            # Number of ovens

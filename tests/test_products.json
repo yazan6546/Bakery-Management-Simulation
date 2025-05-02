@@ -1,0 +1,171 @@
+{
+  "products": {
+    "bread": [
+      {
+        "id": "white_bread",
+        "name": "White Bread",
+        "price": 2.5,
+        "production_time": 3,
+        "ingredients": [
+          {"name": "wheat", "quantity": 2},
+          {"name": "yeast", "quantity": 1},
+          {"name": "salt", "quantity": 0.5}
+        ]
+      },
+      {
+        "id": "wheat_bread",
+        "name": "Wheat Bread",
+        "price": 3.0,
+        "production_time": 3,
+        "ingredients": [
+          {"name": "wheat", "quantity": 3},
+          {"name": "yeast", "quantity": 1},
+          {"name": "salt", "quantity": 0.5}
+        ]
+      },
+      {
+        "id": "baguette",
+        "name": "Baguette",
+        "price": 3.5,
+        "production_time": 4,
+        "ingredients": [
+          {"name": "wheat", "quantity": 2},
+          {"name": "yeast", "quantity": 0.8},
+          {"name": "salt", "quantity": 0.3}
+        ]
+      }
+    ],
+    "sandwiches": [
+      {
+        "id": "cheese_sandwich",
+        "name": "Cheese Sandwich",
+        "price": 5.0,
+        "production_time": 2,
+        "ingredients": [
+          {"name": "bread", "quantity": 2},
+          {"name": "cheese", "quantity": 1},
+          {"name": "butter", "quantity": 0.5}
+        ]
+      },
+      {
+        "id": "salami_sandwich",
+        "name": "Salami Sandwich",
+        "price": 6.0,
+        "production_time": 2,
+        "ingredients": [
+          {"name": "bread", "quantity": 2},
+          {"name": "salami", "quantity": 1.5},
+          {"name": "cheese", "quantity": 0.5}
+        ]
+      }
+    ],
+    "cakes": [
+      {
+        "id": "chocolate_cake",
+        "name": "Chocolate Cake",
+        "price": 15.0,
+        "production_time": 10,
+        "ingredients": [
+          {"name": "flour", "quantity": 2},
+          {"name": "sugar", "quantity": 1.5},
+          {"name": "chocolate", "quantity": 1},
+          {"name": "milk", "quantity": 0.5}
+        ]
+      },
+      {
+        "id": "vanilla_cake",
+        "name": "Vanilla Cake",
+        "price": 14.0,
+        "production_time": 9,
+        "ingredients": [
+          {"name": "flour", "quantity": 2},
+          {"name": "sugar", "quantity": 1},
+          {"name": "vanilla", "quantity": 0.2},
+          {"name": "milk", "quantity": 0.5}
+        ]
+      }
+    ],
+
+    "sweets": [
+      {
+        "id": "chocolate_cookie",
+        "name": "Chocolate Cookie",
+        "price": 2.0,
+        "production_time": 4,
+        "ingredients": [
+          {"name": "flour", "quantity": 1},
+          {"name": "sugar", "quantity": 0.8},
+          {"name": "chocolate", "quantity": 0.5},
+          {"name": "butter", "quantity": 0.5}
+        ]
+      },
+      {
+        "id": "sugar_cookie",
+        "name": "Sugar Cookie",
+        "price": 1.8,
+        "production_time": 3,
+        "ingredients": [
+          {"name": "flour", "quantity": 1},
+          {"name": "sugar", "quantity": 1},
+          {"name": "butter", "quantity": 0.5},
+          {"name": "vanilla", "quantity": 0.1}
+        ]
+      }
+    ],
+    "sweet_patisseries": [
+      {
+        "id": "fruit_tart",
+        "name": "Fruit Tart",
+        "price": 8.0,
+        "production_time": 6,
+        "ingredients": [
+          {"name": "flour", "quantity": 1},
+          {"name": "butter", "quantity": 0.5},
+          {"name": "sugar", "quantity": 0.3},
+          {"name": "fresh_fruits", "quantity": 1.5},
+          {"name": "custard", "quantity": 0.5}
+        ]
+      },
+      {
+        "id": "eclair",
+        "name": "Chocolate Eclair",
+        "price": 7.5,
+        "production_time": 7,
+        "ingredients": [
+          {"name": "flour", "quantity": 0.5},
+          {"name": "butter", "quantity": 0.5},
+          {"name": "eggs", "quantity": 3},
+          {"name": "chocolate", "quantity": 0.8},
+          {"name": "cream", "quantity": 0.5}
+        ]
+      }
+    ],
+    "savory_patisseries": [
+      {
+        "id": "quiche",
+        "name": "Vegetable Quiche",
+        "price": 9.0,
+        "production_time": 8,
+        "ingredients": [
+          {"name": "flour", "quantity": 1},
+          {"name": "butter", "quantity": 0.7},
+          {"name": "eggs", "quantity": 4},
+          {"name": "cheese", "quantity": 1},
+          {"name": "vegetables", "quantity": 1.5}
+        ]
+      },
+      {
+        "id": "cheese_puff",
+        "name": "Cheese Puff",
+        "price": 4.5,
+        "production_time": 5,
+        "ingredients": [
+          {"name": "flour", "quantity": 0.8},
+          {"name": "butter", "quantity": 0.5},
+          {"name": "cheese", "quantity": 1.2},
+          {"name": "eggs", "quantity": 1}
+        ]
+      }
+    ]
+  }
+}

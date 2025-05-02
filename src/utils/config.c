@@ -13,6 +13,7 @@ int load_config(const char *filename, Config *config) {
 
     // Initialize all configuration values to default or invalid values to indicate uninitialized state
     config->MAX_TIME = -1;
+    config->MAX_CUSTOMERS = -1;
     config->FRUSTRATED_CUSTOMERS = -1;
     config->COMPLAINED_CUSTOMERS = -1;
     config->CUSTOMERS_MISSING = -1;
@@ -30,6 +31,10 @@ int load_config(const char *filename, Config *config) {
     config->NUM_OVENS = -1;
     config->MIN_BAKE_TIME= -1;
     config->MAX_BAKE_TIME= -1;
+    config->MAX_PATIENCE = -1;
+    config->MIN_PATIENCE = -1;
+    config->MAX_PATIENCE_DECAY = -1;
+    config->MIN_PATIENCE_DECAY = -1;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -44,6 +49,7 @@ int load_config(const char *filename, Config *config) {
 
             // Set corresponding config fields based on the key
             if (strcmp(key, "FRUSTRATED_CUSTOMERS") == 0) config->FRUSTRATED_CUSTOMERS = (int)value;
+            else if (strcmp(key, "MAX_CUSTOMERS") == 0) config->MAX_CUSTOMERS = (int) value;
             else if (strcmp(key, "MAX_TIME") == 0) config->MAX_TIME = (int)value;
             else if (strcmp(key, "COMPLAINED_CUSTOMERS") == 0) config->COMPLAINED_CUSTOMERS = (int)value;
             else if (strcmp(key, "CUSTOMERS_MISSING") == 0) config->CUSTOMERS_MISSING = (int)value;
@@ -58,6 +64,10 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "MAX_TIME_FRUSTRATED") == 0) config->MAX_TIME_FRUSTRATED = (int)value;
             else if (strcmp(key, "MIN_OVEN_TIME") == 0) config->MIN_OVEN_TIME = (int)value;
             else if (strcmp(key, "MAX_OVEN_TIME") == 0) config->MAX_OVEN_TIME = (int)value;
+            else if (strcmp(key, "MAX_PATIENCE") == 0) config->MAX_PATIENCE = value;
+            else if (strcmp(key, "MIN_PATIENCE") == 0) config->MIN_PATIENCE = value;
+            else if (strcmp(key, "MAX_PATIENCE_DECAY") == 0) config->MAX_PATIENCE_DECAY = value;
+            else if (strcmp(key, "MIN_PATIENCE_DECAY") == 0) config->MIN_PATIENCE_DECAY = value;
             else if (strcmp(key, "NUM_OVENS") == 0) config->NUM_OVENS = (int)value;
             else if (strcmp(key, "MIN_BAKE_TIME") == 0) config->MIN_BAKE_TIME = (int)value;
             else if (strcmp(key, "MAX_BAKE_TIME") == 0) config->MAX_BAKE_TIME = (int)value;
@@ -98,6 +108,7 @@ fflush(stdout);
 void print_config(Config *config) {
     printf("Config values: \n");
     printf("MAX_TIME: %d\n", config->MAX_TIME);
+    printf("MAX_CUSTOMERS: %d\n", config->MAX_CUSTOMERS);
     printf("FRUSTRATED_CUSTOMERS: %d\n", config->FRUSTRATED_CUSTOMERS);
     printf("COMPLAINED_CUSTOMERS: %d\n", config->COMPLAINED_CUSTOMERS);
     printf("CUSTOMERS_MISSING: %d\n", config->CUSTOMERS_MISSING);
@@ -113,6 +124,10 @@ void print_config(Config *config) {
     printf("MIN_OVEN_TIME: %d\n", config->MIN_OVEN_TIME);
     printf("MAX_OVEN_TIME: %d\n", config->MAX_OVEN_TIME);
     printf("NUM_OVENS: %d\n", config->NUM_OVENS);
+    printf("MAX_PATIENCE: %f\n", config->MAX_PATIENCE);
+    printf("MIN_PATIENCE: %f\n", config->MIN_PATIENCE);
+    printf("MAX_PATIENCE_DECAY: %f\n", config->MAX_PATIENCE_DECAY);
+    printf("MIN_PATIENCE_DECAY: %f\n", config->MIN_PATIENCE_DECAY);
     printf("MIN_BAKE_TIME: %d\n", config->MIN_BAKE_TIME);
     printf("MAX_BAKE_TIME: %d\n", config->MAX_BAKE_TIME);
 
@@ -126,7 +141,8 @@ int check_parameter_correctness(const Config *config) {
         config->CUSTOMERS_MISSING < 0 || config->NUM_CHEFS < 0 || config->NUM_BAKERS < 0 || config->NUM_SELLERS < 0 ||
         config->NUM_SUPPLY_CHAIN < 0 || config->MIN_PURCHASE_QUANTITY < 0 || config->MAX_PURCHASE_QUANTITY < 0 ||
         config->MIN_TIME_FRUSTRATED < 0 || config->MAX_TIME_FRUSTRATED < 0 || config->MIN_OVEN_TIME < 0 ||
-        config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0) {
+        config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
+        config->MAX_CUSTOMERS < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -143,6 +159,15 @@ int check_parameter_correctness(const Config *config) {
         return -1;
     }
 
+    if (config->MAX_PATIENCE < config->MIN_PATIENCE) {
+        fprintf(stderr, "MAX_PATIENCE cannot be less than MIN_PATIENCE\n");
+        return -1;
+    }
+
+    if (config->MAX_PATIENCE_DECAY < config->MIN_PATIENCE_DECAY) {
+        fprintf(stderr, "MAX_PATIENCE_DECAY cannot be less than MIN_PATIENCE_DECAY\n");
+        return -1;
+    }
 
     if (config->MIN_TIME_FRUSTRATED > config->MAX_TIME_FRUSTRATED) {
         fprintf(stderr, "MIN_TIME_FRUSTRATED cannot be greater than MAX_TIME_FRUSTRATED\n");
@@ -163,8 +188,13 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
             config->MAX_TIME,
+            config->MAX_CUSTOMERS,
+            config->MAX_PATIENCE,
+            config->MIN_PATIENCE,
+            config->MAX_PATIENCE_DECAY,
+            config->MIN_PATIENCE_DECAY,
             config->FRUSTRATED_CUSTOMERS,
             config->COMPLAINED_CUSTOMERS,
             config->CUSTOMERS_MISSING,
@@ -185,8 +215,13 @@ void serialize_config(Config *config, char *buffer) {
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
+    sscanf(buffer, "\"%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d",
             &config->MAX_TIME,
+            &config->MAX_CUSTOMERS,
+            &config->MAX_PATIENCE,
+            &config->MIN_PATIENCE,
+            &config->MAX_PATIENCE_DECAY,
+            &config->MIN_PATIENCE_DECAY,
             &config->FRUSTRATED_CUSTOMERS,
             &config->COMPLAINED_CUSTOMERS,
             &config->CUSTOMERS_MISSING,
