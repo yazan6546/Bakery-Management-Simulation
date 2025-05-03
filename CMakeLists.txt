@@ -87,7 +87,7 @@ target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthr
 target_link_libraries(supply_chain PRIVATE pthread rt m)
 target_link_libraries(supply_chain_manager PRIVATE pthread rt m)
 
-set (need_queue main bakers sellers customer_manager customers graphics) # List of executables that need the queue library
+set (need_queue main bakers chefs supply_chain sellers customer_manager customers graphics) # List of executables that need the queue library
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
     message("Adding ${need} to the main executable")
     target_include_directories(${need} PRIVATE include/lib/queue) # Add the source files for each executable to the main executable

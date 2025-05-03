@@ -121,7 +121,6 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
                 leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
             }
 
-            printf("WAIITITITITI\n");
 
             if (completion_msg.result == ORDER_SUCCESS) {
                 printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);

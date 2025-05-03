@@ -200,14 +200,6 @@ int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order,
         }
     }
 
-void print_inventory(Inventory *inventory) {
-    printf("Inventory Contents:\n");
-    for (int i = 0; i < NUM_INGREDIENTS; i++) {
-        printf("  %s: %d units\n", get_ingredient_name(i), inventory->quantities[i]);
-    }
-    printf("-------------------------------\n");
-}
-
     // Second pass: if all items are available, fulfill the order by reducing quantities
     if (can_fulfill) {
         for (int i = 0; i < order->item_count; i++) {
@@ -223,6 +215,16 @@ void print_inventory(Inventory *inventory) {
 
     return can_fulfill;
 }
+
+void print_inventory(Inventory *inventory) {
+    printf("Inventory Contents:\n");
+    for (int i = 0; i < NUM_INGREDIENTS; i++) {
+        printf("  %s: %d units\n", get_ingredient_name(i), inventory->quantities[i]);
+    }
+    printf("-------------------------------\n");
+}
+
+
 // Utility function to convert ingredient type enum to string name
 const char* get_ingredient_name(int ingredient_type) {
     switch(ingredient_type) {
