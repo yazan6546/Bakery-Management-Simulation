@@ -62,11 +62,13 @@ void cleanup_supply_chain_resources() {
 
 
 // Function to process messages from supply chains
-void process_supply_chain_messages() {
+void process_supply_chain_messages(sem_t* inventory_sem) {
     SupplyChainMessage msg;
     int pid_index = rand() % shared_game->config.NUM_SUPPLY_CHAIN;
 
     printf("Supply Chain Manager: Processing messages from supply chain %d\n", pid_index);
+
+    lock_inventory(inventory_sem);
 
     for(int i = 0; i < INGREDIENTS_TO_ORDER; i++) {
         int ingredient_type = rand() % NUM_INGREDIENTS;
@@ -85,6 +87,8 @@ void process_supply_chain_messages() {
         
         }
     }
+
+    unlock_inventory(inventory_sem);
 
     if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
         perror("Failed to send message to supply chain");
@@ -170,7 +174,7 @@ int main(int argc, char *argv[]) {
     // Main loop for supply chain manager
     while(1) {
         // Process messages from supply chains
-        process_supply_chain_messages();
+        process_supply_chain_messages(inventory_sem);
         
         sleep(10); // Sleep for a while before processing again
     }

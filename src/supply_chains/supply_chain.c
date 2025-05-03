@@ -57,11 +57,15 @@ void update_inventory() {
 
     // Simulate delivery time
     int time = get_random_delay();
-    sleep(time);
     printf("Supply Chain %d: delivering after %d seconds\n", getpid(), time);
+    sleep(time);
+    printf("Supply Chain %d: putting in inventory\n", getpid());
+    
     
     // Lock inventory for update
     lock_inventory(inventory_sem);
+
+    printf("Supply Chain %d: Accessed inventory:\n", supply_chain_id);
     
     // Update inventory in shared memory
     for (int i = 0; i < INGREDIENTS_TO_ORDER; i++)
