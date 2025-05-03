@@ -41,6 +41,7 @@ typedef struct {
     int REALLOCATION_CHECK_INTERVAL;
     float PRODUCTION_RATIO_THRESHOLD;
     int MIN_CHEFS_PER_TEAM;
+    int INGREDIENTS_TO_ORDER;
 } Config;
 
 int load_config(const char *filename, Config *config);
