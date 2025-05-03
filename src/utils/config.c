@@ -40,6 +40,8 @@ int load_config(const char *filename, Config *config) {
     config->MAX_ORDER_ITEMS = -1;
     config->CUSTOMER_CASCADE_PROBABILITY = -1;
     config->CASCADE_WINDOW = -1;
+    config->MIN_SELLER_PROCESSING_TIME;
+    config->MAX_SELLER_PROCESSING_TIME;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -81,6 +83,8 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "MAX_ORDER_ITEMS") == 0) config->MAX_ORDER_ITEMS = (int)value;
             else if (strcmp(key, "CUSTOMER_CASCADE_PROBABILITY") == 0) config->CUSTOMER_CASCADE_PROBABILITY = value;
             else if (strcmp(key, "CASCADE_WINDOW") == 0) config->CASCADE_WINDOW = (int)value;
+            else if (strcmp(key, "MIN_SELLER_PROCESSING_TIME") == 0) config->MIN_SELLER_PROCESSING_TIME = (int)value;
+            else if (strcmp(key, "MAX_SELLER_PROCESSING_TIME") == 0) config->MAX_SELLER_PROCESSING_TIME = (int)value;
             else {
                 fprintf(stderr, "Unknown key: %s\n", key);
                 fclose(file);
@@ -145,6 +149,8 @@ void print_config(Config *config) {
     printf("MAX_ORDER_ITEMS: %d\n", config->MAX_ORDER_ITEMS);
     printf("CUSTOMER_CASCADE_PROBABILITY: %f\n", config->CUSTOMER_CASCADE_PROBABILITY);
     printf("CASCADE_WINDOW: %d\n", config->CASCADE_WINDOW);
+    printf("MIN_SELLER_PROCESSING_TIME: %d\n", config->MIN_SELLER_PROCESSING_TIME);
+    printf("MAX_SELLER_PROCESSING_TIME: %d\n", config->MAX_SELLER_PROCESSING_TIME);
 
     fflush(stdout);
 }
@@ -158,7 +164,7 @@ int check_parameter_correctness(const Config *config) {
         config->MIN_TIME_FRUSTRATED < 0 || config->MAX_TIME_FRUSTRATED < 0 || config->MIN_OVEN_TIME < 0 ||
         config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
         config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0 ||
-        config->CASCADE_WINDOW < 0)  {
+        config->CASCADE_WINDOW < 0 || config->MIN_SELLER_PROCESSING_TIME < 0 || config->MAX_SELLER_PROCESSING_TIME < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -174,6 +180,11 @@ int check_parameter_correctness(const Config *config) {
     // Logical consistency checks for minimum and maximum pairs
     if (config->MIN_PURCHASE_QUANTITY > config->MAX_PURCHASE_QUANTITY) {
         fprintf(stderr, "MIN_PURCHASE_QUANTITY cannot be greater than MAX_PURCHASE_QUANTITY\n");
+        return -1;
+    }
+
+    if (config->MIN_SELLER_PROCESSING_TIME > config->MAX_SELLER_PROCESSING_TIME) {
+        fprintf(stderr, "MIN_SELLER_PROCESSING_TIME cannot be greater than MAX_SELLER_PROCESSING_TIME\n");
         return -1;
     }
 
@@ -211,7 +222,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -239,11 +250,13 @@ void serialize_config(Config *config, char *buffer) {
             config->MIN_ORDER_ITEMS,
             config->MAX_ORDER_ITEMS,
             config->CUSTOMER_CASCADE_PROBABILITY,
-            config->CASCADE_WINDOW);
+            config->CASCADE_WINDOW,
+            config->MIN_SELLER_PROCESSING_TIME,
+            config->MAX_SELLER_PROCESSING_TIME);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -271,5 +284,7 @@ void deserialize_config(const char *buffer, Config *config) {
            &config->MIN_ORDER_ITEMS,
             &config->MAX_ORDER_ITEMS,
             &config->CUSTOMER_CASCADE_PROBABILITY,
-            &config->CASCADE_WINDOW);
+            &config->CASCADE_WINDOW,
+            &config->MIN_SELLER_PROCESSING_TIME,
+            &config->MAX_SELLER_PROCESSING_TIME);
 }

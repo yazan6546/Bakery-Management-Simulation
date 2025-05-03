@@ -38,6 +38,8 @@ typedef struct {
     int MAX_ORDER_ITEMS;
     float CUSTOMER_CASCADE_PROBABILITY;
     int CASCADE_WINDOW;
+    int MIN_SELLER_PROCESSING_TIME;
+    int MAX_SELLER_PROCESSING_TIME;
 } Config;
 
 int load_config(const char *filename, Config *config);
