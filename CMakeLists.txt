@@ -45,6 +45,7 @@ add_executable(baker_worker
     src/inventory.c
     src/bakers/baker_utils.c
     src/utils/semaphores_utils.c
+    src/utils/products_utils.c
 )
 
 add_executable(supply_chain_manager
