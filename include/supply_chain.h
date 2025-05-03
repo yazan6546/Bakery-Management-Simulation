@@ -6,6 +6,7 @@
 #define SUPPLY_CHAIN_H
 
 #include <semaphore.h>
+#include "products.h"
 
 #define INGREDIENTS_TO_ORDER 3
 
