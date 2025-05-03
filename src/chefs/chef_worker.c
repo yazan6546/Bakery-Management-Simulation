@@ -7,25 +7,21 @@
 #include "game.h"
 #include <time.h>
 #include <signal.h>
+#include "shared_mem_utils.h"
 
 Game* game;
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
-        fprintf(stderr, "Usage: %s <shm_fd> <msg_queue_id> <team>\n", argv[0]);
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <msg_queue_id> <team>\n", argv[0]);
         exit(1);
     }
+
+    setup_shared_memory(&game);
+
 
     // Parse arguments
-    int fd = atoi(argv[1]);
-    int msg_queue_id = atoi(argv[2]);
-    ChefTeam team = atoi(argv[3]);
-
-    // Map shared memory
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
+    int msg_queue_id = atoi(argv[1]);
+    ChefTeam team = atoi(argv[2]);
 
     struct sigaction sa;
     sa.sa_handler = move_chef;

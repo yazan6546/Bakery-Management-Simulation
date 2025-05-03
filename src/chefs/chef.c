@@ -10,25 +10,16 @@
 #include <unistd.h>
 #include "config.h"
 #include "game.h"
+#include "shared_mem_utils.h"
+#include "semaphores_utils.h"
 #include "inventory.h"
 
-#include "semaphores_utils.h"
 
 Game *game;
 
 int main(int argc, char *argv[]) {
-    // Map shared memory
-    int fd = shm_open("/game_shared_mem", O_RDWR, 0666);
-    if (fd == -1) {
-        perror("shm_open failed");
-        exit(1);
-    }
 
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
+    setup_shared_memory(&game);
 
     // Setup semaphores
     sem_t* inventory_sem = setup_inventory_semaphore();
@@ -76,12 +67,11 @@ int main(int argc, char *argv[]) {
 
             if (pid == 0) {
                 // Child process
-                char shm_fd_str[16], mqid_str[16], team_str[8];
-                snprintf(shm_fd_str, sizeof(shm_fd_str), "%d", fd);
+                char mqid_str[16], team_str[8];
                 snprintf(mqid_str, sizeof(mqid_str), "%d", team_queues[team]);
                 snprintf(team_str, sizeof(team_str), "%d", team);
 
-                execl("./chef_worker", "chef_worker", shm_fd_str, mqid_str, team_str, NULL);
+                execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
                 perror("execl failed");
                 exit(1);
             } else if (pid > 0) {
