@@ -13,6 +13,46 @@ int shm_fd; // Store fd globally for cleanup
 
 void handle_alarm(int signum);
 void cleanup_resources();
+void handle_kill(int signum);
+
+
+int main(int argc, char *argv[]) {
+
+    printf("********** Bakery Simulation **********\n\n");
+    fflush(stdout);
+
+
+    // execlp("pwd", "pwd", NULL);
+    // Register cleanup function with atexit
+    atexit(cleanup_resources);
+    game_create(&shm_fd, &shared_game);
+
+    signal(SIGALRM, handle_alarm);
+    signal(SIGINT, handle_kill); // Renamed to match actual signal
+
+
+    if (load_config(CONFIG_PATH, &shared_game->config) == -1) {
+        printf("Config file failed");
+        return 1;
+    }
+
+    if (load_product_catalog(CONFIG_PATH_JSON, &shared_game->productCatalog) == -1) {
+        printf("Product catalog file failed");
+        return 1;
+    }
+
+    game_init(shared_game, processes, shm_fd);
+
+    alarm(1);  // Start the timer
+
+
+    while (check_game_conditions(shared_game)) {
+
+
+
+    }
+
+}
 
 void handle_alarm(int signum) {
 
@@ -37,49 +77,4 @@ void cleanup_resources() {
 
 void handle_kill(int signum) {
     exit(0);
-}
-
-int main(int argc, char *argv[]) {
-
-
-
-    printf("********** Bakery Simulation **********\n\n");
-    fflush(stdout);
-
-
-    // execlp("pwd", "pwd", NULL);
-    // Register cleanup function with atexit
-    atexit(cleanup_resources);
-    game_create(&shm_fd, &shared_game);
-
-    signal(SIGALRM, handle_alarm);
-    signal(SIGINT, handle_kill); // Renamed to match actual signal
-    signal(SIGKILL, handle_kill); // Renamed to match actual signal
-
-
-    if (load_config(CONFIG_PATH, &shared_game->config) == -1) {
-        printf("Config file failed");
-        return 1;
-    }
-
-    print_config(&shared_game->config);
-    if (load_product_catalog(CONFIG_PATH_JSON, &shared_game->productCatalog) == -1) {
-        printf("Product catalog file failed");
-        return 1;
-    }
-
-    game_init(shared_game, processes, shm_fd);
-
-
-
-
-    alarm(1);  // Start the timer
-
-
-    while (check_game_conditions(shared_game)) {
-
-
-
-    }
-
 }

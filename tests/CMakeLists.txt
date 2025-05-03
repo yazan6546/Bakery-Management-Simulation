@@ -30,6 +30,3 @@ ${CMAKE_SOURCE_DIR}/src/utils/random.c
         ${CMAKE_SOURCE_DIR}/src/utils/shared_mem_utils.c)
 target_include_directories(test-queue-removal PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
 target_link_libraries(test-queue-removal PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt) # Add dependencies for the main executable
-
-
-add_executable(alarm_mq alarm_mq.c)

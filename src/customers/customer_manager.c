@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
     // Setup shared memory for game and customer queue
     setup_shared_memory(&shared_game);
     setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
+    initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
 
     // Initialize random number generator
     init_random();

@@ -11,6 +11,7 @@
 #include "unistd.h"
 #include <string.h>
 #include <stdbool.h>
+#include "shared_mem_utils.h"
 
 
 int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
@@ -45,7 +46,7 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
 
 void game_create(int *shm_fd, Game **shared_game) {
     // Create shared game state using mmap
-    *shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
+    *shm_fd = shm_open(GAME_SHM_NAME, O_CREAT | O_RDWR, 0666);
     if ((*shm_fd) == -1) {
         perror("shm_open failed");
         exit(EXIT_FAILURE);
@@ -73,7 +74,7 @@ void game_destroy(const int shm_fd, Game *shared_game) {
             perror("munmap failed");
         }
     }
-    shm_unlink("/game_shared_mem");
+    shm_unlink(GAME_SHM_NAME);
 
     if (shm_fd > 0) {
         close(shm_fd);
@@ -123,31 +124,3 @@ int check_game_conditions(const Game *game) {
     }
     return 1;
 }
-//
-// int check_round_conditions(const Game *game, const Config *config) {
-//     if (game->round_time > config->MAX_ROUND_TIME) {
-//         return 0;
-//     }
-//
-//     if (game->round_score >= config->WINNING_THRESHOLD || game->round_score <= -config->WINNING_THRESHOLD) {
-//         return 0;
-//     }
-//     return 1;
-// }
-//
-// void go_to_next_round(Game *game) {
-//     game->round_num++;
-//     game->round_score = 0;
-//     game->round_running = 1;
-//     game->reset_round_time_flag = 1; // Reset round time
-// }
-//
-//
-// void print_with_time1(const Game *game, const char *format, ...) {
-//     va_list args;
-//     va_start(args, format);
-//     printf("@ g:%ds r:%ds: ", game->elapsed_time, game->round_time);
-//     vprintf(format, args);
-//     va_end(args);
-//     fflush(stdout);
-// }
