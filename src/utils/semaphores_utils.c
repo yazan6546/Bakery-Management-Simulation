@@ -87,7 +87,7 @@ void reset_all_semaphores() {
     sem_unlink(READY_SEM_NAME);
     
     // Any other semaphores used in the application
-    sem_unlink("/customer_complaint_sem");
+    sem_unlink(COMPLAINT_SEM_NAME);
     
     printf("All semaphores reset\n");
 }
