@@ -176,11 +176,6 @@ int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order,
             can_fulfill = 0;
             break;
         }
-
-        else {
-            can_fulfill = 0;
-            break;
-        }
     }
 
 
@@ -189,7 +184,7 @@ int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order,
         for (int i = 0; i < order->item_count; i++) {
             OrderItem *item = &order->items[i];
 
-            ready_products->categories[item->product_type].quantities[item->product_index] -= item->quantity;
+            ready_products->categories[item->type].quantities[item->product_index] -= item->quantity;
             ready_products->total_count -= item->quantity;
         }
     }

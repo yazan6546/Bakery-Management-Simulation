@@ -29,10 +29,15 @@ typedef struct {
     CustomerOrder order;           // Order details
 } OrderMessage;
 
+typedef enum {
+    ORDER_SUCCESS,
+    ORDER_FAILED
+} OrderResult;
+
 typedef struct {
-    long mtype;                    // Message type
-    char status[50];              // Status message
-    float total_price;            // Final price
+    long mtype;           // Message type (should match customer PID)
+    OrderResult result;   // Success or failure
+    float total_price;    // Total price of completed order (0 if failed)
 } CompletionMessage;
 
 

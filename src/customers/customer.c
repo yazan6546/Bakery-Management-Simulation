@@ -111,25 +111,21 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             printf("Customer %d is waiting for order...\n", customer_id);
             alarm(0); // Stop the timer
             sleep(3);
-            alarm(1); // Restart the timer
-            // 10% chance of missing order
-            if (random_float(0, 1) < 0.1) {
-                printf("Customer %d: Order is missing!\n", customer_id);
+
+            CompletionMessage completion_msg;
+            // Check if order is missing
+            if (msgrcv (gloabl_msg, &completion_msg, sizeof(OrderMessage), my_pid, IPC_NOWAIT) == -1) {
+                printf("Customer %d's order is missing!\n", customer_id);
                 leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
-                break;
             }
 
-            // 20% chance of complaining
-            if (random_float(0, 1) < 0.2) {
-                printf("Customer %d is complaining about the order\n", customer_id);
-                my_entry.has_complained = true;
-                leave_restaurant(COMPLAINING, 3); // 3 = complained
-                break;
+            if (completion_msg.result == ORDER_SUCCESS) {
+                printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);
+                leave_restaurant(WAITING_FOR_ORDER, 1); // 1 = normal leaving
+            } else {
+                printf("Customer %d's order failed!\n", customer_id);
+                leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
             }
-
-            // Happy customer
-            printf("Customer %d is happy with the order and leaves\n", customer_id);
-            leave_restaurant(WAITING_FOR_ORDER, 1); // 1 = normal leaving
             break;
 
         case FRUSTRATED:

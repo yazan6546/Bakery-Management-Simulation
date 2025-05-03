@@ -30,17 +30,28 @@ void handle_sigint(int sig) {
     running = 0;
 }
 
-void process_customer_order(pid_t customer_pid, CustomerOrder *order) {
+void process_customer_order(pid_t customer_pid, CustomerOrder *order, Game *shared_game) {
     printf("Seller %d: Processing order from customer PID %d with %d items, total price: %.2f\n",
            seller.id, customer_pid, order->item_count, order->total_price);
 
-    // Simulate processing time
-    sleep(rand() % 3);
+    if (!check_and_fulfill_order(&shared_game->ready_products, order, NULL)) {
+        printf("Seller %d: Order could not be fulfilled\n", seller.id);
+        // Handle order failure (e.g., notify customer)
+        CompletionMessage compl_msg;
+        compl_msg.mtype = customer_pid;  // Use customer's PID as message type
+        compl_msg.result = ORDER_FAILED;
+        compl_msg.total_price = 0.0f;
+        if (msgsnd(msg_queue_id, &compl_msg, sizeof(CompletionMessage) - sizeof(long), 0) == -1) {
+            perror("Failed to send completion message");
+        }
+
+        return;
+    }
 
     // Send completion message using customer's PID as message type
     CompletionMessage compl_msg;
     compl_msg.mtype = customer_pid;  // Use customer's PID as message type
-    strcpy(compl_msg.status, "Order completed successfully");
+    compl_msg.result = ORDER_SUCCESS;
     compl_msg.total_price = order->total_price;
 
     if (msgsnd(msg_queue_id, &compl_msg, sizeof(CompletionMessage) - sizeof(long), 0) == -1) {
@@ -68,7 +79,7 @@ void serve_customer(Customer *customer) {
         seller.state = PROCESSING_ORDER;
 
         // Process the order
-        process_customer_order(customer->pid, &order_msg.order);
+        process_customer_order(customer->pid, &order_msg.order, shared_game);
 
         // Update seller state
         seller.state = COMPLETING_ORDER;
