@@ -1,106 +1,66 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
 #include <string.h>
-#include <time.h>
+#include <fcntl.h>
 
-#include "queue.h"
 #include "oven.h"
-#include "BakeryItem.h"
 #include "BakerTeam.h"
 #include "game.h"
-#include "random.h"
 #include "bakery_utils.h"
+#include "products.h"
+#include "semaphores_utils.h"    /* optional: if manager ever uses them */
 
 #define TEAM_COUNT 3
 
 typedef struct {
-    long mtype;
-    BakeryItem item;
-} Message;
+    long         mtype;                       /* 1 bread, 2 cake/sweet, 3 patis. */
+    char         item_name[MAX_NAME_LENGTH];
+    ProductType  category;
+    int          index;                       /* index in JSON list */
+} BakeryMessage;
 
 Game *game;
 
-int main(int argc, char *argv[]) {
+int main(void)
+{
     int fd = shm_open("/game_shared_mem", O_RDWR, 0666);
-    if (fd == -1) {
-        perror("shm_open failed");
-        exit(1);
-    }
+    if (fd == -1) { perror("shm_open"); exit(EXIT_FAILURE); }
 
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
+    game = mmap(NULL, sizeof(Game),
+                PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (game == MAP_FAILED) { perror("mmap"); exit(EXIT_FAILURE); }
     close(fd);
 
-    printf("********** Bakery Simulation **********\n");
-    Config config = game->config;
-    print_config(&config);
-    init_random();
+    printf("********** Bakery Simulation (manager) **********\n");
+    print_config(&game->config);
 
-    for (int i = 0; i < config.NUM_OVENS; i++) {
-        init_oven(&game->ovens[i], i);
-    }
-
+    /* one Sys‑V queue per team */
     int mqids[TEAM_COUNT];
-    for (int i = 0; i < TEAM_COUNT; i++) {
+    for (int i = 0; i < TEAM_COUNT; ++i) {
         mqids[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-        if (mqids[i] == -1) {
-            perror("msgget failed");
-            exit(1);
-        }
+        if (mqids[i] == -1) { perror("msgget"); exit(EXIT_FAILURE); }
     }
 
+    /* fork a worker for every baker */
     BakerTeam teams[TEAM_COUNT];
-    distribute_bakers_locally(&config, teams);
+    distribute_bakers_locally(&game->config, teams);
 
-    for (int i = 0; i < TEAM_COUNT; i++) {
-        for (int j = 0; j < teams[i].number_of_bakers; j++) {
-            pid_t pid = fork();
-            if (pid == 0) {
+    for (int t = 0; t < TEAM_COUNT; ++t)
+        for (int b = 0; b < teams[t].number_of_bakers; ++b) {
+            if (fork() == 0) {
                 char mqid_str[16], team_str[8];
-                snprintf(mqid_str, sizeof(mqid_str), "%d", mqids[i]);
-                snprintf(team_str, sizeof(team_str), "%d", teams[i].team_name);
-
-                execl("./baker_worker", "baker_worker", mqid_str, team_str, NULL);
-                perror("execl failed");
-                exit(1);
-            }
-        }
-    }
-
-    /* int t = 0;
-    while (1) {
-        printf("\n=== Time Step %d ===\n", ++t);
-
-        if (rand() % 2 == 0) {
-            char item_name[50];
-            sprintf(item_name, "Item-%d", rand() % 100);
-
-            BakeryItem item;
-            int team = rand() % TEAM_COUNT;
-            if (team == 0)
-                backery_item_create(&item, item_name, "Bake Bread");
-            else if (team == 1)
-                backery_item_create(&item, item_name, "Bake Cakes and Sweets");
-            else
-                backery_item_create(&item, item_name, "Bake Sweet and Savory Patisseries");
-
-            Message msg = {1, item};
-            if (msgsnd(mqids[team], &msg, sizeof(BakeryItem), 0) == -1) {
-                perror("msgsnd failed");
-            } else {
-                printf("Produced: %s (%s)\n", item.name, item.team_name);
+                snprintf(mqid_str, sizeof(mqid_str), "%d", mqids[t]);
+                snprintf(team_str, sizeof(team_str), "%d", teams[t].team_name);
+                execl("./baker_worker", "baker_worker",
+                      mqid_str, team_str, NULL);
+                perror("execl"); exit(EXIT_FAILURE);
             }
         }
 
-        sleep(1);
-    }
-    */
-   
+   // pause();
     return 0;
 }

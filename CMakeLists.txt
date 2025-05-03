@@ -26,7 +26,6 @@ src/customers/customer_utils.c)
 add_executable(bakers
     src/bakers/baker.c
     src/bakers/oven.c
-    src/bakers/BakeryItem.c
     src/utils/random.c
     src/utils/config.c
     src/game.c
@@ -36,16 +35,15 @@ add_executable(bakers
 )
 
 
-
 add_executable(baker_worker
     src/bakers/baker_worker.c
     src/bakers/oven.c
-    src/bakers/BakeryItem.c
     src/utils/random.c
     src/utils/config.c
     src/game.c
     src/inventory.c
     src/bakers/baker_utils.c
+    src/utils/semaphores_utils.c
 )
 
 add_executable(customer_manager

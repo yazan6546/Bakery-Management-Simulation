@@ -1,5 +1,6 @@
-// ===== baker_worker.c =====
-
+/*****************************************
+ *  baker_worker.c – one process / baker *
+ *****************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,70 +9,82 @@
 #include <sys/mman.h>
 #include <semaphore.h>
 
-#include "BakeryItem.h"
 #include "oven.h"
 #include "inventory.h"
 #include "game.h"
-#include "random.h"
 #include "BakerTeam.h"
 #include "bakery_utils.h"
+#include "products.h"
+#include "semaphores_utils.h"   
+
+#define MAX_NAME MAX_NAME_LENGTH
+
 
 typedef struct {
-    long mtype;
-    BakeryItem item;
-} Message;
-
-Game *game;
+    long         mtype;               
+    char         item_name[MAX_NAME];
+    ProductType  category;
+    int          index;            
+} BakeryMessage;
 
 typedef enum { IDLE, BUSY } BakerState;
 
-ProductType infer_product_type(BakeryItem *item) {
-    if (strstr(item->team_name, "Bread")) return BREAD;
-    if (strstr(item->team_name, "Cakes and Sweets")) {
-        if (strstr(item->name, "Cake")) return CAKE;
-        return SWEET;
+
+static inline Team category_to_team(ProductType c)
+{
+    switch (c) {
+        case BREAD:                       return BREAD_BAKERS;
+        case CAKE:
+        case SWEET:                       return CAKE_AND_SWEETS_BAKERS;
+        default:                          return PASTRIES_BAKERS;
     }
-    if (strstr(item->team_name, "Patisseries")) {
-        if (strstr(item->name, "Savory")) return SAVORY_PATISSERIES;
-        return SWEET_PATISSERIES;
-    }
-    return BREAD;
 }
 
-int main(int argc, char *argv[]) {
+Game *game;
+
+int main(int argc, char *argv[])
+{
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <mqid> <team_enum>\n", argv[0]);
-        return 1;
+        return EXIT_FAILURE;
     }
-
-    int mqid = atoi(argv[1]);
+    int  mqid    = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
 
+    /* attach shared Game */
     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
-    if (shm_fd == -1) { perror("shm_open failed"); exit(1); }
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (game == MAP_FAILED) { perror("mmap failed"); exit(1); }
+    if (shm_fd == -1) { perror("shm_open"); exit(EXIT_FAILURE); }
+    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE,
+                MAP_SHARED, shm_fd, 0);
+    if (game == MAP_FAILED) { perror("mmap"); exit(EXIT_FAILURE); }
     close(shm_fd);
 
-    sem_t *ready_products_sem = setup_ready_products_semaphore();
+    sem_t *ready_sem = setup_ready_products_semaphore();
     setup_oven_semaphores(game->config.NUM_OVENS);
-    init_random();
 
-    BakerState state = IDLE;
-    BakeryItem current_item;
-    int oven_index = -1;
-    int oven_time_left = 0;
+    BakerState    state    = IDLE;
+    BakeryMessage cur_msg;
+    int           oven_idx = -1;
 
     while (1) {
-        // Tick oven time
-        if (state == BUSY && oven_index != -1) {
-            oven_tick(&game->ovens[oven_index]);
-            if (!game->ovens[oven_index].is_busy) {
-                ProductType ptype = infer_product_type(&current_item);
-                add_ready_product(&game->ready_products, ptype, 1, ready_products_sem);
-                printf("[Baker %s] Finished baking %s in Oven %d\n", get_team_name_str(my_team), current_item.name, oven_index);
+
+        if (state == BUSY && oven_idx != -1) {
+            oven_tick(&game->ovens[oven_idx]);
+            if (!game->ovens[oven_idx].is_busy) {
+
+
+                add_ready_product(&game->ready_products,
+                                  cur_msg.category,
+                                  cur_msg.index,
+                                  1,
+                                  ready_sem);
+
+                printf("[Baker %s] Finished %s in oven %d\n",
+                       get_team_name_str(my_team),
+                       cur_msg.item_name, oven_idx);
+
                 state = IDLE;
-                oven_index = -1;
+                oven_idx = -1;
             } else {
                 sleep(1);
                 continue;
@@ -79,40 +92,56 @@ int main(int argc, char *argv[]) {
         }
 
         if (state == IDLE) {
-            Message msg;
-            if (msgrcv(mqid, &msg, sizeof(BakeryItem), 0, 0) >= 0) {
-                if (!is_team_item(&msg.item, my_team)) {
-                    msgsnd(mqid, &msg, sizeof(BakeryItem), 0);
-                    usleep(10000);
-                    continue;
-                }
+            BakeryMessage msg;
+            if (msgrcv(mqid, &msg,
+                       sizeof(BakeryMessage) - sizeof(long),
+                       0, 0) < 0) {
+                perror("[worker] msgrcv");
+                continue;
+            }
 
-                current_item = msg.item;
-                int prep_time = (int)random_float(game->config.MIN_BAKE_TIME, game->config.MAX_BAKE_TIME);
-                printf("[Baker %s] Preparing %s for %d seconds...\n", get_team_name_str(my_team), current_item.name, prep_time);
-                sleep(prep_time);
+            if (category_to_team(msg.category) != my_team) {
+                msgsnd(mqid, &msg,
+                       sizeof(BakeryMessage) - sizeof(long), 0);
+                usleep(10000);
+                continue;
+            }
 
-                int placed = 0;
-                for (int i = 0; i < game->config.NUM_OVENS; i++) {
-                    if (put_item_in_oven(&game->ovens[i], current_item.name, current_item.team_name,
-                                         game->config.MIN_OVEN_TIME + rand() % (game->config.MAX_OVEN_TIME - game->config.MIN_OVEN_TIME + 1))) {
-                        oven_index = i;
-                        state = BUSY;
-                        printf("[Baker %s] Placed %s in Oven %d\n", get_team_name_str(my_team), current_item.name, oven_index);
-                        placed = 1;
-                        break;
+            cur_msg = msg;
+
+            int prep = game->config.MIN_BAKE_TIME +
+                       rand() % (game->config.MAX_BAKE_TIME -
+                                 game->config.MIN_BAKE_TIME + 1);
+            printf("[Baker %s] Preparing %s (%d s)\n",
+                   get_team_name_str(my_team),
+                   cur_msg.item_name, prep);
+            sleep(prep);
+
+
+            while (1) {
+                for (int i = 0; i < game->config.NUM_OVENS; ++i) {
+                    if (put_item_in_oven(&game->ovens[i],
+                                         cur_msg.item_name,
+                                         get_team_name_str(my_team),
+                                         game->config.MIN_OVEN_TIME +
+                                         rand() % (game->config.MAX_OVEN_TIME -
+                                                   game->config.MIN_OVEN_TIME + 1))) {
+                        oven_idx = i;
+                        state    = BUSY;
+                        printf("[Baker %s] Placed %s in oven %d\n",
+                               get_team_name_str(my_team),
+                               cur_msg.item_name, i);
+                        goto next_cycle;
                     }
                 }
 
-                if (!placed) {
-                    printf("[Baker %s] No oven available. Requeuing %s\n", get_team_name_str(my_team), current_item.name);
-                    msgsnd(mqid, &msg, sizeof(BakeryItem), 0);
-                    sleep(1);
-                }
-            } else {
-                usleep(50000);
+                sleep(1);
+                for (int i = 0; i < game->config.NUM_OVENS; ++i)
+                    oven_tick(&game->ovens[i]);
             }
         }
+next_cycle:
+        continue;
     }
     return 0;
 }
