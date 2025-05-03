@@ -175,7 +175,7 @@ int check_parameter_correctness(const Config *config) {
         config->MIN_TIME_FRUSTRATED < 0 || config->MAX_TIME_FRUSTRATED < 0 || config->MIN_OVEN_TIME < 0 ||
         config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
         config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0 ||
-        config->CASCADE_WINDOW < 0 || config->INGREDIENTS_TO_ORDER < 0
+        config->CASCADE_WINDOW < 0 || config->INGREDIENTS_TO_ORDER < 0 ||
         config->CASCADE_WINDOW < 0 || config->MIN_SELLER_PROCESSING_TIME < 0
         || config->MAX_SELLER_PROCESSING_TIME < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
@@ -235,7 +235,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -265,12 +265,12 @@ void serialize_config(Config *config, char *buffer) {
             config->CUSTOMER_CASCADE_PROBABILITY,
             config->CASCADE_WINDOW,
             config->MIN_SELLER_PROCESSING_TIME,
-            config->MAX_SELLER_PROCESSING_TIME);
+            config->MAX_SELLER_PROCESSING_TIME,
             config->INGREDIENTS_TO_ORDER);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -300,6 +300,6 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->CUSTOMER_CASCADE_PROBABILITY,
             &config->CASCADE_WINDOW,
             &config->MIN_SELLER_PROCESSING_TIME,
-            &config->MAX_SELLER_PROCESSING_TIME);
+            &config->MAX_SELLER_PROCESSING_TIME,
             &config->INGREDIENTS_TO_ORDER);
 }
