@@ -45,3 +45,29 @@ IngredientType get_ingredient_type_from_string(const char* name) {
     fprintf(stderr, "Unknown ingredient type: %s\n", name);
     return -1; // Invalid type
 }
+
+// Utility function to convert ingredient type enum to string name
+const char* get_ingredient_name(int ingredient_type) {
+    switch(ingredient_type) {
+        case WHEAT: return "Wheat";
+        case FLOUR: return "Flour";
+        case CHOCOLATE: return "Chocolate";
+        case YEAST: return "Yeast";
+        case BUTTER: return "Butter";
+        case MILK: return "Milk";
+        case SUGAR: return "Sugar";
+        case SALT: return "Salt";
+        case SWEET_ITEMS: return "Sweet Items";
+        case CHEESE: return "Cheese";
+        case SALAMI: return "Salami";
+        case PASTE_INGREDIENTS: return "Paste Ingredients";
+        case CUSTARD: return "Custard";
+        case VANILLA: return "Vanilla";
+        case EGGS: return "Eggs";
+        case VEGETABLES: return "Vegetables";
+        case BREAD_ING: return "Bread Ingredients";
+        case CREAM: return "Cream";
+        case FRUITS: return "Fresh Fruits";
+        default: return "Unknown Ingredient";
+    }
+}

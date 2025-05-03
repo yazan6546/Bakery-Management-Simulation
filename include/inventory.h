@@ -45,6 +45,7 @@ void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]
 int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
 void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
 void restock_ingredients(Inventory *inventory, sem_t* sem);
+void print_inventory(Inventory *inventory);
 void add_paste(Inventory *inventory, int quantity, sem_t* sem);
 int get_paste_count(Inventory *inventory, sem_t* sem);
 

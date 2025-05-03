@@ -176,7 +176,10 @@ int get_ready_product(ReadyProducts *ready_products, ProductType type, int produ
     return result;
 }
 
-
-
-
-
+void print_inventory(Inventory *inventory) {
+    printf("Inventory Contents:\n");
+    for (int i = 0; i < NUM_INGREDIENTS; i++) {
+        printf("  %s: %d units\n", get_ingredient_name(i), inventory->quantities[i]);
+    }
+    printf("-------------------------------\n");
+}
