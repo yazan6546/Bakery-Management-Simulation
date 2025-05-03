@@ -22,6 +22,9 @@ target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c
 add_executable(chefs src/chefs/chef.c src/inventory.c src/chefs/chef_utils.c
         src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
 
+add_executable(chef_worker src/chefs/chef_worker.c src/inventory.c src/chefs/chef_utils.c
+        src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
+
 
 add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c
         src/utils/semaphores_utils.c src/utils/shared_mem_utils.c
@@ -92,7 +95,7 @@ target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthr
 target_link_libraries(supply_chain PRIVATE pthread rt m)
 target_link_libraries(supply_chain_manager PRIVATE pthread rt m)
 
-set(need_queue supply_chain_manager main bakers chefs supply_chain sellers customer_manager customers graphics baker_worker)
+set(need_queue supply_chain_manager main bakers chefs supply_chain sellers customer_manager customers graphics chef_worker baker_worker)
 
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
     message("Adding ${need} to the main executable")

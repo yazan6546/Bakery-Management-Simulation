@@ -42,3 +42,5 @@ CASCADE_WINDOW=5        # Time window for customer cascade (in seconds)
 NUM_OVENS=2            # Number of ovens
 
 INGREDIENTS_TO_ORDER=3  # Number of ingredients that supply chain can restock
+MIN_SELLER_PROCESSING_TIME=2        # Minimum processing time for sellers
+MIN_SELLER_PROCESSING_TIME=5        # Maximum processing time for sellers
