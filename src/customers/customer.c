@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
     // Initial status notification
     send_status_message(0);
 
+    alarm(1);  // Start the timer
     // Customer state machine
     while (1) {
         printf("Customer %d patience : %.4f\n", customer_id, my_entry.patience);
@@ -92,7 +93,6 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             break;
 
         case WAITING_IN_QUEUE:
-            alarm(1);
             printf("Customer %d is waiting in queue...\n", customer_id);
             pause(); // pause until seller signals
             break;

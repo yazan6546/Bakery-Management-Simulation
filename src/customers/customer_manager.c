@@ -264,8 +264,8 @@ int main(int argc, char *argv[]) {
                shared_game->num_customers_missing,
                shared_game->num_customers_cascade);
 
-        // Sleep for a random time between 2-4 seconds
-        sleep(2 + rand() % 3);
+        // Sleep for a random time between 1-3 seconds
+        sleep(1);
     }
 
     return 0;
