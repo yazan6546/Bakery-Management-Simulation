@@ -7,6 +7,7 @@
 #include "game.h"
 #include "queue.h"
 #include "shared_mem_utils.h"
+#include "semaphores_utils.h"
 
 // Global pointer to shared game state
 Game *shared_game;
@@ -24,6 +25,7 @@ int main(int argc, char *argv[]) {
     printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);
 
+    reset_all_semaphores();
 
     // execlp("pwd", "pwd", NULL);
     // Register cleanup function with atexit

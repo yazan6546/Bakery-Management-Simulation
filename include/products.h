@@ -50,7 +50,7 @@ typedef enum {
 // Struct for an ingredient with quantity
 typedef struct {
     IngredientType type; // Type of ingredient
-    int quantity;
+    float quantity;
 } Ingredient;
 
 // Updated Product struct with separate timing fields

@@ -30,7 +30,7 @@ void init_ready_products(ReadyProducts *ready_products) {
 }
 
 // Add ingredient with thread safety
-void add_ingredient(Inventory *inventory, IngredientType type, int quantity, sem_t* sem) {
+void add_ingredient(Inventory *inventory, IngredientType type, float quantity, sem_t* sem) {
     if (!sem) {
         sem = setup_inventory_semaphore();
     }
@@ -44,7 +44,7 @@ void add_ingredient(Inventory *inventory, IngredientType type, int quantity, sem
     unlock_inventory(sem);
 }
 
-void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem) {
+void add_ingredients(Inventory *inventory, const float quantities[NUM_INGREDIENTS], sem_t* sem) {
     if (!sem) {
         sem = setup_inventory_semaphore();
     }
@@ -59,7 +59,7 @@ void add_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS]
     unlock_inventory(sem);
 }
 
-int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem) {
+int check_ingredients(Inventory *inventory, const float quantities[NUM_INGREDIENTS], sem_t* sem) {
     if (!sem) {
         sem = setup_inventory_semaphore();
     }
@@ -81,7 +81,7 @@ int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS
     return result;
 }
 
-void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem) {
+void use_ingredients(Inventory *inventory, const float quantities[NUM_INGREDIENTS], sem_t* sem) {
     if (!sem) {
         sem = setup_inventory_semaphore();
     }
@@ -220,7 +220,7 @@ int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order,
 void print_inventory(Inventory *inventory) {
     printf("Inventory Contents:\n");
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
-        printf("  %s: %d units\n", get_ingredient_name(i), inventory->quantities[i]);
+        printf("  %s: %.1f units\n", get_ingredient_name(i), inventory->quantities[i]);
     }
     printf("-------------------------------\n");
 }

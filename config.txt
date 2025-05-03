@@ -25,13 +25,13 @@ MAX_BAKE_TIME=8        # Maximum bake time
 MIN_TIME_FRUSTRATED=5
 MAX_TIME_FRUSTRATED=10
 
-MIN_PATIENCE=500        # Minimum patience level
-MAX_PATIENCE=1000        # Maximum patience level
+MIN_PATIENCE=1        # Minimum patience level
+MAX_PATIENCE=5        # Maximum patience level
 
 MIN_PATIENCE_DECAY=0.2        # Minimum patience decay
-MAX_PATIENCE_DECAY=0.25        # Maximum patience decay
+MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
 
-CUSTOMER_PROBABILITY=0        # Probability of a customer arriving (every sec)
+CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
 
 MIN_ORDER_ITEMS=1        # Minimum number of items in an order
 MAX_ORDER_ITEMS=5        # Maximum number of items in an order
@@ -43,3 +43,5 @@ NUM_OVENS=2            # Number of ovens
 
 MIN_SELLER_PROCESSING_TIME=1        # Minimum time for a seller to process an order
 MAX_SELLER_PROCESSING_TIME=3        # Maximum time for a seller to process an order
+
+INGREDIENTS_TO_ORDER=3  # Number of ingredients that supply chain can restock
