@@ -4,8 +4,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "queue.h"
 #include "customer.h"
+#include "queue.h"
+#include "shared_mem_utils.h"
 
 void test_queue_removal(queue_shm *test_queue) {
     printf("===== QUEUE REMOVAL TEST =====\n");
@@ -23,7 +24,8 @@ void test_queue_removal(queue_shm *test_queue) {
 
     // Add customers to queue
     for (int i = 0; i < 5; i++) {
-        queueShmEnqueue(test_queue, &test_customers[i]);
+        int j = queueShmEnqueue(test_queue, &test_customers[i]);
+        printf("okok %d\n", j);
     }
 
     // Print initial queue state
@@ -80,7 +82,9 @@ int main() {
 
     queue_shm *test_queue;
     Game *shared_game;
-    setup_shared_memory(&test_queue, &shared_game);
+    setup_shared_memory(&shared_game);
+    setup_queue_shared_memory(&test_queue, 10);
+    initQueueShm(test_queue, sizeof(Customer), 10);
     test_queue_removal(test_queue);
 
 }

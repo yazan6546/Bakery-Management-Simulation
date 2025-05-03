@@ -3,8 +3,8 @@
 ## Game settings
 
 MAX_TIME=500            # Maximum time for the game (in minutes)
-MAX_CUSTOMERS=1         # Maximum number of customers at once
-FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
+MAX_CUSTOMERS=0       # Maximum number of customers at once
+FRUSTRATED_CUSTOMERS=20        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
@@ -25,13 +25,13 @@ MAX_BAKE_TIME=20        # Maximum bake time
 MIN_TIME_FRUSTRATED=5
 MAX_TIME_FRUSTRATED=10
 
-MIN_PATIENCE=1        # Minimum patience level
-MAX_PATIENCE=5        # Maximum patience level
+MIN_PATIENCE=500        # Minimum patience level
+MAX_PATIENCE=1000        # Maximum patience level
 
 MIN_PATIENCE_DECAY=0.2        # Minimum patience decay
-MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
+MAX_PATIENCE_DECAY=0.25        # Maximum patience decay
 
-CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
+CUSTOMER_PROBABILITY=0        # Probability of a customer arriving (every sec)
 
 MIN_ORDER_ITEMS=1        # Minimum number of items in an order
 MAX_ORDER_ITEMS=5        # Maximum number of items in an order

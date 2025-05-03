@@ -81,6 +81,7 @@ void cleanup_resources() {
     //     kill(processes_sellers[i], SIGINT);
     // }
     cleanup_shared_memory(shared_game);
+    shm_unlink(CUSTOMER_QUEUE_SHM_NAME);
     free(processes_sellers);
     printf("Cleanup complete\n");
 }

@@ -30,7 +30,7 @@ void handle_alarm(int sig);
 void handle_sigint_customer(int sig);
 void check_for_contagion(Game *shared_game);
 void send_order_message(int msg_queue_id, CustomerOrder *order);
-
+void setup_sigint_handler();
 // Send status update to manager
 
 int main(int argc, char *argv[]) {
@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s <msg_queue_id> <customer_id> <customer_buffer>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+
+    setup_sigint_handler();
 
     int global_msg = get_message_queue();
     setup_shared_memory(&shared_game);
@@ -226,13 +228,18 @@ void handle_seller_signal(int sig) {
 }
 
 void handle_sigint_customer(int sig) {
-    alarm(0); // Stop the timer
-    printf("Customer %d received SIGINT, exiting...\n", customer_id);
-    fflush(stdout);
+
+    // Block all signals during handler execution
+    sigset_t mask;
+    sigfillset(&mask);
+    sigprocmask(SIG_BLOCK, &mask, NULL);
+    alarm(0);
+
+
     if (shared_game != NULL)
         munmap(shared_game, sizeof(Game));
 
-    exit(EXIT_SUCCESS);
+    _exit(EXIT_SUCCESS);
 }
 
 
@@ -274,3 +281,23 @@ void send_order_message(int msg_queue_id, CustomerOrder *order) {
 }
 
 
+
+// Setup SIGINT handler function - call this in your main
+void setup_sigint_handler() {
+    struct sigaction sa;
+    sa.sa_handler = handle_sigint_customer;
+    sigemptyset(&sa.sa_mask);
+    sigaddset(&sa.sa_mask, SIGALRM); // Block SIGALRM during handler
+    sa.sa_flags = 0; // Don't restart system calls
+
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("Failed to set SIGINT handler");
+        exit(EXIT_FAILURE);
+    }
+
+    // Ensure SIGINT isn't blocked
+    sigset_t unblock;
+    sigemptyset(&unblock);
+    sigaddset(&unblock, SIGINT);
+    sigprocmask(SIG_UNBLOCK, &unblock, NULL);
+}

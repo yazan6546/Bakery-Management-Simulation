@@ -51,6 +51,10 @@ void setup_queue_shared_memory(queue_shm **queue_shm, size_t capacity) {
     size_t shm_size = queueShmSize(elemSize, capacity);
 
     int queue_fd = shm_open(CUSTOMER_QUEUE_SHM_NAME, O_CREAT | O_RDWR, 0666);
+    if (queue_fd == -1) {
+        perror("Failed to open queue shared memory");
+        exit(EXIT_FAILURE);
+    }
     ftruncate(queue_fd, (long) shm_size);
     *queue_shm = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
 
