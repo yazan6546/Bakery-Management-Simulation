@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     }
 
     int t = 0;
-    while (1) {
+   /* while (1) {
         printf("\n=== Time Step %d ===\n", ++t);
 
         if (rand() % 2 == 0) {
@@ -100,6 +100,7 @@ int main(int argc, char *argv[]) {
 
         sleep(1);
     }
-
+    */
+   
     return 0;
 }
