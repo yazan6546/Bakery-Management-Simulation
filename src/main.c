@@ -9,6 +9,7 @@
 // Global pointer to shared game state
 Game *shared_game;
 pid_t processes[6];
+pid_t *processes_sellers;
 int shm_fd; // Store fd globally for cleanup
 
 void handle_alarm(int signum);
@@ -27,6 +28,8 @@ int main(int argc, char *argv[]) {
     atexit(cleanup_resources);
     game_create(&shm_fd, &shared_game);
 
+    processes_sellers = malloc(shared_game->config.NUM_SELLERS * sizeof(pid_t));
+
     signal(SIGALRM, handle_alarm);
     signal(SIGINT, handle_kill); // Renamed to match actual signal
 
@@ -41,7 +44,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    game_init(shared_game, processes, shm_fd);
+    game_init(shared_game, processes, processes_sellers, shm_fd);
 
     alarm(1);  // Start the timer
 
@@ -69,6 +72,10 @@ void cleanup_resources() {
 
     for (int i = 0; i < 6; i++) {
         kill(processes[i], SIGINT);
+    }
+
+    for (int i = 0; i<shared_game->config.NUM_SELLERS; i++) {
+        kill(processes_sellers[i], SIGINT);
     }
 
     printf("Cleanup complete\n");

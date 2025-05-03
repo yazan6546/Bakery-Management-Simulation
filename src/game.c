@@ -14,7 +14,7 @@
 #include "shared_mem_utils.h"
 
 
-int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
+int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared_mem_fd) {
 
     game->elapsed_time = 0;
     game->num_frustrated_customers = 0;
@@ -39,6 +39,12 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
 
     for (int i = 0; i < 1; i++) {
         processes[i] = start_process(binary_paths[i], shared_mem_fd);
+    }
+
+    char *seller = "./sellers";
+
+    for (int i = 0; i < game->config.NUM_SELLERS; i++) {
+        processes_sellers[i] = start_process(seller, 0);
     }
 
     return 0;
@@ -92,6 +98,7 @@ pid_t start_process(const char *binary, int shared_mem_fd) {
     if (pid == 0) {
         // Now pass two arguments: shared memory fd and GUI pid.
         // Convert fd to string
+
         char fd_str[10];
         snprintf(fd_str, sizeof(fd_str), "%d", shared_mem_fd);
         if (execl(binary, binary, fd_str, NULL)) {
