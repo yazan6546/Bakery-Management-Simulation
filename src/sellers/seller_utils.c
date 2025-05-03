@@ -26,20 +26,3 @@ void init_seller(Seller *seller, int id) {
     seller->pid = getpid();
     seller->state = IDLE;
 }
-
-// Send a completion message to a customer
-int send_completion_message(int msg_queue_id, pid_t customer_pid, float total_price, const char* status) {
-    CompletionMessage msg;
-    msg.mtype = customer_pid;  // Use customer's PID as message type
-    strncpy(msg.status, status, sizeof(msg.status) - 1);
-    msg.status[sizeof(msg.status) - 1] = '\0';  // Ensure null-termination
-    msg.total_price = total_price;
-    
-    return msgsnd(msg_queue_id, &msg, sizeof(CompletionMessage) - sizeof(long), 0);
-}
-
-bool is_order_missing(CustomerOrder *order) {
-
-
-    return false;
-}
