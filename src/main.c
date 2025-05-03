@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "assets.h"
+#include "semaphores_utils.h"
 
 // Global pointer to shared game state
 Game *shared_game;
@@ -41,8 +42,8 @@ void handle_kill(int signum) {
 }
 
 int main(int argc, char *argv[]) {
-
-
+    // Reset all semaphores at startup to clear any orphaned ones from previous runs
+    reset_all_semaphores();
 
     printf("********** Bakery Simulation **********\n\n");
     fflush(stdout);

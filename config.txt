@@ -43,3 +43,4 @@ NUM_OVENS=2            # Number of oven
 REALLOCATION_CHECK_INTERVAL=10        # Interval for checking reallocation (in seconds)
 PRODUCTION_RATIO_THRESHOLD=1.5        # Threshold for production ratio
 MIN_CHEFS_PER_TEAM=1
+INGREDIENTS_TO_ORDER=3  # Number of ingredients that supply chain can restock

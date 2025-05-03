@@ -28,11 +28,11 @@ int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
 
 
     char *binary_paths[] = {
-        //"./graphics",
-        "./chefs",
+        // "./graphics",
+        // "./chefs",
         // "./bakers",
-        //"./sellers",
-        // "./supply_chain_manager"
+        // "./sellers",
+        "./supply_chain_manager"
         // "./customer_manager"
     };
 
