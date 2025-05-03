@@ -40,12 +40,12 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
     for (int i = 0; i < 1; i++) {
         processes[i] = start_process(binary_paths[i], shared_mem_fd);
     }
-
-    char *seller = "./sellers";
-
-    for (int i = 0; i < game->config.NUM_SELLERS; i++) {
-        processes_sellers[i] = start_process(seller, 0);
-    }
+    //
+    // char *seller = "./sellers";
+    //
+    // for (int i = 0; i < game->config.NUM_SELLERS; i++) {
+    //     processes_sellers[i] = start_process(seller, 0);
+    // }
 
     return 0;
 }

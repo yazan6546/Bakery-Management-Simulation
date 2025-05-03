@@ -78,6 +78,8 @@ void serve_customer(Customer *customer) {
         // Update seller state
         seller.state = PROCESSING_ORDER;
 
+        printf("seller received order!! %f\n", order_msg.order.total_price);
+
         // Process the order
         process_customer_order(customer->pid, &order_msg.order, shared_game);
 
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]) {
 
     // Set up shared memory for customer queue
     setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
-
+    initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
 
     // Open the queue semaphore
     queue_sem = sem_open(QUEUE_SEM_NAME, O_CREAT, 0666, 1);

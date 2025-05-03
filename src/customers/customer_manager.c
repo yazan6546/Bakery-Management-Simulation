@@ -66,6 +66,8 @@ void handle_customer_message(int signum) {
     while (msgrcv(msg_queue_id, &msg, sizeof(CustomerStatusMsg) - sizeof(long), 1, IPC_NOWAIT) != -1) {
         pid_t pid = msg.customer_pid;
         int cust_id = msg.customer_id;
+        if (msg.state == FRUSTRATED)
+            msg.action = 2;
 
         printf("Received message from customer %d (PID %d), action=%d, state=%d\n",
                cust_id, pid, msg.action, msg.state);
@@ -100,6 +102,7 @@ void handle_customer_message(int signum) {
                     case 2: // Frustrated
                         printf("Customer %d left frustrated\n", cust_id);
                         shared_game->num_frustrated_customers++;
+                        printf("pid : %d\n", c->pid);
                         kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
@@ -143,10 +146,10 @@ void handle_customer_message(int signum) {
             }
         }
 
-        if (!found && msg.customer_pid > 0) {
-//            kill(pid, SIGKILL); // Clean up the orphaned process
-            printf("Unknown sender, killing process: %d\n", pid);
-        }
+//         if (!found && msg.customer_pid > 0) {
+// //            kill(pid, SIGKILL); // Clean up the orphaned process
+//             printf("Unknown sender, killing process: %d\n", pid);
+//         }
     }
 }
 

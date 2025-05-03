@@ -27,7 +27,7 @@ void update_state(CustomerState new_state);
 void update_patience(float new_patience);
 void leave_restaurant(CustomerState final_state, int action_type);
 void handle_alarm(int sig);
-void handle_sigint(int sig);
+void handle_sigint_customer(int sig);
 void check_for_contagion(Game *shared_game);
 void send_order_message(int msg_queue_id, CustomerOrder *order);
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     // Set up signal handlers
     signal(SIGALRM, handle_alarm);
     signal(SIGUSR1, handle_seller_signal);
-    signal(SIGINT, handle_sigint);
+    signal(SIGINT, handle_sigint_customer);
 
     // Initial status notification
     send_status_message(0);
@@ -110,8 +110,7 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 
         case WAITING_FOR_ORDER:
             printf("Customer %d is waiting for order...\n", customer_id);
-            alarm(0); // Stop the timer
-            sleep(3);
+            sleep(1);
 
             CompletionMessage completion_msg;
             // Check if order is missing
@@ -119,6 +118,8 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
                 printf("Customer %d's order is missing!\n", customer_id);
                 leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
             }
+
+            printf("WAIITITITITI\n");
 
             if (completion_msg.result == ORDER_SUCCESS) {
                 printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);
@@ -137,6 +138,11 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
         case COMPLAINING:
             leave_restaurant(COMPLAINING, 3); // 3 = complained
             pause(); // wait for manager to handle
+            break;
+
+        case CONTAGION:
+            printf("Customer %d is leaving due to contagion\n", customer_id);
+            leave_restaurant(CONTAGION, 5); // 5 = cascade effect
             break;
 
         default:
@@ -197,10 +203,10 @@ void handle_alarm(int sig) {
         }
 
         if (my_entry.patience <= 0) {
+            alarm(0); // Stop the timer
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
             // Let manager update game stats
             update_state(FRUSTRATED);
-            alarm(0); // Stop the timer
             return;
         }
     }
@@ -219,7 +225,8 @@ void handle_seller_signal(int sig) {
     }
 }
 
-void handle_sigint(int sig) {
+void handle_sigint_customer(int sig) {
+    alarm(0); // Stop the timer
     printf("Customer %d received SIGINT, exiting...\n", customer_id);
     fflush(stdout);
     if (shared_game != NULL)
