@@ -18,6 +18,7 @@
 Game *shared_game;
 queue_shm *customer_queue;
 int msg_queue_id;
+int max_customers = 0;
 int active_customers = 0;
 sem_t *complaint_sem = NULL;
 
@@ -27,13 +28,23 @@ void cleanup_resources() {
         msgctl(msg_queue_id, IPC_RMID, NULL);
     }
 
+    printf("customer count : %lu\n", customer_queue->count);
     // Kill any remaining customer processes
-    for (int i = 0; i < customer_queue->count; i++) {
+    for (int temp = 0; temp < customer_queue->count; temp++) {
+
+        int i = (customer_queue->head + temp) % customer_queue->capacity;
         Customer *c = &((Customer*)customer_queue->elements)[i];
+
+        printf("NOW KILLING CUSTOMER : %d\n", c->pid);
         if (c->pid > 0) {
-            kill(c->pid, SIGTERM);
+            kill(c->pid, SIGINT);
         }
     }
+
+    printf("cleaning up queue...\n");
+
+    queueShmClear(customer_queue);
+    cleanup_queue_shared_memory(customer_queue, shared_game->config.MAX_CUSTOMERS);
 
     // Clean up named semaphore
     if (complaint_sem != NULL) {
@@ -81,7 +92,7 @@ void handle_customer_message(int signum) {
                     case 1: // Normal leaving
                         printf("Customer %d is leaving normally\n", cust_id);
                         shared_game->num_customers_served++;
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -89,7 +100,7 @@ void handle_customer_message(int signum) {
                     case 2: // Frustrated
                         printf("Customer %d left frustrated\n", cust_id);
                         shared_game->num_frustrated_customers++;
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -103,7 +114,7 @@ void handle_customer_message(int signum) {
                         shared_game->complaining_customer_pid = c->pid;
                         shared_game->last_complaint_time = time(NULL);
                         sem_post(complaint_sem);
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -111,7 +122,7 @@ void handle_customer_message(int signum) {
                     case 4: // Missing order
                         printf("Customer %d had missing order\n", cust_id);
                         shared_game->num_customers_missing++;
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -123,7 +134,7 @@ void handle_customer_message(int signum) {
                         sem_wait(complaint_sem);
                         shared_game->num_customers_cascade++;
                         sem_post(complaint_sem);
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -209,6 +220,7 @@ void spawn_customer(int customer_id) {
 int main(int argc, char *argv[]) {
     // Setup shared memory for game and customer queue
     setup_shared_memory(&shared_game);
+    max_customers = shared_game->config.MAX_CUSTOMERS;
     setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
     initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
 

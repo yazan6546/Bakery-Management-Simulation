@@ -16,6 +16,7 @@ int customer_id;
 pid_t my_pid;
 int msg_queue_id;
 float original_patience;
+Game *shared_game;
 Customer my_entry;
 sem_t *complaint_sem;
 
@@ -39,7 +40,6 @@ int main(int argc, char *argv[]) {
     }
 
     int global_msg = get_message_queue();
-    Game *shared_game;
     setup_shared_memory(&shared_game);
     complaint_sem = sem_open(COMPLAINT_SEM_NAME, O_CREAT, 0666, 1);
     if (complaint_sem == SEM_FAILED) {
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     // Set up signal handlers
     signal(SIGALRM, handle_alarm);
     signal(SIGUSR1, handle_seller_signal);
+    signal(SIGINT, handle_sigint);
 
     // Initial status notification
     send_status_message(0);
@@ -220,7 +221,10 @@ void handle_seller_signal(int sig) {
 
 void handle_sigint(int sig) {
     printf("Customer %d received SIGINT, exiting...\n", customer_id);
-    shm_unlink("/game_shared_mem");
+    fflush(stdout);
+    if (shared_game != NULL)
+        munmap(shared_game, sizeof(Game));
+
     exit(EXIT_SUCCESS);
 }
 

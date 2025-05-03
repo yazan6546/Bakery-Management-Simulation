@@ -51,21 +51,6 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
 }
 
 
-
-void game_destroy(const int shm_fd, Game *shared_game) {
-    if (shared_game != NULL && shared_game != MAP_FAILED) {
-        if (munmap(shared_game, sizeof(Game)) == -1) {
-            perror("munmap failed");
-        }
-    }
-    shm_unlink(GAME_SHM_NAME);
-
-    if (shm_fd > 0) {
-        close(shm_fd);
-    }
-}
-
-
 pid_t start_process(const char *binary, int shared_mem_fd) {
     pid_t pid = fork();
     if (pid == -1) {

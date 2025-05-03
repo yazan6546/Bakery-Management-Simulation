@@ -80,10 +80,7 @@ void cleanup_resources() {
     for (int i = 0; i<shared_game->config.NUM_SELLERS; i++) {
         kill(processes_sellers[i], SIGINT);
     }
-    queueShmClear(queue);
-    game_destroy(shm_fd, shared_game);
-
-    shm_unlink(CUSTOMER_QUEUE_SHM_NAME);
+    cleanup_shared_memory(shared_game);
     free(processes_sellers);
     printf("Cleanup complete\n");
 }

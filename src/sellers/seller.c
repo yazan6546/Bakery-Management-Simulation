@@ -144,6 +144,7 @@ int main(int argc, char *argv[]) {
     // Set up shared memory for customer queue
     setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
 
+
     // Open the queue semaphore
     queue_sem = sem_open(QUEUE_SEM_NAME, O_CREAT, 0666, 1);
     if (queue_sem == SEM_FAILED) {
