@@ -16,6 +16,7 @@
 #include "config.h"
 #include "game.h"
 #include "chef.h"
+#include "bakery_message.h"
 
 Game *game;
 int fd;
@@ -248,9 +249,9 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id) {
                 // Prepare message for chef manager for items that need baking
                 ChefMessage msg;
                 msg.mtype = 1;
-                msg.prepared_item.source_team = team;
-                msg.prepared_item.item.product = *product;
-                msg.prepared_item.item.quantity = 1;
+                msg.source_team = team;
+                msg.product_index = product_index;
+                msg.product_name = product->name;
 
                 // Send to chef manager
                 if (msgsnd(msg_queue_id, &msg, sizeof(PreparedItem), 0) == -1) {

@@ -9,22 +9,7 @@
 #include <inventory.h>
 #include "products.h"
 
-// Message structure for restock requests
-typedef struct {
-    long mtype;
-    IngredientType ingredient;
-    int quantity;
-    int urgency; // 0-10 scale, 10 being most urgent
-} RestockRequest;
 
-
-// Message structure for restock confirmations
-typedef struct {
-    long mtype;
-    IngredientType ingredient;
-    int quantity;
-    int success; // 1 if successful, 0 if failed
-} RestockConfirmation;
 
 // Chef state structure
 typedef struct {
@@ -54,15 +39,6 @@ typedef enum {
     TEAM_COUNT=7
 } ChefTeam;
 
-typedef struct {
-    OrderItem item;
-    ChefTeam source_team;
-} PreparedItem;
-
-typedef struct {
-    long mtype;
-    PreparedItem prepared_item;
-} ChefMessage;
 
 typedef struct {
     int id;

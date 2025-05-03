@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-
+#include "bakery_message.h"
 #include "inventory.h"
 #include "config.h"
 #include "game.h"
