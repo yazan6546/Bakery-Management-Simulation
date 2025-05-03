@@ -152,12 +152,14 @@ void print_config(Config *config) {
     printf("MAX_ORDER_ITEMS: %d\n", config->MAX_ORDER_ITEMS);
     printf("CUSTOMER_CASCADE_PROBABILITY: %f\n", config->CUSTOMER_CASCADE_PROBABILITY);
     printf("CASCADE_WINDOW: %d\n", config->CASCADE_WINDOW);
+    printf("REALLOCATION_CHECK_INTERVAL: %d\n", config->REALLOCATION_CHECK_INTERVAL);
+    printf("PRODUCTION_RATIO_THRESHOLD: %f\n", config->PRODUCTION_RATIO_THRESHOLD);
+    printf("MIN_CHEFS_PER_TEAM: %d\n", config->MIN_CHEFS_PER_TEAM);
 
     fflush(stdout);
 }
 
 int check_parameter_correctness(const Config *config) {
-
     // Check that all integer parameters are non-negative
     if (config->MAX_TIME < 0 || config->FRUSTRATED_CUSTOMERS < 0 || config->COMPLAINED_CUSTOMERS < 0 ||
         config->CUSTOMERS_MISSING < 0 || config->NUM_CHEFS < 0 || config->NUM_BAKERS < 0 || config->NUM_SELLERS < 0 ||
@@ -165,7 +167,8 @@ int check_parameter_correctness(const Config *config) {
         config->MIN_TIME_FRUSTRATED < 0 || config->MAX_TIME_FRUSTRATED < 0 || config->MIN_OVEN_TIME < 0 ||
         config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
         config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0 ||
-        config->CASCADE_WINDOW < 0)  {
+        config->CASCADE_WINDOW < 0 || config->REALLOCATION_CHECK_INTERVAL < 0 ||
+        config->MIN_CHEFS_PER_TEAM < 0 || config->PRODUCTION_RATIO_THRESHOLD) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -218,7 +221,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %f %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -246,11 +249,14 @@ void serialize_config(Config *config, char *buffer) {
             config->MIN_ORDER_ITEMS,
             config->MAX_ORDER_ITEMS,
             config->CUSTOMER_CASCADE_PROBABILITY,
-            config->CASCADE_WINDOW);
+            config->CASCADE_WINDOW,
+            config->REALLOCATION_CHECK_INTERVAL,
+            config->PRODUCTION_RATIO_THRESHOLD,
+            config->MIN_CHEFS_PER_TEAM);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %f %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -278,5 +284,8 @@ void deserialize_config(const char *buffer, Config *config) {
            &config->MIN_ORDER_ITEMS,
             &config->MAX_ORDER_ITEMS,
             &config->CUSTOMER_CASCADE_PROBABILITY,
-            &config->CASCADE_WINDOW);
+            &config->CASCADE_WINDOW,
+            &config->REALLOCATION_CHECK_INTERVAL,
+            &config->PRODUCTION_RATIO_THRESHOLD,
+            &config->MIN_CHEFS_PER_TEAM);
 }

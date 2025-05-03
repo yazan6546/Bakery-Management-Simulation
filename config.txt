@@ -8,7 +8,7 @@ FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
-NUM_CHEFS=2            # Number of chefs
+NUM_CHEFS=12            # Number of chefs
 NUM_BAKERS=6         # Number of bakers
 NUM_SELLERS=2           # Number of sellers
 NUM_SUPPLY_CHAIN=2        # Number of supply chain members
@@ -39,4 +39,7 @@ MAX_ORDER_ITEMS=5        # Maximum number of items in an order
 CUSTOMER_CASCADE_PROBABILITY=0.1        # Probability of a customer cascade (every sec)
 CASCADE_WINDOW=5        # Time window for customer cascade (in seconds)
 
-NUM_OVENS=2            # Number of ovens
+NUM_OVENS=2            # Number of oven
+REALLOCATION_CHECK_INTERVAL=10        # Interval for checking reallocation (in seconds)
+PRODUCTION_RATIO_THRESHOLD=1.5        # Threshold for production ratio
+MIN_CHEFS_PER_TEAM=1
