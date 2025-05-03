@@ -40,8 +40,8 @@ int load_config(const char *filename, Config *config) {
     config->MAX_ORDER_ITEMS = -1;
     config->CUSTOMER_CASCADE_PROBABILITY = -1;
     config->CASCADE_WINDOW = -1;
-    config->MIN_SELLER_PROCESSING_TIME;
-    config->MAX_SELLER_PROCESSING_TIME;
+    config->MIN_SELLER_PROCESSING_TIME = -1;
+    config->MAX_SELLER_PROCESSING_TIME = -1;
     config->REALLOCATION_CHECK_INTERVAL = -1;
     config->PRODUCTION_RATIO_THRESHOLD = -1;
     config->MIN_CHEFS_PER_TEAM = -1;
