@@ -2,6 +2,7 @@
 #define BAKERY_MESSAGE_H
 
 #include "customer.h"
+#include "chef.h"
 #define MAX_ITEM_NAME 50
 #define MAX_TEAM_NAME 50
 
@@ -42,5 +43,31 @@ typedef struct {
 
 
 int get_message_queue();
+
+
+typedef struct {
+    long mtype;
+    ChefTeam source_team;
+    char *product_name;
+    int product_index;
+} ChefMessage;
+
+// Message structure for restock requests
+typedef struct {
+    long mtype;
+    IngredientType ingredient;
+    int quantity;
+    int urgency; // 0-10 scale, 10 being most urgent
+} RestockRequest;
+
+
+// Message structure for restock confirmations
+typedef struct {
+    long mtype;
+    IngredientType ingredient;
+    int quantity;
+    int success; // 1 if successful, 0 if failed
+} RestockConfirmation;
+
 
 #endif // BAKERY_MESSAGE_H

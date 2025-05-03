@@ -40,6 +40,9 @@ typedef struct {
     int CASCADE_WINDOW;
     int MIN_SELLER_PROCESSING_TIME;
     int MAX_SELLER_PROCESSING_TIME;
+    int REALLOCATION_CHECK_INTERVAL;
+    float PRODUCTION_RATIO_THRESHOLD;
+    int MIN_CHEFS_PER_TEAM;
 } Config;
 
 int load_config(const char *filename, Config *config);

@@ -42,6 +42,9 @@ int load_config(const char *filename, Config *config) {
     config->CASCADE_WINDOW = -1;
     config->MIN_SELLER_PROCESSING_TIME;
     config->MAX_SELLER_PROCESSING_TIME;
+    config->REALLOCATION_CHECK_INTERVAL = -1;
+    config->PRODUCTION_RATIO_THRESHOLD = -1;
+    config->MIN_CHEFS_PER_TEAM = -1;
 
     // Buffer to hold each line from the configuration file
     char line[256];
@@ -83,6 +86,10 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "MAX_ORDER_ITEMS") == 0) config->MAX_ORDER_ITEMS = (int)value;
             else if (strcmp(key, "CUSTOMER_CASCADE_PROBABILITY") == 0) config->CUSTOMER_CASCADE_PROBABILITY = value;
             else if (strcmp(key, "CASCADE_WINDOW") == 0) config->CASCADE_WINDOW = (int)value;
+            else if (strcmp(key, "REALLOCATION_CHECK_INTERVAL") == 0) config->REALLOCATION_CHECK_INTERVAL = (int)value;
+            else if (strcmp(key, "PRODUCTION_RATIO_THRESHOLD") == 0) config->PRODUCTION_RATIO_THRESHOLD = value;
+            else if (strcmp(key, "MIN_CHEFS_PER_TEAM") == 0) config->MIN_CHEFS_PER_TEAM = (int)value;
+
             else if (strcmp(key, "MIN_SELLER_PROCESSING_TIME") == 0) config->MIN_SELLER_PROCESSING_TIME = (int)value;
             else if (strcmp(key, "MAX_SELLER_PROCESSING_TIME") == 0) config->MAX_SELLER_PROCESSING_TIME = (int)value;
             else {

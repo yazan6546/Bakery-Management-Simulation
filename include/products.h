@@ -37,13 +37,13 @@ typedef enum {
 } IngredientType;
 
 typedef enum {
-    BREAD,
-    CAKE,
-    SANDWICH,
-    SWEET,
-    SWEET_PATISSERIES,
-    SAVORY_PATISSERIES,
-    NUM_PRODUCTS  // This will automatically equal the number of products
+    BREAD=0,
+    CAKE=1,
+    SANDWICH=2,
+    SWEET=3,
+    SWEET_PATISSERIES=4,
+    SAVORY_PATISSERIES=5,
+    NUM_PRODUCTS=6  // This will automatically equal the number of products
 } ProductType;
 
 

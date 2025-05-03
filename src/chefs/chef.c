@@ -1,7 +1,3 @@
-//
-// Created by yazan on 4/26/2025.
-//
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,207 +6,111 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
-
+#include <signal.h>
 #include "inventory.h"
 #include "config.h"
 #include "game.h"
 #include "chef.h"
 
-// Shared game reference
-Game *game;
-
-// Function to check if ingredients are low and need to be restocked
-void check_and_request_ingredients(ChefState *chef, Inventory *inventory) {
-    // Lock inventory to check
-    lock_inventory(chef->inventory_sem);
-    
-    // Check each ingredient
-    for (int i = 0; i < NUM_INGREDIENTS; i++) {
-        // If ingredient is below threshold, request restock
-        if (inventory->quantities[i] < LOW_INGREDIENT_THRESHOLD && !chef->is_waiting_for_ingredients) {
-            int quantity_needed = RESTOCK_TARGET_QUANTITY - inventory->quantities[i]; // Restock to target
-            if (quantity_needed <= 0) continue;
-            
-            printf("[Chef %d] Ingredient %d is low (%d). Requesting restock.\n",
-                   chef->id, i, inventory->quantities[i]);
-            
-            // Create restock request
-            RestockRequest request;
-            request.mtype = 1; // Default message type
-            request.ingredient = i;
-            request.quantity = quantity_needed;
-            
-            // Calculate urgency based on how low we are
-            request.urgency = 10 - (inventory->quantities[i] / 5);
-            if (request.urgency < 1) request.urgency = 1;
-            if (request.urgency > 10) request.urgency = 10;
-            
-            // Send request to supply chain
-            if (msgsnd(chef->request_queue_id, &request, sizeof(RestockRequest) - sizeof(long), 0) == -1) {
-                perror("[Chef] Failed to send restock request");
-            } else {
-                printf("[Chef %d] Sent restock request for %d units of ingredient %d (urgency: %d)\n",
-                       chef->id, quantity_needed, i, request.urgency);
-                
-                // Update chef state
-                chef->is_waiting_for_ingredients = 1;
-                chef->waiting_for = i;
-                chef->waiting_quantity = quantity_needed;
-            }
-            
-            break; // Only request one ingredient at a time
-        }
-    }
-    
-    unlock_inventory(chef->inventory_sem);
-}
-
-// Function to check for supply chain confirmations
-void check_for_confirmations(ChefState *chef) {
-    if (!chef->is_waiting_for_ingredients) {
-        return;
-    }
-    
-    // Check for confirmation message (non-blocking)
-    RestockConfirmation confirmation;
-    if (msgrcv(chef->response_queue_id, &confirmation, sizeof(RestockConfirmation) - sizeof(long), 0, IPC_NOWAIT) != -1) {
-        printf("[Chef %d] Restock confirmation received for %d units of ingredient %d\n",
-               chef->id, confirmation.quantity, confirmation.ingredient);
-        
-        // Reset waiting state
-        chef->is_waiting_for_ingredients = 0;
-    }
-}
-
-// Function to prepare recipes (simplified for now)
-void prepare_recipes(ChefState *chef, Inventory *inventory, ReadyProducts *ready_products) {
-    // If waiting for ingredients, don't try to cook
-    if (chef->is_waiting_for_ingredients) {
-        return;
-    }
-    
-    // Simple cooking logic - just check if we have enough of each ingredient
-    int ingredients_needed[NUM_INGREDIENTS] = {0};
-    int recipe_choice = rand() % 3;  // Randomly choose between 3 recipe types
-    
-    // Set up ingredient requirements based on recipe
-    switch (recipe_choice) {
-        case 0:  // Bread recipe
-            ingredients_needed[WHEAT] = 5;
-            ingredients_needed[YEAST] = 2;
-            ingredients_needed[SALT] = 1;
-            break;
-        
-        case 1:  // Cake recipe
-            ingredients_needed[WHEAT] = 3;
-            ingredients_needed[SUGAR] = 4;
-            ingredients_needed[BUTTER] = 2;
-            ingredients_needed[MILK] = 1;
-            break;
-            
-        case 2:  // Sandwich recipe
-            ingredients_needed[WHEAT] = 2;
-            ingredients_needed[CHEESE] = 2;
-            ingredients_needed[SALAMI] = 2;
-            break;
-    }
-    
-    // Check if we have enough ingredients
-    if (check_ingredients(inventory, ingredients_needed, chef->inventory_sem)) {
-        // Use ingredients
-        use_ingredients(inventory, ingredients_needed, chef->inventory_sem);
-        
-        // Add to ready products based on recipe type
-        switch (recipe_choice) {
-            case 0:
-                add_ready_product(ready_products, BREAD, 1, chef->ready_products_sem);
-                printf("[Chef %d] Prepared bread\n", chef->id);
-                break;
-                
-            case 1:
-                add_ready_product(ready_products, CAKE, 1, chef->ready_products_sem);
-                printf("[Chef %d] Prepared cake\n", chef->id);
-                break;
-                
-            case 2:
-                add_ready_product(ready_products, SANDWICH, 1, chef->ready_products_sem);
-                printf("[Chef %d] Prepared sandwich\n", chef->id);
-                break;
-        }
-        
-        // Cook time
-        sleep(2);
-    }
-}
+Game* game;
 
 int main(int argc, char *argv[]) {
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s <shared_memory_fd> <request_queue_id> <response_queue_id> [chef_id]\n", argv[0]);
-        return 1;
-    }
-    
-    srand(time(NULL) ^ getpid());  // Seed random number generator
-    
-    // Parse command line arguments
-    int shm_fd = atoi(argv[1]);
-    int request_queue_id = atoi(argv[2]);
-    int response_queue_id = atoi(argv[3]);
-    int chef_id = (argc > 4) ? atoi(argv[4]) : (getpid() % 100);
-    
     // Map shared memory
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    int fd = shm_open("/game_shared_mem", O_RDWR, 0666);
+    if (fd == -1) {
+        perror("shm_open failed");
+        exit(1);
+    }
+
+    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (game == MAP_FAILED) {
         perror("mmap failed");
         exit(1);
     }
+
+    // Setup semaphores
+    sem_t* inventory_sem = setup_inventory_semaphore();
+    sem_t* ready_products_sem = setup_ready_products_semaphore();
+
+    // Setup signal handler for chef reassignment
+    signal(SIGUSR1, SIG_IGN);  // Parent process ignores the signal
+
+    time_t last_check_time = time(NULL);
     
-    // Setup inventory semaphores
-    sem_t *inventory_sem = setup_inventory_semaphore();
-    if (inventory_sem == NULL) {
-        perror("Failed to setup inventory semaphore");
+    if (!inventory_sem || !ready_products_sem) {
+        perror("Failed to setup semaphores");
         exit(1);
     }
-    
-    // Setup ready products semaphore
-    sem_t *ready_products_sem = setup_ready_products_semaphore();
-    if (ready_products_sem == NULL) {
-        perror("Failed to setup ready products semaphore");
-        exit(1);
+
+    // Create message queues for each team
+    int team_queues[TEAM_COUNT];
+    for (int i = 0; i < TEAM_COUNT; i++) {
+        team_queues[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+        if (team_queues[i] == -1) {
+            perror("Failed to create team message queue");
+            exit(1);
+        }
     }
-    
-    // Initialize chef state
-    ChefState chef;
-    chef.id = chef_id;
-    chef.request_queue_id = request_queue_id;
-    chef.response_queue_id = response_queue_id;
-    chef.is_waiting_for_ingredients = 0;
-    chef.inventory_sem = inventory_sem;
-    chef.ready_products_sem = ready_products_sem;
-    
-    printf("[Chef %d] Chef process started\n", chef.id);
-    
-    // Main chef loop
+
+    // Initialize chef manager
+    ChefManager* manager = init_chef_manager(&game->productCatalog,
+                                           inventory_sem,
+                                           ready_products_sem);
+
+    // Initial distribution of chefs per team
+    int chefs_per_team[TEAM_COUNT] = {
+        [TEAM_PASTE] = 2,
+        [TEAM_CAKES] = 2,
+        [TEAM_SANDWICHES] = 2,
+        [TEAM_SWEETS] = 2,
+        [TEAM_SWEET_PATISSERIES] = 2,
+        [TEAM_SAVORY_PATISSERIES] = 2
+    };
+
+    // Spawn chef workers for each team
+    for (int team = 0; team < TEAM_COUNT; team++) {
+        for (int i = 0; i < chefs_per_team[team]; i++) {
+            pid_t pid = fork();
+
+            if (pid == 0) {
+                // Child process
+                char shm_fd_str[16], mqid_str[16], team_str[8];
+                snprintf(shm_fd_str, sizeof(shm_fd_str), "%d", fd);
+                snprintf(mqid_str, sizeof(mqid_str), "%d", team_queues[team]);
+                snprintf(team_str, sizeof(team_str), "%d", team);
+
+                execl("./chef_worker", "chef_worker", shm_fd_str, mqid_str, team_str, NULL);
+                perror("execl failed");
+                exit(1);
+            } else if (pid > 0) {
+                // Parent process
+                Chef* chef = &manager->chefs[manager->chef_count++];
+                chef->id = manager->chef_count;
+                chef->team = team;
+                chef->pid = pid;
+                chef->is_active = 1;
+            } else {
+                perror("Fork failed");
+            }
+        }
+    }
+
     while (1) {
-        // Check inventory and request ingredients if needed
-        check_and_request_ingredients(&chef, &game->inventory);
-        
-        // Check for confirmations from supply chain
-        check_for_confirmations(&chef);
-        
-        // Try to prepare recipes
-        prepare_recipes(&chef, &game->inventory, &game->ready_products);
-        
-        // Small delay to prevent busy-waiting
-        usleep(500000);  // 0.5 seconds
+        // Process messages from chefs
+        process_chef_messages(manager, team_queues);
+
+        // Check if it's time to rebalance teams
+        time_t current_time = time(NULL);
+        if (current_time - last_check_time >= game->config.REALLOCATION_CHECK_INTERVAL) {
+            balance_teams(manager);
+            last_check_time = current_time;
+        }
+
+        usleep(100000);  // Small delay to prevent busy waiting
     }
-    
-    // Clean up (this never executes in the current implementation)
-    if (inventory_sem) {
-        sem_close(inventory_sem);
-    }
-    if (ready_products_sem) {
-        sem_close(ready_products_sem);
-    }
+
+    // Cleanup
+    cleanup_semaphore_resources(inventory_sem, ready_products_sem);
     
     return 0;
 }

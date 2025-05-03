@@ -13,7 +13,6 @@
 
 #include "config.h"
 #include "game.h"
-#include "queue.h"
 // Customer states
 typedef enum {
     WALKING,
