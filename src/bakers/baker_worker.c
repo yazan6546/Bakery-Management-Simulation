@@ -1,6 +1,4 @@
-/*****************************************
- *  baker_worker.c – one process / baker *
- *****************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

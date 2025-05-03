@@ -12,7 +12,7 @@
 #include "game.h"
 #include "bakery_utils.h"
 #include "products.h"
-#include "semaphores_utils.h"    /* optional: if manager ever uses them */
+#include "semaphores_utils.h" 
 
 #define TEAM_COUNT 3
 
