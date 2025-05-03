@@ -36,6 +36,9 @@ typedef struct {
     float CUSTOMER_PROBABILITY;
     int MIN_ORDER_ITEMS;
     int MAX_ORDER_ITEMS;
+    int REALLOCATION_CHECK_INTERVAL;
+    float PRODUCTION_RATIO_THRESHOLD;
+    int MIN_CHEFS_PER_TEAM;
 } Config;
 
 int load_config(const char *filename, Config *config);
