@@ -118,16 +118,19 @@ void seller_loop() {
             printf("Seller %d: No customers in queue, waiting...\n", seller.id);
             sleep(1);
         }
+
+        sleep(1);
     }
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <seller_id>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
+    // if (argc < 2) {
+    //     fprintf(stderr, "Usage: %s <seller_id>\n", argv[0]);
+    //     exit(EXIT_FAILURE);
+    // }
 
-    int seller_id = atoi(argv[1]);
+    // int seller_id = atoi(argv[1]);
+    int seller_id = 1; // For testing purposes, hardcoded seller ID
 
     init_seller(&seller, seller_id);
     printf("Seller %d initialized with PID %d\n", seller.id, seller.pid);

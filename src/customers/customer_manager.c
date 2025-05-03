@@ -12,7 +12,7 @@
 #include "bakery_message.h"
 #include "time.h"
 #include "semaphores_utils.h"
-#include <shared_mem_utils.h>
+#include "shared_mem_utils.h"
 
 // Global variables
 Game *shared_game;

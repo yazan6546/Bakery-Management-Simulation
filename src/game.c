@@ -50,29 +50,7 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
     return 0;
 }
 
-void game_create(int *shm_fd, Game **shared_game) {
-    // Create shared game state using mmap
-    *shm_fd = shm_open(GAME_SHM_NAME, O_CREAT | O_RDWR, 0666);
-    if ((*shm_fd) == -1) {
-        perror("shm_open failed");
-        exit(EXIT_FAILURE);
-    }
 
-    if (ftruncate(*shm_fd, sizeof(Game)) == -1) {
-        perror("ftruncate failed");
-        exit(EXIT_FAILURE);
-    }
-
-    *shared_game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, *shm_fd, 0);
-    if (*shared_game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(EXIT_FAILURE);
-    }
-
-    fcntl(*shm_fd, F_SETFD, fcntl(*shm_fd, F_GETFD) & ~FD_CLOEXEC);
-
-
-}
 
 void game_destroy(const int shm_fd, Game *shared_game) {
     if (shared_game != NULL && shared_game != MAP_FAILED) {

@@ -1,17 +1,18 @@
 #include <signal.h>
-#include "game.h"
-#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "assets.h"
+#include "config.h"
+#include "game.h"
+#include "shared_mem_utils.h"
 
 // Global pointer to shared game state
 Game *shared_game;
 pid_t processes[6];
 pid_t *processes_sellers;
 int shm_fd; // Store fd globally for cleanup
-
+queue_shm *queue;
 void handle_alarm(int signum);
 void cleanup_resources();
 void handle_kill(int signum);
@@ -26,7 +27,9 @@ int main(int argc, char *argv[]) {
     // execlp("pwd", "pwd", NULL);
     // Register cleanup function with atexit
     atexit(cleanup_resources);
-    game_create(&shm_fd, &shared_game);
+
+    shm_fd = setup_shared_memory(&shared_game);
+    setup_queue_shared_memory(&queue, shared_game->config.MAX_CUSTOMERS);
 
     processes_sellers = malloc(shared_game->config.NUM_SELLERS * sizeof(pid_t));
 
@@ -77,9 +80,12 @@ void cleanup_resources() {
     for (int i = 0; i<shared_game->config.NUM_SELLERS; i++) {
         kill(processes_sellers[i], SIGINT);
     }
+    queueShmClear(queue);
+    game_destroy(shm_fd, shared_game);
 
+    shm_unlink(CUSTOMER_QUEUE_SHM_NAME);
+    free(processes_sellers);
     printf("Cleanup complete\n");
-    fflush(stdout);
 }
 
 void handle_kill(int signum) {

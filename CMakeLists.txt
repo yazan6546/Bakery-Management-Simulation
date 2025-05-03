@@ -14,7 +14,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(JSON-C REQUIRED)
 
 add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c
-    src/utils/products_utils.c src/utils/json-config.c src/utils/semaphores_utils.c)
+    src/utils/products_utils.c src/utils/json-config.c src/utils/semaphores_utils.c
+src/utils/shared_mem_utils.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 #add_executable(chefs src/chefs/chef.c src/inventory.c)

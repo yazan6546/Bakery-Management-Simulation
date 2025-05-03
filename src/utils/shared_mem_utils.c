@@ -5,7 +5,7 @@
 
 
 
-void setup_shared_memory(Game **shared_game) {
+int setup_shared_memory(Game **shared_game) {
     // Setup game shared memory as before
     int shm_fd = shm_open(GAME_SHM_NAME, O_CREAT | O_RDWR, 0666);
     ftruncate(shm_fd, sizeof(Game));
@@ -17,11 +17,12 @@ void setup_shared_memory(Game **shared_game) {
     }
 
     fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
-    close(shm_fd);
     if (*shared_game == MAP_FAILED) {
         perror("Failed to map shared memory");
         exit(EXIT_FAILURE);
     }
+
+    return shm_fd;
 }
 
 void cleanup_shared_memory(Game *shared_game) {
@@ -31,6 +32,18 @@ void cleanup_shared_memory(Game *shared_game) {
         }
     }
     shm_unlink(GAME_SHM_NAME);
+}
+
+void cleanup_queue_shared_memory(queue_shm *queue_shm, size_t capacity) {
+    size_t elemSize = sizeof(Customer);
+    size_t shm_size = queueShmSize(elemSize, capacity);
+
+    if (queue_shm != NULL && queue_shm != MAP_FAILED) {
+        if (munmap(queue_shm, shm_size) == -1) {
+            perror("munmap failed");
+        }
+    }
+    shm_unlink(CUSTOMER_QUEUE_SHM_NAME);
 }
 
 void setup_queue_shared_memory(queue_shm **queue_shm, size_t capacity) {
@@ -48,4 +61,5 @@ void setup_queue_shared_memory(queue_shm **queue_shm, size_t capacity) {
 
     fcntl(queue_fd, F_SETFD, fcntl(queue_fd, F_GETFD) & ~FD_CLOEXEC);
     close(queue_fd);
+
 }
