@@ -63,7 +63,12 @@ void cleanup_supply_chain_resources() {
 
 // Function to process messages from supply chains
 void process_supply_chain_messages(sem_t* inventory_sem) {
-    SupplyChainMessage msg;
+    SupplyChainMessage* msg;
+    msg = malloc(sizeof(SupplyChainMessage) + sizeof(Ingredient) * shared_game->config.INGREDIENTS_TO_ORDER);
+    if (msg == NULL) {
+        perror("Failed to allocate memory for SupplyChainMessage");
+        return;
+    }
     int pid_index = rand() % shared_game->config.NUM_SUPPLY_CHAIN;
 
     printf("Supply Chain Manager: Processing messages from supply chain %d\n", pid_index);
@@ -72,7 +77,7 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
 
     printf("Supply Chain Manager: Accessed inventory:\n");
 
-    for(int i = 0; i < INGREDIENTS_TO_ORDER; i++) {
+    for(int i = 0; i < shared_game->config.INGREDIENTS_TO_ORDER; i++) {
         int ingredient_type = rand() % NUM_INGREDIENTS;
         // calculate percentage of this ingredient
         int percentage = shared_game->inventory.quantities[ingredient_type] * 100.0 / shared_game->inventory.max_capacity;
@@ -80,23 +85,25 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
         if(percentage < 20) {
             // Send message to supply chain
             
-            msg.mtype = supply_chain_pids[pid_index];
-            msg.ingredients[i].type = ingredient_type;
-            msg.ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
+            msg->mtype = supply_chain_pids[pid_index];
+            msg->ingredients[i].type = ingredient_type;
+            msg->ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
 
             printf("Supply Chain Manager: Ordering %d of %s\n", 
-                   msg.ingredients[i].quantity, get_ingredient_name(ingredient_type));   
+                   msg->ingredients[i].quantity, get_ingredient_name(ingredient_type));   
         
         }
     }
 
     unlock_inventory(inventory_sem);
 
-    if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
+    if (msgsnd(msg_queue_id, msg, sizeof(SupplyChainMessage) + sizeof(Ingredient) * shared_game->config.INGREDIENTS_TO_ORDER  - sizeof(long), IPC_NOWAIT) == -1) {
         perror("Failed to send message to supply chain");
     } else {
         printf("Supply Chain Manager: Sent order to supply chain %d\n", supply_chain_pids[pid_index]);
     }
+
+    free(msg);
 
     fflush(stdout);  
 

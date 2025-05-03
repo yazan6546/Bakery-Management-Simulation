@@ -2,26 +2,35 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <errno.h>
 
 // Setup semaphore using POSIX semaphores
 sem_t* setup_inventory_semaphore() {
+    // First try to unlink any existing semaphore (ignore errors if it doesn't exist)
+    sem_unlink(SEM_NAME);
+    
     // Create or open the semaphore
     sem_t* sem = sem_open(SEM_NAME, O_CREAT, 0666, 1); // Initial value 1
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return NULL;
     }
+    printf("Inventory semaphore created successfully\n");
     return sem;
 }
 
 // Setup semaphore for ready products
 sem_t* setup_ready_products_semaphore(void) {
+    // First try to unlink any existing semaphore (ignore errors if it doesn't exist)
+    sem_unlink(READY_SEM_NAME);
+    
     // Create or open the semaphore
     sem_t* sem = sem_open(READY_SEM_NAME, O_CREAT, 0666, 1); // Initial value 1
     if (sem == SEM_FAILED) {
         perror("sem_open failed for ready products");
         return NULL;
     }
+    printf("Ready products semaphore created successfully\n");
     return sem;
 }
 
@@ -66,4 +75,19 @@ void cleanup_ready_products_semaphore_resources(sem_t* ready_products_sem) {
 void cleanup_inventory_semaphore_resources(sem_t* inventory_sem) {
     sem_close(inventory_sem);
     sem_unlink(SEM_NAME);
+}
+
+// Reset all known semaphores in the application
+void reset_all_semaphores() {
+    // Unlink all named semaphores used in the application
+    printf("Resetting all semaphores...\n");
+    
+    // Main semaphores
+    sem_unlink(SEM_NAME);
+    sem_unlink(READY_SEM_NAME);
+    
+    // Any other semaphores used in the application
+    sem_unlink("/customer_complaint_sem");
+    
+    printf("All semaphores reset\n");
 }
