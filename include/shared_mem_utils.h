@@ -2,6 +2,7 @@
 #define SHARED_MEM_UTILS_H
 
 #include "game.h"
+#define SHM_NAME "/game_shared_mem"
 
 
 void setup_shared_memory(Game **shared_game);
