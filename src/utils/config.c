@@ -38,6 +38,8 @@ int load_config(const char *filename, Config *config) {
     config->CUSTOMER_PROBABILITY = -1;
     config->MIN_ORDER_ITEMS = -1;
     config->MAX_ORDER_ITEMS = -1;
+    config->CUSTOMER_CASCADE_PROBABILITY = -1;
+    config->CASCADE_WINDOW = -1;
     config->REALLOCATION_CHECK_INTERVAL = -1;
     config->PRODUCTION_RATIO_THRESHOLD = -1;
     config->MIN_CHEFS_PER_TEAM = -1;
@@ -80,6 +82,8 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "CUSTOMER_PROBABILITY") == 0) config->CUSTOMER_PROBABILITY = value;
             else if (strcmp(key, "MIN_ORDER_ITEMS") == 0) config->MIN_ORDER_ITEMS = (int)value;
             else if (strcmp(key, "MAX_ORDER_ITEMS") == 0) config->MAX_ORDER_ITEMS = (int)value;
+            else if (strcmp(key, "CUSTOMER_CASCADE_PROBABILITY") == 0) config->CUSTOMER_CASCADE_PROBABILITY = value;
+            else if (strcmp(key, "CASCADE_WINDOW") == 0) config->CASCADE_WINDOW = (int)value;
             else if (strcmp(key, "REALLOCATION_CHECK_INTERVAL") == 0) config->REALLOCATION_CHECK_INTERVAL = (int)value;
             else if (strcmp(key, "PRODUCTION_RATIO_THRESHOLD") == 0) config->PRODUCTION_RATIO_THRESHOLD = value;
             else if (strcmp(key, "MIN_CHEFS_PER_TEAM") == 0) config->MIN_CHEFS_PER_TEAM = (int)value;
@@ -146,6 +150,8 @@ void print_config(Config *config) {
     printf("CUSTOMER_PROBABILITY: %f\n", config->CUSTOMER_PROBABILITY);
     printf("MIN_ORDER_ITEMS: %d\n", config->MIN_ORDER_ITEMS);
     printf("MAX_ORDER_ITEMS: %d\n", config->MAX_ORDER_ITEMS);
+    printf("CUSTOMER_CASCADE_PROBABILITY: %f\n", config->CUSTOMER_CASCADE_PROBABILITY);
+    printf("CASCADE_WINDOW: %d\n", config->CASCADE_WINDOW);
 
     fflush(stdout);
 }
@@ -158,14 +164,16 @@ int check_parameter_correctness(const Config *config) {
         config->NUM_SUPPLY_CHAIN < 0 || config->MIN_PURCHASE_QUANTITY < 0 || config->MAX_PURCHASE_QUANTITY < 0 ||
         config->MIN_TIME_FRUSTRATED < 0 || config->MAX_TIME_FRUSTRATED < 0 || config->MIN_OVEN_TIME < 0 ||
         config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
-        config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0) {
+        config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0 ||
+        config->CASCADE_WINDOW < 0)  {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
 
     // Check that float parameters are non-negative
     if (config->DAILY_PROFIT < 0 || config->MAX_PATIENCE < 0 || config->MIN_PATIENCE < 0 ||
-        config->MAX_PATIENCE_DECAY < 0 || config->MIN_PATIENCE_DECAY < 0 || config->CUSTOMER_PROBABILITY < 0){
+        config->MAX_PATIENCE_DECAY < 0 || config->MIN_PATIENCE_DECAY < 0 || config->CUSTOMER_PROBABILITY < 0
+        || config->CUSTOMER_CASCADE_PROBABILITY < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -210,7 +218,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -236,11 +244,13 @@ void serialize_config(Config *config, char *buffer) {
             config->MAX_BAKE_TIME,
             config->CUSTOMER_PROBABILITY,
             config->MIN_ORDER_ITEMS,
-            config->MAX_ORDER_ITEMS);
+            config->MAX_ORDER_ITEMS,
+            config->CUSTOMER_CASCADE_PROBABILITY,
+            config->CASCADE_WINDOW);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -266,5 +276,7 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->MAX_BAKE_TIME,
            &config->CUSTOMER_PROBABILITY,
            &config->MIN_ORDER_ITEMS,
-            &config->MAX_ORDER_ITEMS);
+            &config->MAX_ORDER_ITEMS,
+            &config->CUSTOMER_CASCADE_PROBABILITY,
+            &config->CASCADE_WINDOW);
 }

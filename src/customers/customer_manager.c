@@ -10,12 +10,15 @@
 #include "queue.h"
 #include "random.h"
 #include "bakery_message.h"
+#include "time.h"
+#include "semaphores_utils.h"
 
 // Global variables
 Game *shared_game;
 queue_shm *customer_queue;
 int msg_queue_id;
 int active_customers = 0;
+sem_t *complaint_sem = NULL;
 
 void cleanup_resources() {
     printf("Cleaning up resources...in customer_manager\n");
@@ -30,6 +33,13 @@ void cleanup_resources() {
             kill(c->pid, SIGTERM);
         }
     }
+
+    // Clean up named semaphore
+    if (complaint_sem != NULL) {
+        sem_close(complaint_sem);
+        sem_unlink(COMPLAINT_SEM_NAME);
+    }
+
 }
 
 void handle_sigint(int signum) {
@@ -69,6 +79,7 @@ void handle_customer_message(int signum) {
 
                     case 1: // Normal leaving
                         printf("Customer %d is leaving normally\n", cust_id);
+                        shared_game->num_customers_served++;
                         kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
@@ -84,7 +95,13 @@ void handle_customer_message(int signum) {
 
                     case 3: // Complained
                         printf("Customer %d complained and left\n", cust_id);
+
+                        sem_wait(complaint_sem);
                         shared_game->num_complained_customers++;
+                        shared_game->recent_complaint = true;
+                        shared_game->complaining_customer_pid = c->pid;
+                        shared_game->last_complaint_time = time(NULL);
+                        sem_post(complaint_sem);
                         kill(c->pid, SIGKILL);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
@@ -97,6 +114,18 @@ void handle_customer_message(int signum) {
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
+
+                    case 5: // Cascade effect
+                        printf("Customer %d left due to cascade effect after seeing customer %d complain\n",
+                              cust_id, shared_game->complaining_customer_pid);
+
+                        sem_wait(complaint_sem);
+                        shared_game->num_customers_cascade++;
+                        sem_post(complaint_sem);
+                        kill(c->pid, SIGKILL);
+                        queueShmRemoveAt(customer_queue, temp);
+                        active_customers--;
+                        break;
                 }
                 break;
             }
@@ -104,20 +133,25 @@ void handle_customer_message(int signum) {
 
         if (!found && msg.customer_pid > 0) {
 //            kill(pid, SIGKILL); // Clean up the orphaned process
-
-            for (int j = 0; j < customer_queue->count; j++) {
-                size_t pos = (customer_queue->head + j) % customer_queue->capacity;
-                Customer *c = &((Customer*)customer_queue->elements)[pos];
-                printf("NFFFF : pid : %d\n", c->pid);
-            }
-
-            for (int j = 0; j < customer_queue->count; j++) {
-                Customer *c = &((Customer*)customer_queue->elements)[j];
-                printf("HAHAHA : pid : %d\n", c->pid);
-            }
             printf("Unknown sender, killing process: %d\n", pid);
         }
     }
+}
+
+
+void check_and_reset_complaints() {
+    sem_wait(complaint_sem);
+
+    if (shared_game->recent_complaint) {
+        time_t current_time = time(NULL);
+        // Reset complaint after CASCADE_WINDOW seconds
+        if (current_time - shared_game->last_complaint_time > shared_game->config.CASCADE_WINDOW) {
+            shared_game->recent_complaint = false;
+            printf("Complaint effect has expired\n");
+        }
+    }
+
+    sem_post(complaint_sem);
 }
 
 void spawn_customer(int customer_id) {
@@ -178,6 +212,13 @@ int main(int argc, char *argv[]) {
     // Initialize random number generator
     init_random();
 
+    // Create named semaphore for complaint synchronization
+    complaint_sem = sem_open(COMPLAINT_SEM_NAME, O_CREAT, 0666, 1);
+    if (complaint_sem == SEM_FAILED) {
+        perror("Failed to create complaint semaphore");
+        exit(EXIT_FAILURE);
+    }
+
     // Setup signal handler for customer messages
     signal(SIGUSR1, handle_customer_message);
     signal(SIGINT, handle_sigint);
@@ -206,23 +247,19 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        printf("\n\n------------------------------\n");
-        for (int j = 0; j < customer_queue->count; j++) {
-            size_t pos = (customer_queue->head + j) % customer_queue->capacity;
-            Customer *c = &((Customer*)customer_queue->elements)[pos];
-            printf("MAIN : pid : %d\n", c->pid);
-        }
-        printf("------------------------------\n\n");
+        // Check and reset old complaints
+        check_and_reset_complaints();
 
         // Process any pending messages (in case SIGUSR1 was missed)
         handle_customer_message(SIGUSR1);
 
-        // Debug output
-        printf("Active customers: %d, Frustrated: %d, Complained: %d, Missing Orders: %d\n",
+        // Print statistics
+        printf("Active: %d, Frustrated: %d, Complained: %d, Missing: %d, Cascade: %d\n",
                active_customers,
                shared_game->num_frustrated_customers,
                shared_game->num_complained_customers,
-               shared_game->num_customers_missing);
+               shared_game->num_customers_missing,
+               shared_game->num_customers_cascade);
 
         // Sleep for a random time between 2-4 seconds
         sleep(2 + rand() % 3);

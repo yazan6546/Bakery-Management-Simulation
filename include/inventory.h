@@ -16,10 +16,8 @@
 #include <string.h>
 #include "products.h"
 
-// Define names for shared memory file and semaphore
 
-#define SEM_NAME "/bakery_inventory_sem"
-#define READY_SEM_NAME "/bakery_ready_products_sem"
+
 
 // Inventory struct with array-based approach
 typedef struct {
@@ -50,18 +48,12 @@ void restock_ingredients(Inventory *inventory, sem_t* sem);
 void add_paste(Inventory *inventory, int quantity, sem_t* sem);
 int get_paste_count(Inventory *inventory, sem_t* sem);
 
-// Function prototypes for shared memory and semaphores
-sem_t* setup_inventory_semaphore(void);
-void lock_inventory(sem_t* sem);
-void unlock_inventory(sem_t* sem);
-void cleanup_semaphore_resources(sem_t* inventory_sem, sem_t* ready_products_sem);
 
-// Function prototypes for ready products
-sem_t* setup_ready_products_semaphore(void);
+
+
 void init_ready_products(ReadyProducts *ready_products);
 void add_ready_product(ReadyProducts *ready_products, ProductType type, int product_index, int quantity, sem_t* sem);
 int get_ready_product(ReadyProducts *ready_products, ProductType type, int product_index, int quantity, sem_t* sem);
-void lock_ready_products(sem_t* sem);
-void unlock_ready_products(sem_t* sem);
+
 
 #endif //INVENTORY_H

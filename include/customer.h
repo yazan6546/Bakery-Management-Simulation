@@ -9,6 +9,7 @@
 // Feedback values
 #define FEEDBACK_GOOD 1
 #define FEEDBACK_BAD 2
+// Named semaphore for complaint synchronization
 
 #include "config.h"
 #include "game.h"
@@ -19,7 +20,8 @@ typedef enum {
     WAITING_FOR_ORDER,
     ORDERING,
     FRUSTRATED,
-    COMPLAINING
+    COMPLAINING,
+    CONTAGION
 } CustomerState;
 
 typedef struct {
