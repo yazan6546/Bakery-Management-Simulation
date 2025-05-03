@@ -1,18 +1,20 @@
+#include "chef.h"
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
-#include <fcntl.h>
-#include <string.h>
 #include <time.h>
-#include <signal.h>
-#include "inventory.h"
+#include <unistd.h>
 #include "config.h"
 #include "game.h"
-#include "chef.h"
+#include "inventory.h"
 
-Game* game;
+#include "semaphores_utils.h"
+
+Game * game;
 
 int main(int argc, char *argv[]) {
     // Map shared memory
@@ -110,7 +112,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Cleanup
-    cleanup_semaphore_resources(inventory_sem, ready_products_sem);
+    cleanup_inventory_semaphore_resources(inventory_sem);
+    cleanup_ready_products_semaphore_resources(ready_products_sem);
     
     return 0;
 }
