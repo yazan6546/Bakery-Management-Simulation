@@ -1,123 +1,133 @@
-//
-// Created by yazan on 4/26/2025.
-//
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/msg.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
 #include <time.h>
-#include "bakery_message.h"
-#include "inventory.h"
-#include "config.h"
+#include <math.h>
+
 #include "game.h"
 #include "supply_chain.h"
-#include "chef.h"  // Include chef.h to access RestockRequest type
+#include "semaphores_utils.h"
+#include "shared_mem_utils.h"
+#include "random.h"
+#include "products.h"
 
-// Global game reference
-Game *game;
+// Define message queue key
+#define SUPPLY_CHAIN_MSG_KEY 0x1234
 
-// Function to process a restock request
-void process_restock_request(SupplyChainState *state, SupplyChainRequest *request, Inventory *inventory) {
-    printf("[Supply Chain %d] Processing restock request for ingredient %d, quantity %d, urgency %d\n", 
-           state->id, request->ingredient, request->quantity, request->urgency);
+// Global variables
+Game* shared_game = NULL;
+sem_t* inventory_sem = NULL;
+int supply_chain_id = -1;
+int msg_queue_id = -1;
+
+// Signal handler for cleanup
+void handle_signal(int sig) {
+    printf("Supply Chain %d: Shutting down...\n", supply_chain_id);
     
-    // Simulate delivery time based on urgency (more urgent = faster delivery)
-    int delivery_time = 10 - request->urgency;
-    if (delivery_time < 1) delivery_time = 1;
-    
-    printf("[Supply Chain %d] Estimated delivery time: %d seconds\n", state->id, delivery_time);
-    
-    // Simulate the delivery process
-    sleep(delivery_time);
-    
-    // Create and prepare confirmation message
-    SupplyChainConfirmation confirmation;
-    confirmation.mtype = request->mtype; // Reply to the same type
-    confirmation.ingredient = request->ingredient;
-    confirmation.quantity = request->quantity;
-    confirmation.success = 1; // Assume success for now
-    
-    // Add ingredients to inventory
-    add_ingredient(inventory, request->ingredient, request->quantity, state->inventory_sem);
-    
-    // Send confirmation back to chef
-    if (msgsnd(state->response_queue_id, &confirmation, sizeof(SupplyChainConfirmation) - sizeof(long), 0) == -1) {
-        perror("[Supply Chain] Failed to send confirmation");
-    } else {
-        printf("[Supply Chain %d] Restocked %d units of ingredient %d, confirmation sent\n", 
-               state->id, request->quantity, request->ingredient);
+    // Cleanup resources
+    if (shared_game != NULL) {
+        munmap(shared_game, sizeof(Game));
     }
+    
+    exit(EXIT_SUCCESS);
+}
+
+// Function to generate random delay between deliveries
+int get_random_delay() {
+    return (rand() % 5) + 3; // 3 to 7 seconds
+}
+
+// Function to generate random quantity of ingredients
+int get_random_quantity() {
+    return (rand() % 10) + 5; // 5 to 14 units
+}
+
+
+
+// Function to update inventory based on supply chain type
+void update_inventory() {
+    
+    SupplyChainMessage msg;
+    int result = msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), IPC_NOWAIT);
+
+    if(result == -1) {
+        perror("Failed to receive message from supply chain");
+        return;
+    }
+
+
+    // Simulate delivery time
+    int time = get_random_delay();
+    printf("Supply Chain %d: delivering after %d seconds\n", getpid(), time);
+    sleep(time);
+    printf("Supply Chain %d: putting in inventory\n", getpid());
+    
+    
+    // Lock inventory for update
+    lock_inventory(inventory_sem);
+
+    printf("Supply Chain %d: Accessed inventory:\n", getpid());
+    
+    // Update inventory in shared memory
+    for (int i = 0; i < INGREDIENTS_TO_ORDER; i++)
+    {
+        // Update the inventory in shared memory 
+
+        int type = msg.ingredients[i].type;
+        shared_game->inventory.quantities[type] = 
+        fmin(shared_game->inventory.quantities[type] + msg.ingredients[i].quantity,
+             shared_game->inventory.max_capacity);
+           
+        printf("Supply Chain %d: Updated inventory for ingredient %d: %d\n", 
+               getpid(), i, shared_game->inventory.quantities[type]);
+    }
+
+    unlock_inventory(inventory_sem);
+
+    print_inventory(&shared_game->inventory);
+
+    fflush(stdout);
+    
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s <shared_memory_fd> <request_queue_id> <response_queue_id> [supply_chain_id]\n", argv[0]);
-        return 1;
+  
+    
+    // Setup shared memory
+    setup_shared_memory(&shared_game);
+    if (shared_game == NULL) {
+        fprintf(stderr, "Supply Chain %d: Failed to setup shared memory\n", supply_chain_id);
+        return EXIT_FAILURE;
     }
     
-    srand(time(NULL) ^ getpid());
-    
-    // Parse command line arguments
-    int shm_fd = atoi(argv[1]);
-    int request_queue_id = atoi(argv[2]);
-    int response_queue_id = atoi(argv[3]);
-    int supply_chain_id = (argc > 4) ? atoi(argv[4]) : (getpid() % 100);
-    
-    // Map shared memory
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
-    
-    printf("[Supply Chain %d] Supply chain process started (PID: %d)\n", supply_chain_id, getpid());
-    printf("[Supply Chain %d] Monitoring request queue %d, responding on queue %d\n", 
-           supply_chain_id, request_queue_id, response_queue_id);
-    
-    // Setup inventory semaphores
-    sem_t* inventory_sem = setup_inventory_semaphore();
+    // Setup semaphores
+    inventory_sem = setup_inventory_semaphore();
     if (inventory_sem == NULL) {
-        perror("Failed to set up inventory semaphore");
-        exit(1);
+        fprintf(stderr, "Supply Chain %d: Failed to setup inventory semaphore\n", supply_chain_id);
+        return EXIT_FAILURE;
     }
     
-    // Initialize supply chain state
-    SupplyChainState state;
-    state.id = supply_chain_id;
-    state.request_queue_id = request_queue_id;
-    state.response_queue_id = response_queue_id;
-    state.inventory_sem = inventory_sem;
+    // Create or get message queue
+    msg_queue_id = msgget(SUPPLY_CHAIN_MSG_KEY, 0666 | IPC_CREAT);
+    if (msg_queue_id == -1) {
+        perror("Failed to create/get message queue");
+        return EXIT_FAILURE;
+    }
     
-    // Main loop to process restock requests
+    
+    // Main loop
     while (1) {
-        // Need to handle both the RestockRequest from chefs and convert it to our SupplyChainRequest format
-        RestockRequest chef_request;
+        // Random delay between deliveries
         
-        // Wait for a restock request
-        if (msgrcv(request_queue_id, &chef_request, sizeof(RestockRequest) - sizeof(long), 0, 0) == -1) {
-            perror("[Supply Chain] Error receiving message");
-            continue;
-        }
         
-        // Convert the chef request to our format
-        SupplyChainRequest supply_request;
-        supply_request.mtype = chef_request.mtype;
-        supply_request.ingredient = chef_request.ingredient;
-        supply_request.quantity = chef_request.quantity;
-        supply_request.urgency = chef_request.urgency;
-        
-        // Process the request
-        process_restock_request(&state, &supply_request, &game->inventory);
+        // Update inventory with new supplies
+        update_inventory();
+        sleep(1);
     }
     
-    // Cleanup (this will never execute in the current implementation)
-    if (inventory_sem) {
-        sem_close(inventory_sem);
-    }
-    
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -176,7 +176,36 @@ int get_ready_product(ReadyProducts *ready_products, ProductType type, int produ
     return result;
 }
 
+void print_inventory(Inventory *inventory) {
+    printf("Inventory Contents:\n");
+    for (int i = 0; i < NUM_INGREDIENTS; i++) {
+        printf("  %s: %d units\n", get_ingredient_name(i), inventory->quantities[i]);
+    }
+    printf("-------------------------------\n");
+}
 
-
-
-
+// Utility function to convert ingredient type enum to string name
+const char* get_ingredient_name(int ingredient_type) {
+    switch(ingredient_type) {
+        case WHEAT: return "Wheat";
+        case FLOUR: return "Flour";
+        case CHOCOLATE: return "Chocolate";
+        case YEAST: return "Yeast";
+        case BUTTER: return "Butter";
+        case MILK: return "Milk";
+        case SUGAR: return "Sugar";
+        case SALT: return "Salt";
+        case SWEET_ITEMS: return "Sweet Items";
+        case CHEESE: return "Cheese";
+        case SALAMI: return "Salami";
+        case PASTE_INGREDIENTS: return "Paste Ingredients";
+        case CUSTARD: return "Custard";
+        case VANILLA: return "Vanilla";
+        case EGGS: return "Eggs";
+        case VEGETABLES: return "Vegetables";
+        case BREAD_ING: return "Bread Ingredients";
+        case CREAM: return "Cream";
+        case FRUITS: return "Fresh Fruits";
+        default: return "Unknown Ingredient";
+    }
+}
