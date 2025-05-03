@@ -80,17 +80,20 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
     for(int i = 0; i < shared_game->config.INGREDIENTS_TO_ORDER; i++) {
         int ingredient_type = rand() % NUM_INGREDIENTS;
         // calculate percentage of this ingredient
-        int percentage = shared_game->inventory.quantities[ingredient_type] * 100.0 / shared_game->inventory.max_capacity;
+        float percentage = shared_game->inventory.quantities[ingredient_type] * 100.0f / shared_game->inventory.max_capacity;
 
-        if(percentage < 20) {
+        if(percentage < 20.0f) {
             // Send message to supply chain
             
             msg->mtype = supply_chain_pids[pid_index];
             msg->ingredients[i].type = ingredient_type;
-            msg->ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
+            float current_quantity = shared_game->inventory.quantities[ingredient_type];
+            float max_capacity = (float)shared_game->inventory.max_capacity;
+            float to_order = random_float(1.0f, max_capacity - current_quantity); // Random quantity to order
+            msg->ingredients[i].quantity = to_order;
 
-            printf("Supply Chain Manager: Ordering %d of %s\n", 
-                   msg->ingredients[i].quantity, get_ingredient_name(ingredient_type));   
+            printf("Supply Chain Manager: Ordering %.1f of %s\n", 
+                   to_order, get_ingredient_name(ingredient_type));   
         
         }
     }

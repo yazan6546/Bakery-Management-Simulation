@@ -85,9 +85,9 @@ void update_inventory() {
         int type = msg->ingredients[i].type;
         shared_game->inventory.quantities[type] = 
         fmin(shared_game->inventory.quantities[type] + msg->ingredients[i].quantity,
-             shared_game->inventory.max_capacity);
+             (float)shared_game->inventory.max_capacity);
            
-        printf("Supply Chain %d: Updated inventory for ingredient %d: %d\n", 
+        printf("Supply Chain %d: Updated inventory for ingredient %d: %.1f\n", 
                getpid(), i, shared_game->inventory.quantities[type]);
     }
 
