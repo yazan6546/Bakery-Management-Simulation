@@ -7,6 +7,8 @@
 
 #include <semaphore.h>
 
+#define INGREDIENTS_TO_ORDER 3
+
 // Message structures for supply chain communication
 typedef struct {
     long mtype; // Message type

@@ -21,7 +21,6 @@
 
 // Define message queue key (must match the one in supply_chain.c)
 #define SUPPLY_CHAIN_MSG_KEY 0x1234
-#define INGREDIENTS_TO_ORDER 3
 
 // Global variables
 Game* shared_game = NULL;
@@ -81,9 +80,8 @@ void process_supply_chain_messages() {
             msg.ingredients[i].type = ingredient_type;
             msg.ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
 
-            printf("Supply Chain Manager: Ordering %d of %s\n", 
-                   msg.ingredients[i].quantity, get_ingredient_name(ingredient_type));
-            
+            printf("Supply Chain Manager: Ordering %f of %s\n", 
+                   msg.ingredients[i].quantity, get_ingredient_name(ingredient_type));   
         
         }
     }

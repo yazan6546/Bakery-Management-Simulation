@@ -52,26 +52,29 @@ int get_random_quantity() {
 void update_inventory() {
     
     SupplyChainMessage msg;
-    msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), IPC_NOWAIT);
+    msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), 0);
 
 
     // Simulate delivery time
-    sleep(get_random_delay());
-    printf("Supply Chain %d: delivering after %d seconds\n", getpid(), get_random_delay());
+    int time = get_random_delay();
+    sleep(time);
+    printf("Supply Chain %d: delivering after %d seconds\n", getpid(), time);
     
     // Lock inventory for update
     lock_inventory(inventory_sem);
     
     // Update inventory in shared memory
-    for (int i = 0; i < NUM_INGREDIENTS; i++)
+    for (int i = 0; i < INGREDIENTS_TO_ORDER; i++)
     {
         // Update the inventory in shared memory 
-        shared_game->inventory.quantities[i] = 
-        fmin(shared_game->inventory.quantities[i] + msg.ingredients[i].quantity,
+
+        int type = msg.ingredients[i].type;
+        shared_game->inventory.quantities[type] = 
+        fmin(shared_game->inventory.quantities[type] + msg.ingredients[type].quantity,
              shared_game->inventory.max_capacity);
            
         printf("Supply Chain %d: Updated inventory for ingredient %d: %.1f\n", 
-               supply_chain_id, i, shared_game->inventory.quantities[i]);
+               supply_chain_id, i, shared_game->inventory.quantities[type]);
     }
 
     unlock_inventory(inventory_sem);
