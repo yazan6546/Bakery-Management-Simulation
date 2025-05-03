@@ -5,6 +5,7 @@
 #include "assets.h"
 #include "config.h"
 #include "game.h"
+#include "queue.h"
 #include "shared_mem_utils.h"
 
 // Global pointer to shared game state

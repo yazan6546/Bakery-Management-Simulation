@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "customer.h"
+#include "queue.h"
 
 
 

@@ -200,6 +200,7 @@ int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order,
         }
     }
 
+
     // Second pass: if all items are available, fulfill the order by reducing quantities
     if (can_fulfill) {
         for (int i = 0; i < order->item_count; i++) {
