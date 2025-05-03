@@ -1,32 +1,25 @@
+#include "chef.h"
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
-#include <fcntl.h>
-#include <string.h>
 #include <time.h>
-#include <signal.h>
-#include "inventory.h"
+#include <unistd.h>
 #include "config.h"
 #include "game.h"
-#include "chef.h"
+#include "shared_mem_utils.h"
+#include "semaphores_utils.h"
+#include "inventory.h"
 
-Game* game;
+
+Game *game;
 
 int main(int argc, char *argv[]) {
-    // Map shared memory
-    int fd = shm_open("/game_shared_mem", O_RDWR, 0666);
-    if (fd == -1) {
-        perror("shm_open failed");
-        exit(1);
-    }
 
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
+    setup_shared_memory(&game);
 
     // Setup semaphores
     sem_t* inventory_sem = setup_inventory_semaphore();
@@ -74,12 +67,11 @@ int main(int argc, char *argv[]) {
 
             if (pid == 0) {
                 // Child process
-                char shm_fd_str[16], mqid_str[16], team_str[8];
-                snprintf(shm_fd_str, sizeof(shm_fd_str), "%d", fd);
+                char mqid_str[16], team_str[8];
                 snprintf(mqid_str, sizeof(mqid_str), "%d", team_queues[team]);
                 snprintf(team_str, sizeof(team_str), "%d", team);
 
-                execl("./chef_worker", "chef_worker", shm_fd_str, mqid_str, team_str, NULL);
+                execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
                 perror("execl failed");
                 exit(1);
             } else if (pid > 0) {
@@ -97,12 +89,12 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         // Process messages from chefs
-        process_chef_messages(manager, team_queues);
+        process_chef_messages(manager, team_queues, game);
 
         // Check if it's time to rebalance teams
         time_t current_time = time(NULL);
         if (current_time - last_check_time >= game->config.REALLOCATION_CHECK_INTERVAL) {
-            balance_teams(manager);
+            balance_teams(manager, game);
             last_check_time = current_time;
         }
 
@@ -110,7 +102,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Cleanup
-    cleanup_semaphore_resources(inventory_sem, ready_products_sem);
+    cleanup_inventory_semaphore_resources(inventory_sem);
+    cleanup_ready_products_semaphore_resources(ready_products_sem);
     
     return 0;
 }

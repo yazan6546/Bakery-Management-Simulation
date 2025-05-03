@@ -2,8 +2,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#define SHM_NAME "/game_shared_mem"
-
 
 void setup_shared_memory(Game **shared_game) {
     // Setup game shared memory as before

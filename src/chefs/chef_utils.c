@@ -16,50 +16,10 @@
 #include "config.h"
 #include "game.h"
 #include "chef.h"
+#include "semaphores_utils.h"
 #include "bakery_message.h"
 
-Game *game;
-int fd;
-void start_chef(Chef* chef, int msg_queue_id) {
-    printf("[Chef %d] Started working in team %d\n", chef->id, chef->team);
 
-    while (1) {
-        // Select a random product from chef's specialization
-        if (chef->specialization->product_count == 0) {
-            sleep(1);
-            continue;
-        }
-
-        int product_index = rand() % chef->specialization->product_count;
-        Product* product = &chef->specialization->products[product_index];
-
-        // Check if we have enough ingredients
-        if (check_ingredients(&game->inventory, product->ingredients, chef->inventory_sem)) {
-            // Use ingredients
-            use_ingredients(&game->inventory, product->ingredients, chef->inventory_sem);
-
-            // Prepare the product
-            sleep(product->preparation_time);
-
-            // Create message for prepared item
-            ChefMessage msg;
-            msg.mtype = 1;
-            msg.prepared_item.source_team = chef->team;
-            msg.prepared_item.item.product = *product;
-            msg.prepared_item.item.quantity = 1;
-
-            // Send to chef manager
-            if (msgsnd(msg_queue_id, &msg, sizeof(PreparedItem), 0) == -1) {
-                perror("Failed to send item to chef manager");
-            } else {
-                chef->items_produced++;
-                printf("[Chef %d] Prepared %s\n", chef->id, product->name);
-            }
-        }
-
-        sleep(1); // Production interval
-    }
-}
 
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem) {
     ChefManager* manager = malloc(sizeof(ChefManager));
@@ -84,23 +44,23 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
     return manager;
 }
 
-void process_chef_messages(ChefManager* manager, int* team_queues) {
+void process_chef_messages(ChefManager* manager, int* team_queues, Game *game) {
     while (1) {
         // Process messages from all team queues
         for (int team = 0; team < TEAM_COUNT; team++) {
             ChefMessage msg;
-            while (msgrcv(team_queues[team], &msg, sizeof(PreparedItem), 0, IPC_NOWAIT) != -1) {
+            while (msgrcv(team_queues[team], &msg, sizeof(ChefMessage), 0, IPC_NOWAIT) != -1) {
                 // Forward to baker manager if needed
-                if (msg.prepared_item.source_team != TEAM_SANDWICHES) {
-                    if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(PreparedItem), 0) == -1) {
+                if (msg.source_team != TEAM_SANDWICHES) {
+                    if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage), 0) == -1) {
                         perror("Failed to forward to baker manager");
                     }
                 } else {
                     // Direct to ready products for items that don't need baking
                     add_ready_product(&game->ready_products,
-                                   msg.prepared_item.item.product.id[0],
-                                   0,
-                                   msg.prepared_item.item.quantity,
+                                   msg.source_team,
+                                   msg.product_index,
+                                   1,
                                    manager->ready_products_sem);
                 }
             }
@@ -154,7 +114,7 @@ ChefTeam get_team_for_product_type(ProductType type) {
     }
 }
 
-void simulate_chef_work(ChefTeam team, int msg_queue_id) {
+void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     // Set up random seed based on process ID
     srand(time(NULL) ^ getpid());
 
@@ -254,7 +214,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id) {
                 msg.product_name = product->name;
 
                 // Send to chef manager
-                if (msgsnd(msg_queue_id, &msg, sizeof(PreparedItem), 0) == -1) {
+                if (msgsnd(msg_queue_id, &msg, sizeof(ChefMessage), 0) == -1) {
                     perror("[Chef Worker] Failed to send prepared item");
                 } else {
                     printf("[Chef Worker Team %d] Sent %s to baker\n",
@@ -274,12 +234,10 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id) {
     }
 
     // Cleanup
-    cleanup_semaphore_resources(inventory_sem, ready_products_sem);
+    cleanup_ready_products_semaphore_resources(ready_products_sem);
+    cleanup_inventory_semaphore_resources(inventory_sem);
 }
 
-//#define REALLOCATION_CHECK_INTERVAL 30  // Check every 30 seconds
-//#define PRODUCTION_RATIO_THRESHOLD 1.5   // Trigger reallocation when ratio exceeds this
-//#define MIN_CHEFS_PER_TEAM 1           // Minimum chefs that must remain in a team
 
 // Function to calculate current production ratios
 void calculate_production_ratios(const ReadyProducts *ready_products, float *ratios) {
@@ -306,7 +264,7 @@ void calculate_production_ratios(const ReadyProducts *ready_products, float *rat
 
 
 // Function to move a chef between teams
-void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team) {
+void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game) {
     // Find a chef from the source team
     for (int i = 0; i < manager->chef_count; i++) {
         Chef *chef = &manager->chefs[i];
@@ -334,7 +292,7 @@ void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team) {
 }
 
 // Function to balance teams based on production
-void balance_teams(ChefManager *manager) {
+void balance_teams(ChefManager *manager, Game *game) {
     float production_ratios[NUM_PRODUCTS] = {0};
     calculate_production_ratios(&game->ready_products, production_ratios);
 
@@ -357,17 +315,6 @@ void balance_teams(ChefManager *manager) {
 
     // If the ratio difference is significant, move a chef
     if (max_ratio / min_ratio > game->config.PRODUCTION_RATIO_THRESHOLD) {
-        move_chef(manager, max_team, min_team);
+        move_chef(manager, max_team, min_team, game);
     }
-}
-
-void handle_team_change(int signum) {
-    // Re-map shared memory to get updated team assignment
-    // This is necessary because the team might have changed
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed during team change");
-        exit(1);
-    }
-    printf("[Chef Worker] Received team reassignment signal\n");
 }

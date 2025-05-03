@@ -17,11 +17,16 @@ add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src
     src/utils/products_utils.c src/utils/json-config.c src/utils/semaphores_utils.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
-#add_executable(chefs src/chefs/chef.c src/inventory.c)
-add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c src/utils/semaphores_utils.c src/utils/products_utils.c)
-add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c src/utils/semaphores_utils.c src/utils/random.c src/utils/shared_mem_utils.c src/utils/products_utils.c)
+add_executable(chefs src/chefs/chef.c src/inventory.c src/chefs/chef_utils.c
+src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
+add_executable(chef_worker src/chefs/chef_worker.c src/inventory.c src/chefs/chef_utils.c
+src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
+add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c src/utils/semaphores_utils.c)
+add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c src/utils/semaphores_utils.c
+src/utils/shared_mem_utils.c)
 add_executable(customers src/customers/customer.c src/utils/random.c src/utils/config.c
-src/customers/customer_utils.c)
+src/customers/customer_utils.c
+src/utils/shared_mem_utils.c)
 
 add_executable(bakers
     src/bakers/baker.c
@@ -46,6 +51,7 @@ add_executable(baker_worker
     src/bakers/baker_utils.c
     src/utils/semaphores_utils.c
     src/utils/products_utils.c
+    src/utils/shared_mem_utils.c
 )
 
 add_executable(supply_chain_manager
