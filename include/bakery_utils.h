@@ -3,14 +3,10 @@
 #define BAKER_UTILS_H
 
 #include "BakerTeam.h"
-#include "BakeryItem.h"
 #include "config.h"
 
 // Get the team name string from the enum
 const char* get_team_name_str(Team team);
-
-// Check if a bakery item belongs to a specific team
-int is_team_item(BakeryItem* item, Team team);
 
 // Serialize a baker team struct to a string
 void serialize_baker_team(BakerTeam *team, char *buffer, size_t size);

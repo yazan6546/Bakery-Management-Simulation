@@ -21,11 +21,6 @@ const char* get_team_name_str(Team team) {
     }
 }
 
-int is_team_item(BakeryItem* item, Team team) {
-    const char* team_name_str = get_team_name_str(team);
-    return strcmp(item->team_name, team_name_str) == 0;
-}
-
 void serialize_baker_team(BakerTeam *team, char *buffer, size_t size) {
     snprintf(buffer, size, "%d,%d", (int)team->team_name, team->number_of_bakers);
 }
