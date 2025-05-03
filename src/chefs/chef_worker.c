@@ -28,13 +28,13 @@ int main(int argc, char *argv[]) {
     }
 
     struct sigaction sa;
-    sa.sa_handler = handle_team_change;
+    sa.sa_handler = move_chef;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
     sigaction(SIGUSR1, &sa, NULL);
 
     // Start chef work simulation
-    simulate_chef_work(team, msg_queue_id);
+    simulate_chef_work(team, msg_queue_id, game);
 
     return 0;
 }

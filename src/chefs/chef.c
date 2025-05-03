@@ -14,7 +14,7 @@
 
 #include "semaphores_utils.h"
 
-Game * game;
+Game *game;
 
 int main(int argc, char *argv[]) {
     // Map shared memory
@@ -99,12 +99,12 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         // Process messages from chefs
-        process_chef_messages(manager, team_queues);
+        process_chef_messages(manager, team_queues, game);
 
         // Check if it's time to rebalance teams
         time_t current_time = time(NULL);
         if (current_time - last_check_time >= game->config.REALLOCATION_CHECK_INTERVAL) {
-            balance_teams(manager);
+            balance_teams(manager, game);
             last_check_time = current_time;
         }
 

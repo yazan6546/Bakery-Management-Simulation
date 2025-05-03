@@ -19,8 +19,6 @@
 #include "semaphores_utils.h"
 #include "bakery_message.h"
 
-Game *game;
-int fd;
 
 
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem) {
@@ -46,7 +44,7 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
     return manager;
 }
 
-void process_chef_messages(ChefManager* manager, int* team_queues) {
+void process_chef_messages(ChefManager* manager, int* team_queues, Game *game) {
     while (1) {
         // Process messages from all team queues
         for (int team = 0; team < TEAM_COUNT; team++) {
@@ -116,7 +114,7 @@ ChefTeam get_team_for_product_type(ProductType type) {
     }
 }
 
-void simulate_chef_work(ChefTeam team, int msg_queue_id) {
+void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     // Set up random seed based on process ID
     srand(time(NULL) ^ getpid());
 
@@ -266,7 +264,7 @@ void calculate_production_ratios(const ReadyProducts *ready_products, float *rat
 
 
 // Function to move a chef between teams
-void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team) {
+void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game) {
     // Find a chef from the source team
     for (int i = 0; i < manager->chef_count; i++) {
         Chef *chef = &manager->chefs[i];
@@ -294,7 +292,7 @@ void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team) {
 }
 
 // Function to balance teams based on production
-void balance_teams(ChefManager *manager) {
+void balance_teams(ChefManager *manager, Game *game) {
     float production_ratios[NUM_PRODUCTS] = {0};
     calculate_production_ratios(&game->ready_products, production_ratios);
 
@@ -317,6 +315,6 @@ void balance_teams(ChefManager *manager) {
 
     // If the ratio difference is significant, move a chef
     if (max_ratio / min_ratio > game->config.PRODUCTION_RATIO_THRESHOLD) {
-        move_chef(manager, max_team, min_team);
+        move_chef(manager, max_team, min_team, game);
     }
 }
