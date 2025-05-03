@@ -80,8 +80,6 @@ int main(int argc, char *argv[]) {
     while (check_game_conditions(shared_game)) {
 
     
-
-
     }
 
 }
