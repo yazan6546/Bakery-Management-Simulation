@@ -68,7 +68,9 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
 
     printf("Supply Chain Manager: Processing messages from supply chain %d\n", pid_index);
 
-    lock_inventory(inventory_sem);
+    // lock_inventory(inventory_sem);
+
+    printf("Supply Chain Manager: Accessed inventory:\n");
 
     for(int i = 0; i < INGREDIENTS_TO_ORDER; i++) {
         int ingredient_type = rand() % NUM_INGREDIENTS;
@@ -88,7 +90,7 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
         }
     }
 
-    unlock_inventory(inventory_sem);
+    // unlock_inventory(inventory_sem);
 
     if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
         perror("Failed to send message to supply chain");
@@ -176,7 +178,7 @@ int main(int argc, char *argv[]) {
         // Process messages from supply chains
         process_supply_chain_messages(inventory_sem);
         
-        sleep(10); // Sleep for a while before processing again
+        sleep(2); // Sleep for a while before processing again
     }
 
     return 0;

@@ -52,7 +52,12 @@ int get_random_quantity() {
 void update_inventory() {
     
     SupplyChainMessage msg;
-    msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), 0);
+    int result = msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), IPC_NOWAIT);
+
+    if(result == -1) {
+        perror("Failed to receive message from supply chain");
+        return;
+    }
 
 
     // Simulate delivery time
@@ -121,6 +126,7 @@ int main(int argc, char *argv[]) {
         
         // Update inventory with new supplies
         update_inventory();
+        sleep(1);
     }
     
     return EXIT_SUCCESS;
