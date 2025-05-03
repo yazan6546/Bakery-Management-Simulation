@@ -80,6 +80,8 @@ void update_inventory() {
     unlock_inventory(inventory_sem);
 
     print_inventory(&shared_game->inventory);
+
+    fflush(stdout);
     
 }
 

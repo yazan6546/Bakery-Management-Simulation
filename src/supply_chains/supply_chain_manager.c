@@ -89,7 +89,7 @@ void process_supply_chain_messages() {
     if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
         perror("Failed to send message to supply chain");
     } else {
-        printf("Supply Chain Manager: Sent order to supply chain %d", supply_chain_pids[pid_index]);
+        printf("Supply Chain Manager: Sent order to supply chain %d\n", supply_chain_pids[pid_index]);
     }
 
     fflush(stdout);  
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
         // Process messages from supply chains
         process_supply_chain_messages();
         
-        sleep(3); // Sleep for a while before processing again
+        sleep(10); // Sleep for a while before processing again
     }
 
     return 0;
