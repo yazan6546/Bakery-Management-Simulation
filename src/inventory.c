@@ -163,6 +163,28 @@ void restock_ingredients(Inventory *inventory, sem_t* sem) {
     unlock_inventory(sem);
 }
 
+void add_paste(Inventory *inventory, int quantity, sem_t* sem) {
+    if (!sem) {
+        sem = setup_inventory_semaphore();
+    }
+
+    lock_inventory(sem);
+    inventory->paste_count += quantity;
+    unlock_inventory(sem);
+}
+
+int get_paste_count(Inventory *inventory, sem_t* sem) {
+    if (!sem) {
+        sem = setup_inventory_semaphore();
+    }
+
+    lock_inventory(sem);
+    int count = inventory->paste_count;
+    unlock_inventory(sem);
+
+    return count;
+}
+
 
 // Add ready product with thread safety
 void add_ready_product(ReadyProducts *ready_products, ProductType type, int product_index, int quantity, sem_t* sem) {
