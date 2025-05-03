@@ -17,4 +17,7 @@ void lock_ready_products(sem_t* sem);
 void unlock_ready_products(sem_t* sem);
 void cleanup_ready_products_semaphore_resources(sem_t* ready_products_sem);
 
+// Reset all semaphores at once
+void reset_all_semaphores(void);
+
 #endif // SEMAPHORES_UTILS_H

@@ -51,8 +51,13 @@ int get_random_quantity() {
 // Function to update inventory based on supply chain type
 void update_inventory() {
     
-    SupplyChainMessage msg;
-    int result = msgrcv(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), getpid(), IPC_NOWAIT);
+    SupplyChainMessage* msg;
+    msg = malloc(sizeof(SupplyChainMessage) + sizeof(Ingredient) * shared_game->config.INGREDIENTS_TO_ORDER);
+    if (msg == NULL) {
+        perror("Failed to allocate memory for message");
+        return;
+    }
+    int result = msgrcv(msg_queue_id, msg, sizeof(SupplyChainMessage) + sizeof(Ingredient) * shared_game->config.INGREDIENTS_TO_ORDER  - sizeof(long), getpid(), IPC_NOWAIT);
 
     if(result == -1) {
         perror("Failed to receive message from supply chain");
@@ -73,22 +78,24 @@ void update_inventory() {
     printf("Supply Chain %d: Accessed inventory:\n", getpid());
     
     // Update inventory in shared memory
-    for (int i = 0; i < INGREDIENTS_TO_ORDER; i++)
+    for (int i = 0; i < shared_game->config.INGREDIENTS_TO_ORDER; i++)
     {
         // Update the inventory in shared memory 
 
-        int type = msg.ingredients[i].type;
+        int type = msg->ingredients[i].type;
         shared_game->inventory.quantities[type] = 
-        fmin(shared_game->inventory.quantities[type] + msg.ingredients[i].quantity,
-             shared_game->inventory.max_capacity);
+        fmin(shared_game->inventory.quantities[type] + msg->ingredients[i].quantity,
+             (float)shared_game->inventory.max_capacity);
            
-        printf("Supply Chain %d: Updated inventory for ingredient %d: %d\n", 
+        printf("Supply Chain %d: Updated inventory for ingredient %d: %.1f\n", 
                getpid(), i, shared_game->inventory.quantities[type]);
     }
 
     unlock_inventory(inventory_sem);
 
     print_inventory(&shared_game->inventory);
+
+    free(msg);
 
     fflush(stdout);
     
