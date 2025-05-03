@@ -37,3 +37,9 @@ int send_completion_message(int msg_queue_id, pid_t customer_pid, float total_pr
     
     return msgsnd(msg_queue_id, &msg, sizeof(CompletionMessage) - sizeof(long), 0);
 }
+
+bool is_order_missing(CustomerOrder *order) {
+
+
+    return false;
+}

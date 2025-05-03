@@ -35,7 +35,7 @@ void process_customer_order(pid_t customer_pid, CustomerOrder *order) {
            seller.id, customer_pid, order->item_count, order->total_price);
 
     // Simulate processing time
-    sleep(3);
+    sleep(rand() % 3);
 
     // Send completion message using customer's PID as message type
     CompletionMessage compl_msg;

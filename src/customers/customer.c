@@ -98,10 +98,9 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             break;
 
         case ORDERING:
-            printf("Customer %d is ordering...\n", customer_id);
             alarm(0); // Stop the timer
+            printf("Customer %d is ordering...\n", customer_id);
             sleep(2); // simulate ordering time
-            alarm(1); // Restart the timer
             CustomerOrder order;
             generate_random_customer_order(&order, shared_game);
             send_order_message(gloabl_msg, &order); // send order to seller
@@ -113,7 +112,6 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             alarm(0); // Stop the timer
             sleep(3);
             alarm(1); // Restart the timer
-            // send to seller here...
             // 10% chance of missing order
             if (random_float(0, 1) < 0.1) {
                 printf("Customer %d: Order is missing!\n", customer_id);

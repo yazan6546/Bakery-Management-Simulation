@@ -81,6 +81,8 @@ typedef struct {
 // An item in the order (product + quantity)
 typedef struct {
     Product product;
+    ProductType type;
+    int product_index; // Index of the product in the category
     int quantity;
 } OrderItem;
 

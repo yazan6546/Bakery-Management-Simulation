@@ -40,3 +40,6 @@ CUSTOMER_CASCADE_PROBABILITY=0.1        # Probability of a customer cascade (eve
 CASCADE_WINDOW=5        # Time window for customer cascade (in seconds)
 
 NUM_OVENS=2            # Number of ovens
+
+MIN_SELLER_PROCESSING_TIME=1        # Minimum time for a seller to process an order
+MAX_SELLER_PROCESSING_TIME=3        # Maximum time for a seller to process an order

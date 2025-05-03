@@ -4,6 +4,7 @@
 
 #include "bakery_message.h"
 #include <sys/ipc.h>
+#include <sys/msg.h>
 
 // Create a message queue or get existing one
 int get_message_queue() {
