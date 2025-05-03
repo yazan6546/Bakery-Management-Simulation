@@ -56,21 +56,6 @@ add_executable(customer_manager
 )
 
 
-# add_executable(test_baker
-#     tests/baker_integration_test.c
-#     src/bakers/oven.c
-#     src/inventory.c
-#     src/utils/semaphores_utils.c
-#     src/game.c
-#     src/utils/config.c
-#     src/utils/random.c
-#     src/bakers/baker_utils.c
-# )
-
-# target_link_libraries(test_baker PRIVATE rt pthread)
-
-
-
 target_include_directories(main PRIVATE "include/lib/raylib") # Include the header files in the include directory for the main executable
 include_directories(include)
 target_include_directories(graphics PRIVATE include/lib/raylib)

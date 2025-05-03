@@ -16,6 +16,7 @@ void cleanup_resources();
 
 void handle_alarm(int signum) {
 
+    printf("[t = %d s]\n", shared_game->elapsed_time);
     shared_game->elapsed_time++;
 
     alarm(1);
@@ -78,6 +79,7 @@ int main(int argc, char *argv[]) {
 
     while (check_game_conditions(shared_game)) {
 
+    
 
 
     }
