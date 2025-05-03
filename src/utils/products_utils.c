@@ -45,3 +45,4 @@ IngredientType get_ingredient_type_from_string(const char* name) {
     fprintf(stderr, "Unknown ingredient type: %s\n", name);
     return -1; // Invalid type
 }
+

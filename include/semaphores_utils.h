@@ -8,7 +8,7 @@
 #define QUEUE_SEM_NAME "/customer_queue_sem"
 
 
-sem_t* setup_inventory_semaphore(void);
+sem_t* setup_inventory_semaphore();
 void lock_inventory(sem_t* sem);
 void unlock_inventory(sem_t* sem);
 void cleanup_inventory_semaphore_resources(sem_t* inventory_sem);

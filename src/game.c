@@ -29,12 +29,12 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
 
 
     char *binary_paths[] = {
-        // "./graphics",
-        //"./chefs",
-        //"./bakers",
+        //"./graphics",
+        "./chefs",
+        // "./bakers",
         //"./sellers",
-        //"./supply_chain",
-        "./customer_manager"
+        // "./supply_chain_manager"
+        // "./customer_manager"
     };
 
     for (int i = 0; i < 1; i++) {

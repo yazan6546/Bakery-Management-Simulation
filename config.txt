@@ -19,8 +19,8 @@ MAX_PURCHASE_QUANTITY=5        # Maximum purchase quantity
 MIN_OVEN_TIME=1        # should be changed later for each type
 MAX_OVEN_TIME=5        # should be changed later for each type
 
-MIN_BAKE_TIME=10        # Minimum bake time
-MAX_BAKE_TIME=20        # Maximum bake time
+MIN_BAKE_TIME=5        # Minimum bake time
+MAX_BAKE_TIME=8        # Maximum bake time
 
 MIN_TIME_FRUSTRATED=5
 MAX_TIME_FRUSTRATED=10
