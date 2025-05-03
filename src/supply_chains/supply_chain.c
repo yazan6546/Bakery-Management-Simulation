@@ -70,7 +70,7 @@ void update_inventory() {
     // Lock inventory for update
     lock_inventory(inventory_sem);
 
-    printf("Supply Chain %d: Accessed inventory:\n", supply_chain_id);
+    printf("Supply Chain %d: Accessed inventory:\n", getpid());
     
     // Update inventory in shared memory
     for (int i = 0; i < INGREDIENTS_TO_ORDER; i++)
@@ -79,11 +79,11 @@ void update_inventory() {
 
         int type = msg.ingredients[i].type;
         shared_game->inventory.quantities[type] = 
-        fmin(shared_game->inventory.quantities[type] + msg.ingredients[type].quantity,
+        fmin(shared_game->inventory.quantities[type] + msg.ingredients[i].quantity,
              shared_game->inventory.max_capacity);
            
-        printf("Supply Chain %d: Updated inventory for ingredient %d: %.1f\n", 
-               supply_chain_id, i, shared_game->inventory.quantities[type]);
+        printf("Supply Chain %d: Updated inventory for ingredient %d: %d\n", 
+               getpid(), i, shared_game->inventory.quantities[type]);
     }
 
     unlock_inventory(inventory_sem);

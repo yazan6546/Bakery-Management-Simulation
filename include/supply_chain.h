@@ -12,7 +12,7 @@
 // Message structures for supply chain communication
 typedef struct {
     long mtype; // Message type
-    Ingredient ingredients[NUM_INGREDIENTS]; // Ingredient data
+    Ingredient ingredients[INGREDIENTS_TO_ORDER]; // Ingredient data
 } SupplyChainMessage;
 
 #endif // SUPPLY_CHAIN_H

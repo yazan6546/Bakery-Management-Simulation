@@ -68,7 +68,7 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
 
     printf("Supply Chain Manager: Processing messages from supply chain %d\n", pid_index);
 
-    // lock_inventory(inventory_sem);
+    lock_inventory(inventory_sem);
 
     printf("Supply Chain Manager: Accessed inventory:\n");
 
@@ -84,13 +84,13 @@ void process_supply_chain_messages(sem_t* inventory_sem) {
             msg.ingredients[i].type = ingredient_type;
             msg.ingredients[i].quantity = rand() % (shared_game->inventory.max_capacity - shared_game->inventory.quantities[ingredient_type]) + 1; // Random quantity to order
 
-            printf("Supply Chain Manager: Ordering %f of %s\n", 
+            printf("Supply Chain Manager: Ordering %d of %s\n", 
                    msg.ingredients[i].quantity, get_ingredient_name(ingredient_type));   
         
         }
     }
 
-    // unlock_inventory(inventory_sem);
+    unlock_inventory(inventory_sem);
 
     if (msgsnd(msg_queue_id, &msg, sizeof(SupplyChainMessage) - sizeof(long), IPC_NOWAIT) == -1) {
         perror("Failed to send message to supply chain");
@@ -115,7 +115,7 @@ void fork_supply_chain_process() {
         
         if (supply_chain_pids[i] == 0) {
             // Child process
-            char supply_chain_id[10];
+            char supply_chain_id[20];
             snprintf(supply_chain_id, sizeof(supply_chain_id), "%d", i);
             execl("./supply_chain", "./supply_chain", supply_chain_id, NULL);
             perror("execl failed");
