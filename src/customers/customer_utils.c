@@ -82,6 +82,9 @@ void generate_random_customer_order(CustomerOrder *order, Game *game) {
         order->items[order->item_count].quantity = (int) random_float(game->config.MIN_PURCHASE_QUANTITY,
                                                               game->config.MAX_PURCHASE_QUANTITY);
 
+        order->items[order->item_count].type = category->type;
+        order->items[order->item_count].product_index = random_product;
+
         // Calculate price for this item
         float item_price = order->items[order->item_count].product.price *
                            order->items[order->item_count].quantity;
@@ -89,5 +92,4 @@ void generate_random_customer_order(CustomerOrder *order, Game *game) {
 
         order->item_count++;
     }
-
 }

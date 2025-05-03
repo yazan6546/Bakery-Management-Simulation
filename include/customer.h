@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <stdbool.h>
+#include "queue.h"
 
 #define MAX_NAME_LEN 32
 
@@ -40,4 +41,5 @@ void serialize_customer(Customer *customer, char *buffer);
 void free_customer(Customer *customer);
 void print_customer(Customer *customer);
 void generate_random_customer_order(CustomerOrder *order, Game *game);
+void cleanup_queue_shared_memory(queue_shm *queue_shm, size_t capacity);
 #endif // CUSTOMER_H

@@ -12,11 +12,13 @@
 #include "bakery_message.h"
 #include "time.h"
 #include "semaphores_utils.h"
+#include "shared_mem_utils.h"
 
 // Global variables
 Game *shared_game;
 queue_shm *customer_queue;
 int msg_queue_id;
+int max_customers = 0;
 int active_customers = 0;
 sem_t *complaint_sem = NULL;
 
@@ -26,13 +28,23 @@ void cleanup_resources() {
         msgctl(msg_queue_id, IPC_RMID, NULL);
     }
 
+    printf("customer count : %lu\n", customer_queue->count);
     // Kill any remaining customer processes
-    for (int i = 0; i < customer_queue->count; i++) {
+    for (int temp = 0; temp < customer_queue->count; temp++) {
+
+        int i = (customer_queue->head + temp) % customer_queue->capacity;
         Customer *c = &((Customer*)customer_queue->elements)[i];
+
+        printf("NOW KILLING CUSTOMER : %d\n", c->pid);
         if (c->pid > 0) {
-            kill(c->pid, SIGTERM);
+            kill(c->pid, SIGINT);
         }
     }
+
+    printf("cleaning up queue...\n");
+
+    queueShmClear(customer_queue);
+    cleanup_queue_shared_memory(customer_queue, shared_game->config.MAX_CUSTOMERS);
 
     // Clean up named semaphore
     if (complaint_sem != NULL) {
@@ -54,6 +66,8 @@ void handle_customer_message(int signum) {
     while (msgrcv(msg_queue_id, &msg, sizeof(CustomerStatusMsg) - sizeof(long), 1, IPC_NOWAIT) != -1) {
         pid_t pid = msg.customer_pid;
         int cust_id = msg.customer_id;
+        if (msg.state == FRUSTRATED)
+            msg.action = 2;
 
         printf("Received message from customer %d (PID %d), action=%d, state=%d\n",
                cust_id, pid, msg.action, msg.state);
@@ -80,7 +94,7 @@ void handle_customer_message(int signum) {
                     case 1: // Normal leaving
                         printf("Customer %d is leaving normally\n", cust_id);
                         shared_game->num_customers_served++;
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -88,7 +102,8 @@ void handle_customer_message(int signum) {
                     case 2: // Frustrated
                         printf("Customer %d left frustrated\n", cust_id);
                         shared_game->num_frustrated_customers++;
-                        kill(c->pid, SIGKILL);
+                        printf("pid : %d\n", c->pid);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -102,7 +117,7 @@ void handle_customer_message(int signum) {
                         shared_game->complaining_customer_pid = c->pid;
                         shared_game->last_complaint_time = time(NULL);
                         sem_post(complaint_sem);
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -110,7 +125,7 @@ void handle_customer_message(int signum) {
                     case 4: // Missing order
                         printf("Customer %d had missing order\n", cust_id);
                         shared_game->num_customers_missing++;
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -122,7 +137,7 @@ void handle_customer_message(int signum) {
                         sem_wait(complaint_sem);
                         shared_game->num_customers_cascade++;
                         sem_post(complaint_sem);
-                        kill(c->pid, SIGKILL);
+                        kill(c->pid, SIGINT);
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
@@ -131,10 +146,10 @@ void handle_customer_message(int signum) {
             }
         }
 
-        if (!found && msg.customer_pid > 0) {
-//            kill(pid, SIGKILL); // Clean up the orphaned process
-            printf("Unknown sender, killing process: %d\n", pid);
-        }
+//         if (!found && msg.customer_pid > 0) {
+// //            kill(pid, SIGKILL); // Clean up the orphaned process
+//             printf("Unknown sender, killing process: %d\n", pid);
+//         }
     }
 }
 
@@ -207,32 +222,11 @@ void spawn_customer(int customer_id) {
 
 int main(int argc, char *argv[]) {
     // Setup shared memory for game and customer queue
-    // Setup game shared memory as before
-    int shm_fd = shm_open("/game_shared_mem", O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, sizeof(Game));
-    shared_game = mmap(0, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    close(shm_fd);
-    if (shared_game == MAP_FAILED) {
-        perror("Failed to map shared memory");
-        exit(EXIT_FAILURE);
-    }
-    fcntl(shm_fd, F_SETFD, fcntl(shm_fd, F_GETFD) & ~FD_CLOEXEC);
+    setup_shared_memory(&shared_game);
+    max_customers = shared_game->config.MAX_CUSTOMERS;
+    setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
+    initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
 
-
-    // Setup queue shared memory
-    const char* queue_shm_name = "/customer_queue_shm";
-    size_t elemSize = sizeof(Customer);
-    size_t capacity = (shared_game)->config.MAX_CUSTOMERS;
-    size_t shm_size = queueShmSize(elemSize, capacity);
-
-    int queue_fd = shm_open(queue_shm_name, O_CREAT | O_RDWR, 0666);
-    ftruncate(queue_fd, (long) shm_size);
-    void* queue_shm_ptr = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, queue_fd, 0);
-    fcntl(queue_fd, F_SETFD, fcntl(queue_fd, F_GETFD) & ~FD_CLOEXEC);
-    close(queue_fd);
-
-    // Initialize queue in shared memory
-    customer_queue = initQueueShm(queue_shm_ptr, elemSize, capacity);
     // Initialize random number generator
     init_random();
 
@@ -285,8 +279,8 @@ int main(int argc, char *argv[]) {
                shared_game->num_customers_missing,
                shared_game->num_customers_cascade);
 
-        // Sleep for a random time between 2-4 seconds
-        sleep(2 + rand() % 3);
+        // Sleep for a random time between 1-3 seconds
+        sleep(1);
     }
 
     return 0;

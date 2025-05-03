@@ -176,6 +176,47 @@ int get_ready_product(ReadyProducts *ready_products, ProductType type, int produ
     return result;
 }
 
+
+
+// Check if all products in an order are available and fulfill it if they are
+// Returns 1 if order can be fulfilled, 0 otherwise
+int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order, sem_t* sem) {
+    if (!sem) {
+        sem = setup_ready_products_semaphore();
+    }
+
+    int can_fulfill = 1;
+
+    // Lock the ready products for the entire operation
+    lock_ready_products(sem);
+
+    // First pass: check if all items are available without removing any
+    for (int i = 0; i < order->item_count; i++) {
+        OrderItem *item = &order->items[i];
+
+        if (ready_products->categories[item->type].quantities[item->product_index] < item->quantity) {
+            can_fulfill = 0;
+            break;
+        }
+    }
+
+
+    // Second pass: if all items are available, fulfill the order by reducing quantities
+    if (can_fulfill) {
+        for (int i = 0; i < order->item_count; i++) {
+            OrderItem *item = &order->items[i];
+
+            ready_products->categories[item->type].quantities[item->product_index] -= item->quantity;
+            ready_products->total_count -= item->quantity;
+        }
+    }
+
+    // Unlock the ready products
+    unlock_ready_products(sem);
+
+    return can_fulfill;
+}
+
 void print_inventory(Inventory *inventory) {
     printf("Inventory Contents:\n");
     for (int i = 0; i < NUM_INGREDIENTS; i++) {
@@ -183,6 +224,7 @@ void print_inventory(Inventory *inventory) {
     }
     printf("-------------------------------\n");
 }
+
 
 // Utility function to convert ingredient type enum to string name
 const char* get_ingredient_name(int ingredient_type) {

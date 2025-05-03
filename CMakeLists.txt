@@ -14,19 +14,28 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(JSON-C REQUIRED)
 
 add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src/graphics/assets.c
-    src/utils/products_utils.c src/utils/json-config.c src/utils/semaphores_utils.c)
+    src/utils/products_utils.c src/utils/json-config.c src/utils/semaphores_utils.c
+        src/utils/random.c  # Add this line
+        src/utils/shared_mem_utils.c src/customers/customer_utils.c)
 add_executable(graphics)
 target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
 add_executable(chefs src/chefs/chef.c src/inventory.c src/chefs/chef_utils.c
-src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
-add_executable(chef_worker src/chefs/chef_worker.c src/inventory.c src/chefs/chef_utils.c
-src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
-add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c src/utils/semaphores_utils.c)
+        src/utils/semaphores_utils.c src/utils/shared_mem_utils.c)
+
+
+add_executable(sellers src/sellers/seller.c src/utils/shared_mem_utils.c
+        src/utils/semaphores_utils.c src/utils/shared_mem_utils.c
+        src/sellers/seller_utils.c src/inventory.c
+        src/utils/message_queue_utils.c
+        src/customers/customer_utils.c
+        src/utils/random.c)
+
 add_executable(supply_chain src/supply_chains/supply_chain.c src/inventory.c src/utils/semaphores_utils.c
 src/utils/shared_mem_utils.c)
 add_executable(customers src/customers/customer.c src/utils/random.c src/utils/config.c
-src/customers/customer_utils.c
-src/utils/shared_mem_utils.c)
+        src/customers/customer_utils.c src/utils/message_queue_utils.c src/utils/shared_mem_utils.c
+src/utils/random.c)
+
 
 add_executable(bakers
     src/bakers/baker.c
@@ -68,10 +77,10 @@ add_executable(customer_manager
         src/customers/customer_manager.c
         src/customers/customer_utils.c
         src/utils/config.c
-        src/utils/random.c
         src/inventory.c
         src/utils/semaphores_utils.c
-        src/utils/products_utils.c
+        src/utils/shared_mem_utils.c
+        src/utils/random.c
 )
 
 
@@ -83,7 +92,8 @@ target_link_libraries(graphics PRIVATE "${LIBRARY_DIR}/libraylib.a" m dl rt pthr
 target_link_libraries(supply_chain PRIVATE pthread rt m)
 target_link_libraries(supply_chain_manager PRIVATE pthread rt m)
 
-set (need_queue main bakers customer_manager customers graphics) # List of executables that need the queue library
+set(need_queue supply_chain_manager main bakers chefs supply_chain sellers customer_manager customers graphics baker_worker)
+
 foreach (need IN LISTS need_queue) # Loop through each executable that needs the queue library
     message("Adding ${need} to the main executable")
     target_include_directories(${need} PRIVATE include/lib/queue) # Add the source files for each executable to the main executable

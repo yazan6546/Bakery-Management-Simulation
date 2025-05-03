@@ -51,6 +51,7 @@ int get_paste_count(Inventory *inventory, sem_t* sem);
 
 
 
+int check_and_fulfill_order(ReadyProducts *ready_products, CustomerOrder *order, sem_t* sem);
 
 void init_ready_products(ReadyProducts *ready_products);
 void add_ready_product(ReadyProducts *ready_products, ProductType type, int product_index, int quantity, sem_t* sem);

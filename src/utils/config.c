@@ -40,6 +40,8 @@ int load_config(const char *filename, Config *config) {
     config->MAX_ORDER_ITEMS = -1;
     config->CUSTOMER_CASCADE_PROBABILITY = -1;
     config->CASCADE_WINDOW = -1;
+    config->MIN_SELLER_PROCESSING_TIME;
+    config->MAX_SELLER_PROCESSING_TIME;
     config->REALLOCATION_CHECK_INTERVAL = -1;
     config->PRODUCTION_RATIO_THRESHOLD = -1;
     config->MIN_CHEFS_PER_TEAM = -1;
@@ -88,6 +90,8 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "REALLOCATION_CHECK_INTERVAL") == 0) config->REALLOCATION_CHECK_INTERVAL = (int)value;
             else if (strcmp(key, "PRODUCTION_RATIO_THRESHOLD") == 0) config->PRODUCTION_RATIO_THRESHOLD = value;
             else if (strcmp(key, "MIN_CHEFS_PER_TEAM") == 0) config->MIN_CHEFS_PER_TEAM = (int)value;
+            else if (strcmp(key, "MIN_SELLER_PROCESSING_TIME") == 0) config->MIN_SELLER_PROCESSING_TIME = (int)value;
+            else if (strcmp(key, "MAX_SELLER_PROCESSING_TIME") == 0) config->MAX_SELLER_PROCESSING_TIME = (int)value;
             else if (strcmp(key, "INGREDIENTS_TO_ORDER") == 0) config->INGREDIENTS_TO_ORDER = (int)value;
 
             else {
@@ -155,6 +159,8 @@ void print_config(Config *config) {
     printf("INGREDIENTS_TO_ORDER: %d\n", config->INGREDIENTS_TO_ORDER);
     printf("CUSTOMER_CASCADE_PROBABILITY: %f\n", config->CUSTOMER_CASCADE_PROBABILITY);
     printf("CASCADE_WINDOW: %d\n", config->CASCADE_WINDOW);
+    printf("MIN_SELLER_PROCESSING_TIME: %d\n", config->MIN_SELLER_PROCESSING_TIME);
+    printf("MAX_SELLER_PROCESSING_TIME: %d\n", config->MAX_SELLER_PROCESSING_TIME);
     printf("REALLOCATION_CHECK_INTERVAL: %d\n", config->REALLOCATION_CHECK_INTERVAL);
     printf("PRODUCTION_RATIO_THRESHOLD: %f\n", config->PRODUCTION_RATIO_THRESHOLD);
     printf("MIN_CHEFS_PER_TEAM: %d\n", config->MIN_CHEFS_PER_TEAM);
@@ -171,8 +177,8 @@ int check_parameter_correctness(const Config *config) {
         config->MAX_OVEN_TIME < 0 || config->NUM_OVENS < 0 || config->MIN_BAKE_TIME < 0 || config->MAX_BAKE_TIME < 0 ||
         config->MAX_CUSTOMERS < 0 || config->MIN_ORDER_ITEMS < 0 || config->MAX_ORDER_ITEMS < 0 ||
         config->CASCADE_WINDOW < 0 || config->INGREDIENTS_TO_ORDER < 0 ||
-        config->CASCADE_WINDOW < 0 || config->REALLOCATION_CHECK_INTERVAL < 0 ||
-        config->MIN_CHEFS_PER_TEAM < 0 || config->PRODUCTION_RATIO_THRESHOLD) {
+        config->CASCADE_WINDOW < 0 || config->MIN_SELLER_PROCESSING_TIME < 0
+        || config->MAX_SELLER_PROCESSING_TIME < 0) {
         fprintf(stderr, "Values must be greater than or equal to 0\n");
         return -1;
     }
@@ -188,6 +194,11 @@ int check_parameter_correctness(const Config *config) {
     // Logical consistency checks for minimum and maximum pairs
     if (config->MIN_PURCHASE_QUANTITY > config->MAX_PURCHASE_QUANTITY) {
         fprintf(stderr, "MIN_PURCHASE_QUANTITY cannot be greater than MAX_PURCHASE_QUANTITY\n");
+        return -1;
+    }
+
+    if (config->MIN_SELLER_PROCESSING_TIME > config->MAX_SELLER_PROCESSING_TIME) {
+        fprintf(stderr, "MIN_SELLER_PROCESSING_TIME cannot be greater than MAX_SELLER_PROCESSING_TIME\n");
         return -1;
     }
 
@@ -225,7 +236,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %f %d %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d %d %f %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -254,14 +265,16 @@ void serialize_config(Config *config, char *buffer) {
             config->MAX_ORDER_ITEMS,
             config->CUSTOMER_CASCADE_PROBABILITY,
             config->CASCADE_WINDOW,
+            config->MIN_SELLER_PROCESSING_TIME,
+            config->MAX_SELLER_PROCESSING_TIME,
+            config->INGREDIENTS_TO_ORDER,
             config->REALLOCATION_CHECK_INTERVAL,
             config->PRODUCTION_RATIO_THRESHOLD,
             config->MIN_CHEFS_PER_TEAM);
-            config->INGREDIENTS_TO_ORDER);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %f %d %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d %d %f %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -290,8 +303,10 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->MAX_ORDER_ITEMS,
             &config->CUSTOMER_CASCADE_PROBABILITY,
             &config->CASCADE_WINDOW,
+            &config->MIN_SELLER_PROCESSING_TIME,
+            &config->MAX_SELLER_PROCESSING_TIME,
+            &config->INGREDIENTS_TO_ORDER,
             &config->REALLOCATION_CHECK_INTERVAL,
             &config->PRODUCTION_RATIO_THRESHOLD,
             &config->MIN_CHEFS_PER_TEAM);
-            &config->INGREDIENTS_TO_ORDER);
 }

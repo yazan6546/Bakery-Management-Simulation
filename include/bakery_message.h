@@ -24,6 +24,26 @@ typedef struct {
     int action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
 } CustomerStatusMsg;
 
+// Add to bakery_message.h
+typedef struct {
+    long mtype;                    // Message type
+    CustomerOrder order;           // Order details
+} OrderMessage;
+
+typedef enum {
+    ORDER_SUCCESS,
+    ORDER_FAILED
+} OrderResult;
+
+typedef struct {
+    long mtype;           // Message type (should match customer PID)
+    OrderResult result;   // Success or failure
+    float total_price;    // Total price of completed order (0 if failed)
+} CompletionMessage;
+
+
+int get_message_queue();
+
 
 typedef struct {
     long mtype;

@@ -34,7 +34,7 @@ typedef struct Game {
 
 // Still can keep these (but optional now)
 pid_t start_process(const char *binary, int shared_mem_fd);
-int game_init(Game *game, pid_t *processes, int shared_mem_fd);
+int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared_mem_fd);
 void game_destroy(int shm_fd, Game *shared_game);
 void game_create(int *shm_fd, Game **shared_game);
 int check_game_conditions(const Game *game);
