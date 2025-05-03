@@ -90,7 +90,6 @@ int load_config(const char *filename, Config *config) {
             else if (strcmp(key, "REALLOCATION_CHECK_INTERVAL") == 0) config->REALLOCATION_CHECK_INTERVAL = (int)value;
             else if (strcmp(key, "PRODUCTION_RATIO_THRESHOLD") == 0) config->PRODUCTION_RATIO_THRESHOLD = value;
             else if (strcmp(key, "MIN_CHEFS_PER_TEAM") == 0) config->MIN_CHEFS_PER_TEAM = (int)value;
-
             else if (strcmp(key, "MIN_SELLER_PROCESSING_TIME") == 0) config->MIN_SELLER_PROCESSING_TIME = (int)value;
             else if (strcmp(key, "MAX_SELLER_PROCESSING_TIME") == 0) config->MAX_SELLER_PROCESSING_TIME = (int)value;
             else if (strcmp(key, "INGREDIENTS_TO_ORDER") == 0) config->INGREDIENTS_TO_ORDER = (int)value;
@@ -237,7 +236,7 @@ int check_parameter_correctness(const Config *config) {
 }
 
 void serialize_config(Config *config, char *buffer) {
-    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d",
+    sprintf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d %d %f %d",
             config->MAX_TIME,
             config->MAX_CUSTOMERS,
             config->MAX_PATIENCE,
@@ -268,11 +267,14 @@ void serialize_config(Config *config, char *buffer) {
             config->CASCADE_WINDOW,
             config->MIN_SELLER_PROCESSING_TIME,
             config->MAX_SELLER_PROCESSING_TIME,
-            config->INGREDIENTS_TO_ORDER);
+            config->INGREDIENTS_TO_ORDER,
+            config->REALLOCATION_CHECK_INTERVAL,
+            config->PRODUCTION_RATIO_THRESHOLD,
+            config->MIN_CHEFS_PER_TEAM);
 }
 
 void deserialize_config(const char *buffer, Config *config) {
-    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d",
+    sscanf(buffer, "%d %d %f %f %f %f %d %d %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %f %d %d %f %d %d %d %d %d %f %d",
             &config->MAX_TIME,
             &config->MAX_CUSTOMERS,
             &config->MAX_PATIENCE,
@@ -303,5 +305,8 @@ void deserialize_config(const char *buffer, Config *config) {
             &config->CASCADE_WINDOW,
             &config->MIN_SELLER_PROCESSING_TIME,
             &config->MAX_SELLER_PROCESSING_TIME,
-            &config->INGREDIENTS_TO_ORDER);
+            &config->INGREDIENTS_TO_ORDER,
+            &config->REALLOCATION_CHECK_INTERVAL,
+            &config->PRODUCTION_RATIO_THRESHOLD,
+            &config->MIN_CHEFS_PER_TEAM);
 }

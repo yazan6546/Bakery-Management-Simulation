@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
     // Initial distribution of chefs per team
     int chefs_per_team[TEAM_COUNT] = {
         [TEAM_PASTE] = 2,
+        [TEAM_BREAD] = 2,
         [TEAM_CAKES] = 2,
         [TEAM_SANDWICHES] = 2,
         [TEAM_SWEETS] = 2,
