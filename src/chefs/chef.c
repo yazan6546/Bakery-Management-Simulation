@@ -12,7 +12,6 @@
 #include "game.h"
 #include "chef.h"
 
-
 Game* game;
 
 int main(int argc, char *argv[]) {
