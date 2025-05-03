@@ -162,12 +162,14 @@ void print_config(Config *config) {
     printf("CASCADE_WINDOW: %d\n", config->CASCADE_WINDOW);
     printf("MIN_SELLER_PROCESSING_TIME: %d\n", config->MIN_SELLER_PROCESSING_TIME);
     printf("MAX_SELLER_PROCESSING_TIME: %d\n", config->MAX_SELLER_PROCESSING_TIME);
+    printf("REALLOCATION_CHECK_INTERVAL: %d\n", config->REALLOCATION_CHECK_INTERVAL);
+    printf("PRODUCTION_RATIO_THRESHOLD: %f\n", config->PRODUCTION_RATIO_THRESHOLD);
+    printf("MIN_CHEFS_PER_TEAM: %d\n", config->MIN_CHEFS_PER_TEAM);
 
     fflush(stdout);
 }
 
 int check_parameter_correctness(const Config *config) {
-
     // Check that all integer parameters are non-negative
     if (config->MAX_TIME < 0 || config->FRUSTRATED_CUSTOMERS < 0 || config->COMPLAINED_CUSTOMERS < 0 ||
         config->CUSTOMERS_MISSING < 0 || config->NUM_CHEFS < 0 || config->NUM_BAKERS < 0 || config->NUM_SELLERS < 0 ||

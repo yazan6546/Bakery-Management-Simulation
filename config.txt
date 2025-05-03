@@ -2,13 +2,13 @@
 
 ## Game settings
 
-MAX_TIME=500            # Maximum time for the game (in minutes)
-MAX_CUSTOMERS=0       # Maximum number of customers at once
-FRUSTRATED_CUSTOMERS=20        # Number of frustrated customers
+MAX_TIME=50            # Maximum time for the game (in minutes)
+MAX_CUSTOMERS=10          # Maximum number of customers at once
+FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
-NUM_CHEFS=2            # Number of chefs
+NUM_CHEFS=12            # Number of chefs
 NUM_BAKERS=6         # Number of bakers
 NUM_SELLERS=2           # Number of sellers
 NUM_SUPPLY_CHAIN=2        # Number of supply chain members
@@ -40,8 +40,5 @@ CUSTOMER_CASCADE_PROBABILITY=0.1        # Probability of a customer cascade (eve
 CASCADE_WINDOW=5        # Time window for customer cascade (in seconds)
 
 NUM_OVENS=2            # Number of ovens
-
-MIN_SELLER_PROCESSING_TIME=1        # Minimum time for a seller to process an order
-MAX_SELLER_PROCESSING_TIME=3        # Maximum time for a seller to process an order
 
 INGREDIENTS_TO_ORDER=3  # Number of ingredients that supply chain can restock
