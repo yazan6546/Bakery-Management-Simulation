@@ -22,6 +22,7 @@
 // Inventory struct with array-based approach
 typedef struct {
     int quantities[NUM_INGREDIENTS];  // Array of ingredient quantities
+    int paste_count;
     int max_capacity;
 } Inventory;
 
@@ -45,6 +46,10 @@ int check_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS
 void use_ingredients(Inventory *inventory, const int quantities[NUM_INGREDIENTS], sem_t* sem);
 void restock_ingredients(Inventory *inventory, sem_t* sem);
 void print_inventory(Inventory *inventory);
+void add_paste(Inventory *inventory, int quantity, sem_t* sem);
+int get_paste_count(Inventory *inventory, sem_t* sem);
+
+
 
 
 void init_ready_products(ReadyProducts *ready_products);

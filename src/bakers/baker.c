@@ -1,125 +1,148 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/msg.h>
-#include <string.h>
-#include <time.h>
 
-#include "queue.h"
-#include "oven.h"
-#include "BakeryItem.h"
-#include "BakerTeam.h"
-#include "game.h"
-#include "random.h"
-#include "bakery_utils.h"
+      
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <sys/mman.h>
+ #include <sys/msg.h>
+ #include <string.h>
+ #include <fcntl.h>
+ #include <signal.h>
+ #include <errno.h>
+ 
+ #include "oven.h"
+ #include "BakerTeam.h"
+ #include "game.h"
+ #include "bakery_utils.h"
+ #include "products.h"
+ #include "semaphores_utils.h"
+ 
+ #define TEAM_COUNT      3
+ #define INPUT_QUEUE_KEY 0xCAFEBABE     
+ 
+ 
+ typedef struct {
+     long         mtype;                
+     char         item_name[MAX_NAME_LENGTH];
+     ProductType  category;
+     int          index;               
+ } BakeryMessage;
+ 
 
-typedef struct {
-    long mtype;
-    BakeryItem item;
-} Message;
+ static inline int category_to_slot(ProductType cat)
+ {
+     if (cat == BREAD)                     return 0;   /* Bread team      */
+     if (cat == CAKE || cat == SWEET)      return 1;   /* Cake/Sweet team */
+     return 2;                                         /* Patisserie team */
+ }
+ 
 
-Game *game;
+ static int   team_q [TEAM_COUNT] = { -1,-1,-1 };
+ static int   in_q                = -1;
+ static pid_t manager_pgid        = 0;  
+ 
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <fd>\n", argv[0]);
-        return 1;
-    }
+ static void graceful_shutdown(int signo)
+ {
+     static int done = 0;           
+     if (done) return;  done = 1;
+ 
+     if (in_q != -1)             msgctl(in_q, IPC_RMID, NULL);
+     for (int i = 0; i < TEAM_COUNT; ++i)
+         if (team_q[i] != -1)    msgctl(team_q[i], IPC_RMID, NULL);
+ 
+     if (manager_pgid > 0)
+         kill(-manager_pgid, SIGTERM);
+ 
+     write(STDERR_FILENO,
+           "\n[manager] graceful shutdown – IPC queues removed\n", 53);
+ 
+     if (signo != 0) _exit(0);
+ }
+ 
+ static void on_exit_wrapper(void)
+ {
+     graceful_shutdown(0);             
+ }
+ 
 
-    int fd = atoi(argv[1]);
-    game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (game == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
+ int main(void)
+ {
 
-    printf("********** Bakery Simulation **********\n");
-    Config config = game->config;
-    print_config(&config);
-    init_random();
+     manager_pgid = getpid();
+     setpgid(0, manager_pgid);
+ 
+     /* register cleanup – both ways */
+     atexit(on_exit_wrapper);
+ 
+     struct sigaction sa = {0};
+     sa.sa_handler = graceful_shutdown;
+     sigemptyset(&sa.sa_mask);
+     sigaction(SIGINT,  &sa, NULL);
+     sigaction(SIGTERM, &sa, NULL);
+ 
 
-    for (int i = 0; i < config.NUM_OVENS; i++) {
-        init_oven(&game->ovens[i], i);
-    }
+     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
+     if (shm_fd == -1) { perror("shm_open"); exit(EXIT_FAILURE); }
+ 
+     Game *game = mmap(NULL, sizeof(Game),
+                       PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+     if (game == MAP_FAILED) { perror("mmap"); exit(EXIT_FAILURE); }
+     close(shm_fd);
+ 
+     printf("********** Bakery Simulation (manager) **********\n");
+     print_config(&game->config);
 
-    int mqid_bread = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_cakesweets = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_patisseries = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-    int mqid_ready = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-
-    if (mqid_bread == -1 || mqid_cakesweets == -1 || mqid_patisseries == -1 || mqid_ready == -1) {
-        perror("msgget failed");
-        exit(1);
-    }
-
-    BakerTeam teams[3];
-    distribute_bakers_locally(&config, teams);
-
-    start_process_baker("baker_teams", &teams[0], &config, mqid_bread, mqid_ready);
-    start_process_baker("baker_teams", &teams[1], &config, mqid_cakesweets, mqid_ready);
-    start_process_baker("baker_teams", &teams[2], &config, mqid_patisseries, mqid_ready);
-
-    for (int t = 0;; t++) {
-        printf("\n=== Main Time Step %d ===\n", t + 1);
-
-        if (rand() % 2 == 0) {
-            char item_name[50];
-            sprintf(item_name, "Item-%d", rand() % 100);
-
-            BakeryItem item;
-            int team = rand() % 3;
-            if (team == 0)
-                backery_item_create(&item, item_name, "Bake Bread");
-            else if (team == 1)
-                backery_item_create(&item, item_name, "Bake Cakes and Sweets");
-            else
-                backery_item_create(&item, item_name, "Bake Sweet and Savory Patisseries");
-
-            Message msg;
-            msg.mtype = 1;
-            msg.item = item;
-
-            int target_mqid = (team == 0) ? mqid_bread : (team == 1) ? mqid_cakesweets : mqid_patisseries;
-
-            if (msgsnd(target_mqid, &msg, sizeof(BakeryItem), 0) == -1) {
-                perror("msgsnd main->team failed");
-            } else {
-                printf("Main produced: %s (%s)\n", item.name, item.team_name);
-            }
-        }
-
-        Message ready_msg;
-        while (msgrcv(mqid_ready, &ready_msg, sizeof(BakeryItem), 0, IPC_NOWAIT) >= 0) {
-            BakeryItem *ready_item = &ready_msg.item;
-            int placed = 0;
-
-            for (int j = 0; j < config.NUM_OVENS; j++) {
-                if (!game->ovens[j].is_busy) {
-                    int baking_time = config.MIN_OVEN_TIME + rand() % (config.MAX_OVEN_TIME - config.MIN_OVEN_TIME + 1);
-                    put_item_in_oven(&game->ovens[j], ready_item->name, ready_item->team_name, baking_time);
-                    printf("Placed %s into Oven %d for %d seconds\n", ready_item->name, game->ovens[j].id, baking_time);
-                    placed = 1;
-                    break;
-                }
-            }
-
-            if (!placed) {
-                if (msgsnd(mqid_ready, &ready_msg, sizeof(BakeryItem), 0) == -1) {
-                    perror("msgsnd requeue ready failed");
-                }
-                break;
-            }
-        }
-
-        for (int j = 0; j < config.NUM_OVENS; j++) {
-            if (oven_tick(&game->ovens[j])) {
-                printf("Oven %d finished baking %s\n", game->ovens[j].id, game->ovens[j].item_name);
-            }
-        }
-
-        sleep(1);
-    }
-
-    return 0;
-}
+     for (int i = 0; i < TEAM_COUNT; ++i) {
+         team_q[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+         if (team_q[i] == -1) { perror("msgget team"); exit(EXIT_FAILURE); }
+     }
+ 
+     /* ---------- fork baker_workers -------------------------------- */
+     BakerTeam teams[TEAM_COUNT];
+     distribute_bakers_locally(&game->config, teams);
+ 
+     for (int t = 0; t < TEAM_COUNT; ++t)
+         for (int b = 0; b < teams[t].number_of_bakers; ++b) {
+             if (fork() == 0) {               /* child process */
+                 char q_s[16], team_s[8];
+                 snprintf(q_s, sizeof q_s, "%d", team_q[t]);
+                 snprintf(team_s, sizeof team_s, "%d", teams[t].team_name);
+                 execl("./baker_worker", "baker_worker", q_s, team_s, NULL);
+                 perror("execl"); _exit(EXIT_FAILURE);
+             }
+         }
+ 
+     /* ---------- public front‑door queue --------------------------- */
+     in_q = msgget(INPUT_QUEUE_KEY, 0666 | IPC_CREAT);
+     if (in_q == -1) { perror("msgget input"); exit(EXIT_FAILURE); }
+ 
+     printf("Manager ready – public queue key 0x%X  (id %d)\n",
+            INPUT_QUEUE_KEY, in_q);
+     puts("Send BakeryMessage structs here to feed the bakers…");
+ 
+     /* ---------- dispatcher loop ----------------------------------- */
+     BakeryMessage msg;
+     while (1) {
+         ssize_t r = msgrcv(in_q, &msg, sizeof msg - sizeof(long), 0, 0);
+         if (r == -1) {
+             if (errno == EINTR) continue;          /* interrupted by signal */
+             perror("manager msgrcv"); continue;
+         }
+ 
+         int slot = category_to_slot(msg.category);
+         if (msgsnd(team_q[slot], &msg,
+                    sizeof msg - sizeof(long), 0) == -1) {
+             perror("manager msgsnd");
+         } else {
+             const char *team =
+                 (slot == 0) ? "Bread" :
+                 (slot == 1) ? "Cake/Sweet" : "Patisserie";
+             printf("→ dispatched %-20s to %s queue (id %d)\n",
+                    msg.item_name, team, team_q[slot]);
+         }
+     }
+     /* never reached */
+     return 0;
+ }
+ 

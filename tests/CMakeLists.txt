@@ -5,7 +5,7 @@
 #        ${CMAKE_SOURCE_DIR}/src/inventory.c
 #        ${CMAKE_SOURCE_DIR}/src/utils/config.c
 #        ${CMAKE_SOURCE_DIR}/src/game.c
-#        ${CMAKE_SOURCE_DIR}/src/chefs/chef_functions.c
+#        ${CMAKE_SOURCE_DIR}/src/chefs/chef_utils.c
 #        ${CMAKE_SOURCE_DIR}/src/supply_chains/supply_chain_functions.c
 #)
 #target_link_libraries(chef-supply-chain-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores

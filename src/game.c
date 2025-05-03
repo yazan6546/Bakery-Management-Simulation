@@ -10,21 +10,27 @@
 #include "config.h"
 #include "unistd.h"
 #include <string.h>
+#include <stdbool.h>
 
 
 int game_init(Game *game, pid_t *processes, int shared_mem_fd) {
+
     game->elapsed_time = 0;
     game->num_frustrated_customers = 0;
     game->num_complained_customers = 0;
     game->num_customers_missing = 0;
-
+    game->num_customers_served = 0;
+    game->num_customers_cascade = 0;
+    game->daily_profit = 0.0f;
+    game->complaining_customer_pid = 0;
+    game->recent_complaint = false;
     init_inventory(&game->inventory);
 
 
     char *binary_paths[] = {
-        // "./graphics",
+        //"./graphics",
         //"./chefs",
-        //"./bakers",
+        "./bakers",
         //"./sellers",
         "./supply_chain_manager"
         // "./customer_manager"
