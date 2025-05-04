@@ -22,6 +22,8 @@ typedef enum {
     TEAM_COUNT=7
 } ChefTeam;
 
+typedef enum { IDLE, BUSY } State;
+
 typedef struct {
     Team team_name;
     int number_of_bakers;

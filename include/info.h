@@ -3,9 +3,12 @@
 
 #include "chef.h"
 
+#define MAX_MEMBERS 20
+
 typedef struct {
-    ChefManager chef_manager;
-    
+    Chef chefs[MAX_MEMBERS];
+    Baker bakers[MAX_MEMBERS];
+    Seller sellers[MAX_MEMBERS];
 } Info;
 
 

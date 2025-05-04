@@ -18,7 +18,7 @@
 
 #define MAX_NAME MAX_NAME_LENGTH
 
-typedef enum { IDLE, BUSY } BakerState;
+
 
 static inline Team category_to_team(ProductType c)
 {

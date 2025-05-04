@@ -5,6 +5,16 @@
 #include "team.h"
 #include "config.h"
 
+
+typedef struct {
+    Team team_name;         // Team name
+    State state;           // State of the baker
+    char Item[MAX_NAME_LENGTH]; // Item name
+} Baker;
+
+
+
+
 // Get the team name string from the enum
 const char* get_team_name_str(Team team);
 
