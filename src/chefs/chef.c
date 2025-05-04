@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+
     // Initialize chef manager
     ChefManager* manager = init_chef_manager(&game->productCatalog,
                                            inventory_sem,
@@ -60,26 +61,33 @@ int main(int argc, char *argv[]) {
     };
 
     // Spawn chef workers for each team
+    int chef_count = 0;
     for (int team = 0; team < TEAM_COUNT; team++) {
         for (int i = 0; i < chefs_per_team[team]; i++) {
+            int id = chef_count++;
+            
+            // Initialize chef info in parent process
+            Chef* chef = &game->info.chefs[id];
+            chef->id = id;
+            chef->team = team;
+            chef->is_active = 1;
+            
             pid_t pid = fork();
 
             if (pid == 0) {
                 // Child process
-                char mqid_str[16], team_str[8];
+                char mqid_str[16], team_str[8], id_str[8];
+
                 snprintf(mqid_str, sizeof(mqid_str), "%d", msg_queue);
                 snprintf(team_str, sizeof(team_str), "%d", team);
+                snprintf(id_str, sizeof(id_str), "%d", id);
 
-                execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
+                execl("./chef_worker", "chef_worker", mqid_str, team_str, id_str, NULL);
                 perror("execl failed");
                 exit(1);
             } else if (pid > 0) {
-                // Parent process
-                Chef* chef = &manager->chefs[manager->chef_count++];
-                chef->id = manager->chef_count;
-                chef->team = team;
-                chef->pid = pid;
-                chef->is_active = 1;
+                // Store PID in parent process
+                game->info.chefs[id].pid = pid;
             } else {
                 perror("Fork failed");
             }
@@ -95,7 +103,7 @@ int main(int argc, char *argv[]) {
         // Check if it's time to rebalance teams
         time_t current_time = time(NULL);
         if (current_time - last_check_time >= game->config.REALLOCATION_CHECK_INTERVAL) {
-            balance_teams(manager, game);
+            balance_teams(game);
             last_check_time = current_time;
         }
 

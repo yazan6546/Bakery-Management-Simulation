@@ -2,6 +2,9 @@
 #define TEAM_H
 
 #include "products.h"
+#include <semaphore.h>
+#include <sys/types.h>
+
 
 typedef enum Team {
     BREAD_BAKERS = 0,
@@ -22,11 +25,31 @@ typedef enum {
     TEAM_COUNT=7
 } ChefTeam;
 
+typedef enum { BAKER_IDLE, BAKER_BUSY } State;
+
 typedef struct {
     Team team_name;
     int number_of_bakers;
 } BakerTeam;
 
+typedef struct {
+    int id;
+    ChefTeam team;
+    pid_t pid;
+    int is_active;
+    int items_produced;
+    char Item[MAX_NAME_LENGTH];
+    ProductCategory* specialization;
+    sem_t* inventory_sem;
+    sem_t* ready_products_sem;
+} Chef;
+
+
+typedef struct {
+    Team team_name;         // Team name
+    State state;           // State of the baker
+    char Item[MAX_NAME_LENGTH]; // Item name
+} Baker;
 
 
 void init_team(BakerTeam *team, const char *name);
