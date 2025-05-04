@@ -103,7 +103,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id) {
     while (1) {
         if (game->info.chefs[id].team != team) {
             // Update team and specialization
-            team = chef.team;
+            team = game->info.chefs[id].team;
             printf("[Chef Worker] Switched to team %d\n", team);
         }
         // Get team's product category
@@ -141,8 +141,8 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id) {
             }
             unlock_inventory(inventory_sem);
 
-            if (!chef.is_active) {
-                chef.is_active = 1;
+            if (!game->info.chefs[id].is_active) {
+                game->info.chefs[id].is_active = 1;
                 printf("[Chef Worker Team %d] Waking up, ingredients available\n", team);
             }
 
@@ -192,8 +192,8 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id) {
         } else {
             unlock_inventory(inventory_sem);
 
-            if (chef.is_active) {
-                chef.is_active = 0;
+            if (game->info.chefs[id].is_active) {
+                game->info.chefs[id].is_active = 0;
                 printf("[Chef Worker Team %d] Going to sleep, waiting for ingredients for %s\n",
                        team, product->name);
             }
@@ -232,15 +232,15 @@ void calculate_production_ratios(const ReadyProducts *ready_products, float *rat
 
 
 // Function to move a chef between teams
-void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game) {
+void move_chef(ChefTeam from_team, ChefTeam to_team, Game *game) {
     // Find a chef from the source team
-    for (int i = 0; i < manager->chef_count; i++) {
-        Chef *chef = &manager->chefs[i];
+    for (int i = 0; i < game->info.chef_count; i++) {
+        Chef *chef = &game->info.chefs[i];
         if (chef->team == from_team) {
             // Count chefs in source team to ensure minimum
             int source_team_count = 0;
-            for (int j = 0; j < manager->chef_count; j++) {
-                if (manager->chefs[j].team == from_team) {
+            for (int j = 0; j < game->info.chef_count; j++) {
+                if (game->info.chefs[j].team == from_team) {
                     source_team_count++;
                 }
             }
@@ -260,7 +260,7 @@ void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game 
 }
 
 // Function to balance teams based on production
-void balance_teams(ChefManager *manager, Game *game) {
+void balance_teams(Game *game) {
     float production_ratios[NUM_PRODUCTS] = {0};
     calculate_production_ratios(&game->ready_products, production_ratios);
 
@@ -283,7 +283,7 @@ void balance_teams(ChefManager *manager, Game *game) {
 
     // If the ratio difference is significant, move a chef
     if (max_ratio / min_ratio > game->config.PRODUCTION_RATIO_THRESHOLD) {
-        move_chef(manager, max_team, min_team, game);
+        move_chef(max_team, min_team, game);
     }
 }
 

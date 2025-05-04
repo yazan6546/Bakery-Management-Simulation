@@ -9,6 +9,8 @@ typedef struct {
     Chef chefs[MAX_MEMBERS];
     Baker bakers[MAX_MEMBERS];
     // Seller sellers[MAX_MEMBERS];
+
+    int chef_count;
 } Info;
 
 
