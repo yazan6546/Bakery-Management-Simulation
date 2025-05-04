@@ -98,7 +98,6 @@ void handle_customer_message(int signum) {
                         printf("Customer %d is leaving normally\n", cust_id);
                         shared_game->num_customers_served++;
                         kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
 
@@ -121,7 +120,6 @@ void handle_customer_message(int signum) {
                         shared_game->last_complaint_time = time(NULL);
                         sem_post(complaint_sem);
                         kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
 

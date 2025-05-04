@@ -32,6 +32,7 @@ typedef struct {
     float patience;  // in seconds
     float patience_decay;  // in seconds
     bool has_complained;
+    short seller_id;
     CustomerState state;
 } Customer;
 

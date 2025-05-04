@@ -19,13 +19,14 @@ float original_patience;
 Game *shared_game;
 Customer my_entry;
 sem_t *complaint_sem;
+volatile sig_atomic_t in_queue = 1;
 
 void handle_state(CustomerState state, Game *shared_game, int gloabl_msg);
 void handle_seller_signal(int sig);
-void send_status_message(int action_type);
-void update_state(CustomerState new_state);
+void send_status_message(int action_type, bool in_queue);
+void update_state(CustomerState new_state, bool in_queue);
 void update_patience(float new_patience);
-void leave_restaurant(CustomerState final_state, int action_type);
+void leave_restaurant(CustomerState final_state, int action_type, bool in_queue);
 void handle_alarm(int sig);
 void handle_sigint_customer(int sig);
 void check_for_contagion(Game *shared_game);
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, handle_sigint_customer);
 
     // Initial status notification
-    send_status_message(0);
+    send_status_message(0, in_queue); // 0 = status update
 
     alarm(1);  // Start the timer
     // Customer state machine
@@ -95,7 +96,7 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
         case WALKING:
             printf("Customer %d is walking...\n", customer_id);
             sleep(1 + rand() % 3);
-            update_state(WAITING_IN_QUEUE);
+            update_state(WAITING_IN_QUEUE, in_queue);
             break;
 
         case WAITING_IN_QUEUE:
@@ -110,7 +111,7 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             CustomerOrder order;
             generate_random_customer_order(&order, shared_game);
             send_order_message(gloabl_msg, &order); // send order to seller
-            update_state(WAITING_FOR_ORDER);
+            update_state(WAITING_FOR_ORDER, in_queue);
             break;
 
         case WAITING_FOR_ORDER:
@@ -121,40 +122,40 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             // Remove IPC_NOWAIT to make the call blocking
             if (msgrcv(gloabl_msg, &completion_msg, sizeof(CompletionMessage) - sizeof(long), my_pid, 0) == -1) {
                 perror("Error receiving order completion");
-                leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
+                leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = FRUSTRATED
             }
 
             if (completion_msg.result == ORDER_SUCCESS) {
                 printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);
-                leave_restaurant(WAITING_FOR_ORDER, 1); // 1 = normal leaving
+                leave_restaurant(WAITING_FOR_ORDER, 1, in_queue); // 1 = normal leaving
             } else if (completion_msg.result == ORDER_MISSING) {
                 printf("Customer %d's order failed!\n", customer_id);
-                leave_restaurant(MISSING_ORDER, 4); // 4 = missing order
+                leave_restaurant(MISSING_ORDER, 4, in_queue); // 4 = missing order
             }
             else if (completion_msg.result == ORDER_FAILED) {
                 printf("Customer %d's order failed!\n", customer_id);
-                leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
+                leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = frustrated
             }
             break;
 
         case FRUSTRATED:
-            leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
+            leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = frustrated
             pause();  // wait for manager to handle
             break;
 
         case MISSING_ORDER:
             printf("Customer %d is missing order\n", customer_id);
-            leave_restaurant(MISSING_ORDER, 4); // 4 = missing order
+            leave_restaurant(MISSING_ORDER, 4, in_queue); // 4 = missing order
             break;
 
         case COMPLAINING:
-            leave_restaurant(COMPLAINING, 3); // 3 = complained
+            leave_restaurant(COMPLAINING, 3, in_queue); // 3 = complained
             pause(); // wait for manager to handle
             break;
 
         case CONTAGION:
             printf("Customer %d is leaving due to contagion\n", customer_id);
-            leave_restaurant(CONTAGION, 5); // 5 = cascade effect
+            leave_restaurant(CONTAGION, 5, in_queue); // 5 = cascade effect
             break;
 
         default:
@@ -163,11 +164,12 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 }
 
 
-void send_status_message(int action_type) {
+void send_status_message(int action_type, bool in_queue) {
     CustomerStatusMsg msg;
     msg.mtype = 1;  // To manager
     msg.customer_pid = my_pid;
     msg.customer_id = customer_id;
+    msg.in_queue = in_queue;
     msg.patience = my_entry.patience;
     msg.state = my_entry.state;
     msg.action = action_type;
@@ -181,12 +183,12 @@ void send_status_message(int action_type) {
 }
 
 // Update customer state directly in shared memory
-void update_state(CustomerState new_state) {
+void update_state(CustomerState new_state, bool in_queue) {
     my_entry.state = new_state;
     printf("Customer %d updated state to %d\n", customer_id, new_state);
 
     // Send status update after state change
-    send_status_message(0);
+    send_status_message(0, in_queue);
 }
 
 // Update patience directly in shared memory
@@ -196,9 +198,9 @@ void update_patience(float new_patience) {
 }
 
 // Notify manager and exit
-void leave_restaurant(CustomerState final_state, int action_type) {
+void leave_restaurant(CustomerState final_state, int action_type, bool in_queue) {
     my_entry.state = final_state;
-    send_status_message(action_type);
+    send_status_message(action_type, in_queue);
     exit(EXIT_SUCCESS);
 }
 
@@ -211,14 +213,14 @@ void handle_alarm(int sig) {
         // Send periodic patience updates (every 3 seconds to avoid flooding)
         static int update_counter = 0;
         if (++update_counter % 2 == 0) {
-            send_status_message(0);
+            send_status_message(0, in_queue);
         }
 
         if (my_entry.patience <= 0) {
             alarm(0); // Stop the timer
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
             // Let manager update game stats
-            update_state(FRUSTRATED);
+            update_state(FRUSTRATED, in_queue);
             return;
         }
     }
@@ -232,7 +234,8 @@ void handle_seller_signal(int sig) {
 
     printf("me  order qe2opek\n");
     if (sig == SIGUSR1) {
-        update_state(ORDERING);
+        in_queue = 0;
+        update_state(ORDERING, in_queue); // Update state to ORDERING
 
         // Reset patience when it's our turn
         update_patience(original_patience);
@@ -277,7 +280,7 @@ void check_for_contagion(Game *shared_game) {
     if (random_float(0, 1) < cascade_prob) {printf("Customer %d saw customer %d complaining and decided to leave too!\n",
                    customer_id, complaining_pid);
 
-        leave_restaurant(CONTAGION, 5); // 5 = cascade effect
+        leave_restaurant(CONTAGION, 5, in_queue); // 5 = cascade effect
     }
 }
 
@@ -289,7 +292,7 @@ void send_order_message(int msg_queue_id, CustomerOrder *order) {
     printf("stuck here/?\n");
     if (msgsnd(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), 0) == -1) {
         perror("Failed to send order message");
-        leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
+        leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = FRUSTRATED
     }
     printf("Customer %d sent order message to seller\n", customer_id);
 }

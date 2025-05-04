@@ -24,6 +24,7 @@ typedef struct {
     float patience;       // Current patience level
     CustomerState state;  // Current state
     int action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
+    bool in_queue;       // True if the customer is in the queue
 } CustomerStatusMsg;
 
 // Add to bakery_message.h
