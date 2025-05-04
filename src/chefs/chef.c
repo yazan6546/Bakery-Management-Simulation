@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    
     // Initialize chef manager
     ChefManager* manager = init_chef_manager(&game->productCatalog,
                                            inventory_sem,
