@@ -97,8 +97,9 @@ int msg_queue_id = -1;  /* Baker manager queue id */
  
      for (int t = 0; t < TEAM_COUNT; ++t)
          for (int b = 0; b < teams[t].number_of_bakers; ++b) {
+            int id = baker_count++;
              if (fork() == 0) {   
-                int id = baker_count++;           /* child process */
+                           /* child process */
                  char q_s[16], team_s[8], id_s[8];
                  snprintf(id_s, sizeof id_s, "%d", id);  // Using id instead of baker_count
 
