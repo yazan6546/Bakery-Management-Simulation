@@ -13,6 +13,8 @@
 #include "shared_mem_utils.h"
 #include "semaphores_utils.h"
 #include "inventory.h"
+#include "team.h"
+#include "bakery_message.h"
 
 
 Game *game;
@@ -84,9 +86,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    int baker_msg_queue = msgget(CHEF_BAKER_KEY, 0666 | IPC_CREAT);
+
     while (1) {
         // Process messages from chefs
-        process_chef_messages(manager, msg_queue, game);
+        process_chef_messages(manager, msg_queue, baker_msg_queue, game);
 
         // Check if it's time to rebalance teams
         time_t current_time = time(NULL);

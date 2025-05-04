@@ -8,6 +8,7 @@
 #include <time.h>
 #include <signal.h>
 #include "shared_mem_utils.h"
+#include "team.h"
 
 Game* game;
 int main(int argc, char *argv[]) {
