@@ -4,7 +4,7 @@
 
 MAX_TIME=500            # Maximum time for the game (in minutes)
 MAX_CUSTOMERS=5          # Maximum number of customers at once
-FRUSTRATED_CUSTOMERS=500        # Number of frustrated customers
+FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
