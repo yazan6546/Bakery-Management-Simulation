@@ -78,15 +78,6 @@ int main(int argc,char *argv[])
     /* empty polling loop – stays as before */
     while (check_game_conditions(shared_game)){ /* nothing */ }
 
-    /* wait for graphics process (index 0 in your array) */
-    int status_graphics;
-    waitpid(processes[0], &status_graphics, 0);
-
-    if (WIFEXITED(status_graphics))
-        printf("Graphics child exited with code %d\n", WEXITSTATUS(status_graphics));
-    else if (WIFSIGNALED(status_graphics))
-        printf("Graphics child killed by signal %d\n", WTERMSIG(status_graphics));
-
     return 0;  /* cleanup_resources is run automatically */
 }
 

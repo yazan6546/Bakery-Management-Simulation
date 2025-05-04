@@ -38,19 +38,19 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
 
     for (int i = 0; i < 5; i++) {
         bool suppress;
-        suppress = false;
+        suppress = true;
         if (strcmp(binary_paths[i], "./customer_manager") == 0)
             suppress = false;
         processes[i] = start_process(binary_paths[i], shared_mem_fd, suppress);
     }
     
     char *seller = "./sellers";
-    
-    for (int i = 0; i < game->config.NUM_SELLERS; i++) {
-        processes_sellers[i] = start_process(seller, 0, false);
-        game->info.sellers[i].id = i;
-        game->info.sellers[i].pid = processes_sellers[i];
-    }
+    //
+    // for (int i = 0; i < game->config.NUM_SELLERS; i++) {
+    //     processes_sellers[i] = start_process(seller, 0, false);
+    //     game->info.sellers[i].id = i;
+    //     game->info.sellers[i].pid = processes_sellers[i];
+    // }
 
     return 0;
 }
