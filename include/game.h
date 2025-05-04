@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <chef.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -10,6 +11,7 @@
 #include <stdbool.h>
 
 #define MAX_OVENS 10  // Max ovens allowed
+#define MAX_CHEFS 50
 
 typedef struct Game {
 
@@ -30,6 +32,9 @@ typedef struct Game {
     ReadyProducts ready_products;
 
     Oven ovens[MAX_OVENS]; // Shared ovens
+    ChefManager chef_manager;
+
+
 } Game;
 
 // Still can keep these (but optional now)

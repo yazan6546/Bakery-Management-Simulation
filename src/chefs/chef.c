@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    game->chef_manager = manager;
     int baker_msg_queue = msgget(CHEF_BAKER_KEY, 0666 | IPC_CREAT);
 
     while (1) {
@@ -96,6 +97,7 @@ int main(int argc, char *argv[]) {
         time_t current_time = time(NULL);
         if (current_time - last_check_time >= game->config.REALLOCATION_CHECK_INTERVAL) {
             balance_teams(manager, game);
+            game->chef_manager = manager;
             last_check_time = current_time;
         }
 
