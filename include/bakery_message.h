@@ -16,6 +16,13 @@ typedef struct {
 } BakeryMessage;
 
 
+typedef enum Action {
+    STATUS_UPDATE,
+    LEAVING_NORMALLY,
+    LEAVING_EARLY
+} ActionType;
+
+
 // Message structure for both files
 typedef struct {
     long mtype;           // Message type
@@ -23,9 +30,11 @@ typedef struct {
     int customer_id;      // Customer ID for logging
     float patience;       // Current patience level
     CustomerState state;  // Current state
-    int action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
+    ActionType action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
     bool in_queue;       // True if the customer is in the queue
 } CustomerStatusMsg;
+
+
 
 // Add to bakery_message.h
 typedef struct {

@@ -122,40 +122,40 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             // Remove IPC_NOWAIT to make the call blocking
             if (msgrcv(gloabl_msg, &completion_msg, sizeof(CompletionMessage) - sizeof(long), my_pid, 0) == -1) {
                 perror("Error receiving order completion");
-                leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = FRUSTRATED
+                leave_restaurant(FRUSTRATED, LEAVING_EARLY, in_queue); // 2 = FRUSTRATED
             }
 
             if (completion_msg.result == ORDER_SUCCESS) {
                 printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);
-                leave_restaurant(WAITING_FOR_ORDER, 1, in_queue); // 1 = normal leaving
+                leave_restaurant(WAITING_FOR_ORDER, LEAVING_NORMALLY, in_queue); // 1 = normal leaving
             } else if (completion_msg.result == ORDER_MISSING) {
                 printf("Customer %d's order failed!\n", customer_id);
-                leave_restaurant(MISSING_ORDER, 4, in_queue); // 4 = missing order
+                leave_restaurant(MISSING_ORDER, LEAVING_EARLY, in_queue); // 4 = missing order
             }
             else if (completion_msg.result == ORDER_FAILED) {
                 printf("Customer %d's order failed!\n", customer_id);
-                leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = frustrated
+                leave_restaurant(ORDER_MISSING, LEAVING_EARLY, in_queue); // 2 = frustrated
             }
             break;
 
         case FRUSTRATED:
-            leave_restaurant(FRUSTRATED, 2, in_queue); // 2 = frustrated
+            leave_restaurant(FRUSTRATED, LEAVING_EARLY, in_queue); // 2 = frustrated
             pause();  // wait for manager to handle
             break;
 
         case MISSING_ORDER:
             printf("Customer %d is missing order\n", customer_id);
-            leave_restaurant(MISSING_ORDER, 4, in_queue); // 4 = missing order
+            leave_restaurant(MISSING_ORDER, LEAVING_EARLY, in_queue); // 4 = missing order
             break;
 
         case COMPLAINING:
-            leave_restaurant(COMPLAINING, 3, in_queue); // 3 = complained
+            leave_restaurant(COMPLAINING, LEAVING_EARLY, in_queue); // 3 = complained
             pause(); // wait for manager to handle
             break;
 
         case CONTAGION:
             printf("Customer %d is leaving due to contagion\n", customer_id);
-            leave_restaurant(CONTAGION, 5, in_queue); // 5 = cascade effect
+            leave_restaurant(CONTAGION, LEAVING_EARLY, in_queue); // 5 = cascade effect
             break;
 
         default:
@@ -188,7 +188,7 @@ void update_state(CustomerState new_state, bool in_queue) {
     printf("Customer %d updated state to %d\n", customer_id, new_state);
 
     // Send status update after state change
-    send_status_message(0, in_queue);
+    send_status_message(STATUS_UPDATE, in_queue);
 }
 
 // Update patience directly in shared memory
