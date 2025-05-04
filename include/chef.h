@@ -53,15 +53,15 @@ void check_for_confirmations(ChefState *chef);
 void prepare_recipes(ChefState *chef, Inventory *inventory, ReadyProducts *ready_products);
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem);
 void start_chef(Chef* chef, int msg_queue_id);
-void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, Game *game);
+void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, struct Game *game);
 ChefTeam get_team_for_product_type(ProductType type);
 ProductType get_product_type_for_team(ChefTeam team);
-void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id);
+void simulate_chef_work(ChefTeam team, int msg_queue_id, struct Game *game, int id);
 void calculate_production_ratios(const ReadyProducts *ready_products, float *ratios);
 void reallocate_chefs(ChefManager* manager, int msg_queue, float* ratios);
-void balance_teams(ChefManager *manager, Game *game);
+void balance_teams(struct Game *game);
 void handle_team_change(int signum);
-void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game);
+void move_chef(ChefTeam from_team, ChefTeam to_team, struct Game *game);
 
 
 #endif //CHEF_H
