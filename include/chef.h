@@ -31,9 +31,6 @@ typedef struct {
 #define MAX_ITEMS_QUEUE 100
 
 
-
-
-
 typedef struct {
     int id;
     ChefTeam team;
