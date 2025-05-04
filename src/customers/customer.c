@@ -75,7 +75,10 @@ int main(int argc, char *argv[]) {
     while (1) {
         printf("Customer %d patience : %.4f\n", customer_id, my_entry.patience);
         handle_state(my_entry.state, shared_game, global_msg);
-        pause();
+
+        if (my_entry.state != WAITING_FOR_ORDER) {
+            pause();
+        }
     }
 
     return 0;
@@ -112,22 +115,21 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 
         case WAITING_FOR_ORDER:
             printf("Customer %d is waiting for order...\n", customer_id);
-            sleep(1);
+            fflush(stdout);
 
             CompletionMessage completion_msg;
-            // Check if order is missing
-            if (msgrcv (gloabl_msg, &completion_msg, sizeof(OrderMessage), my_pid, IPC_NOWAIT) == -1) {
-                printf("Customer %d's order is missing!\n", customer_id);
-                leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
+            // Remove IPC_NOWAIT to make the call blocking
+            if (msgrcv(gloabl_msg, &completion_msg, sizeof(OrderMessage), my_pid, 0) == -1) {
+                perror("Error receiving order completion");
+                leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
             }
-
 
             if (completion_msg.result == ORDER_SUCCESS) {
                 printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);
                 leave_restaurant(WAITING_FOR_ORDER, 1); // 1 = normal leaving
             } else {
                 printf("Customer %d's order failed!\n", customer_id);
-                leave_restaurant(WAITING_FOR_ORDER, 4); // 4 = missing order
+                leave_restaurant(FRUSTRATED, 4); // 4 = missing order
             }
             break;
 
@@ -218,6 +220,8 @@ void handle_alarm(int sig) {
 
 // Handle signals from seller
 void handle_seller_signal(int sig) {
+
+    printf("me  order qe2opek\n");
     if (sig == SIGUSR1) {
         update_state(ORDERING);
 
@@ -273,10 +277,12 @@ void send_order_message(int msg_queue_id, CustomerOrder *order) {
     order_msg.mtype = getpid();  // Use customer's PID as message type
     order_msg.order = *order;
 
+    printf("stuck here/?\n");
     if (msgsnd(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), 0) == -1) {
         perror("Failed to send order message");
         leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
     }
+    printf("Customer %d sent order message to seller\n", customer_id);
 }
 
 

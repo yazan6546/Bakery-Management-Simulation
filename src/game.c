@@ -30,10 +30,10 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
 
     char *binary_paths[] = {
         //"./graphics",
-        "./chefs",
+        // "./chefs",
         // "./bakers",
-        "./supply_chain_manager"
-        // "./customer_manager"
+        // "./supply_chain_manager"
+        "./customer_manager"
     };
 
     for (int i = 0; i < 2; i++) {

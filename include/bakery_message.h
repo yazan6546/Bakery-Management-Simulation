@@ -6,6 +6,7 @@
 #define MAX_ITEM_NAME 50
 #define MAX_TEAM_NAME 50
 #define MAX_NAME_LENGTH 64
+#define CUSTOMER_SELLER_MSG_KEY "vry_gud"
 
 typedef struct {
     long mtype; // Message type: 1 (Bread), 2 (Cake/Sweets), 3 (Patisseries)

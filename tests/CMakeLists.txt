@@ -13,10 +13,13 @@
 ##add_executable(inventory-semaphore-test inventory-semaphore-test.c ${CMAKE_SOURCE_DIR}/src/inventory.c)
 ##target_link_libraries(inventory-semaphore-test PRIVATE rt pthread) # Add real-time and pthread libraries for shared memory and semaphores
 #
-#add_executable(queue-test queue_test.c)
-#target_include_directories(queue-test PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
-#target_link_libraries(queue-test PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt) # Add dependencies for the main executable
-#
+add_executable(queue-test queue_test.c ${CMAKE_SOURCE_DIR}/src/utils/products_utils.c
+        ${CMAKE_SOURCE_DIR}/src/utils/random.c
+        ${CMAKE_SOURCE_DIR}/src/utils/shared_mem_utils.c
+        ${CMAKE_SOURCE_DIR}/src/utils/semaphores_utils.c)
+target_include_directories(queue-test PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queue) # Add the source files for each executable to the main executable
+target_link_libraries(queue-test PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt) # Add dependencies for the main executable
+
 #find_package(JSON-C REQUIRED)
 #
 #add_executable(json-test json_test.c ${CMAKE_SOURCE_DIR}/src/utils/products_utils.c

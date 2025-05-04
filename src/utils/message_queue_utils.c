@@ -8,7 +8,7 @@
 
 // Create a message queue or get existing one
 int get_message_queue() {
-    key_t key = ftok(".", 'M');  // Use current directory for key generation
+    key_t key = ftok(CUSTOMER_SELLER_MSG_KEY, 'M');  // Use current directory for key generation
     int msgid = msgget(key, 0666 | IPC_CREAT);
 
     if (msgid == -1) {

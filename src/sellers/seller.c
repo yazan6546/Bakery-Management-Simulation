@@ -72,14 +72,15 @@ void serve_customer(Customer *customer) {
     kill(customer->pid, SIGUSR1);
     printf("Seller %d: Signaled customer %d\n", seller.id, customer->id);
 
+    printf("customer-id : %d\n", customer->pid);
     // Wait for customer to send order through message queue
     OrderMessage order_msg;
-    if (msgrcv(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), seller.pid, 0) != -1) {
+    if (msgrcv(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), customer->pid, 0) != -1) {
         // Update seller state
         seller.state = PROCESSING_ORDER;
 
         printf("seller received order!! %f\n", order_msg.order.total_price);
-
+        sleep(2);  // Simulate order processing time
         // Process the order
         process_customer_order(customer->pid, &order_msg.order, shared_game);
 
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
 
     // Set up shared memory for customer queue
     setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
-    initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
+    // initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
 
     // Open the queue semaphore
     queue_sem = sem_open(QUEUE_SEM_NAME, O_CREAT, 0666, 1);
