@@ -104,6 +104,12 @@ int main(int argc, char *argv[])
 
             int prep = game->config.MIN_BAKE_TIME +
                        rand() % (game->config.MAX_BAKE_TIME - game->config.MIN_BAKE_TIME + 1);
+
+            
+            strncpy(game->info.bakers[id].Item,
+                    cur_msg.product_name, MAX_NAME_LENGTH - 1);
+            game->info.bakers[id].Item[MAX_NAME_LENGTH - 1] = '\0';
+
             printf("[Baker %s] Preparing %s (%d s)\n",
                    get_team_name_str(my_team),
                    cur_msg.product_name, prep);
