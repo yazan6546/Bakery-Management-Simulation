@@ -32,13 +32,13 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
         "./graphics",
         "./chefs",
         "./bakers",
-        "./supply_chain_manager"
+        "./supply_chain_manager",
         "./customer_manager"
     };
 
     for (int i = 0; i < 5; i++) {
         bool suppress;
-        suppress = true;
+        suppress = false;
         if (strcmp(binary_paths[i], "./customer_manager") == 0)
             suppress = false;
         processes[i] = start_process(binary_paths[i], shared_mem_fd, suppress);

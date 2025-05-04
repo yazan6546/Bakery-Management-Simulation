@@ -32,13 +32,16 @@ target_include_directories(test-shm PRIVATE ${CMAKE_SOURCE_DIR}/include/lib/queu
 target_link_libraries(test-shm PRIVATE ${LIBRARY_DIR}/libgenericQueue.a rt) # Add dependencies for the main executable
 
 
-#find_package(JSON-C REQUIRED)
-#
-#add_executable(json-test json_test.c ${CMAKE_SOURCE_DIR}/src/utils/products_utils.c
-#${CMAKE_SOURCE_DIR}/src/utils/json-config.c)
-#target_include_directories(json-test PRIVATE ${CMAKE_SOURCE_DIR}/include) # Add the source files for each executable to the main executable
-#target_link_libraries(json-test PRIVATE JSON-C::JSON-C) # Add dependencies for the main
-#
+find_package(JSON-C REQUIRED)
+
+add_executable(json-test json_test.c ${CMAKE_SOURCE_DIR}/src/utils/products_utils.c
+${CMAKE_SOURCE_DIR}/src/utils/json-config.c)
+target_include_directories(json-test PRIVATE ${CMAKE_SOURCE_DIR}/include) # Add the source files for each executable to the main executable
+target_link_libraries(json-test PRIVATE JSON-C::JSON-C) # Add dependencies for the main
+
+
+target_compile_definitions(json-test PUBLIC CONFIG_PATH_JSON="${CMAKE_CURRENT_SOURCE_DIR}/test_products.json") # Set the config path macro to the absolute path on the dev machine
+
 #add_executable(test-queue-removal test_queue_removal.c
 #${CMAKE_SOURCE_DIR}/src/customers/customer_utils.c
 #${CMAKE_SOURCE_DIR}/src/utils/random.c
