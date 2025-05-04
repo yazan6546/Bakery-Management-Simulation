@@ -118,14 +118,6 @@ int main(int argc, char *argv[])
                    get_team_name_str(my_team), cur_msg.product_name);
 
 
-            // print game->info.bakers[id] info
-            printf("[Baker %s] Baker ID: %d, Team: %s, State: %d, Item: %s\n",
-                   get_team_name_str(my_team),
-                   id,
-                   get_team_name_str(my_team),
-                   game->info.bakers[id].state,
-                   game->info.bakers[id].Item);
-
             while (1) {
                 for (int i = 0; i < game->config.NUM_OVENS; ++i) {
                     int bake_time = game->config.MIN_OVEN_TIME +
