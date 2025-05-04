@@ -216,7 +216,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
             } else {
                 // Prepare message for chef manager for items that need baking
                 ChefMessage msg;
-                msg.mtype = team;
+                msg.mtype = team + 1;  // Adding 1 to ensure mtype is positive
                 msg.source_team = team;
                 msg.product_index = product_index;
                 strcpy(msg.product_name, product->name);
