@@ -219,7 +219,8 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
                 msg.mtype = team + 1;  // Adding 1 to ensure mtype is positive
                 msg.source_team = team;
                 msg.product_index = product_index;
-                strcpy(msg.product_name, product->name);
+                strncpy(msg.product_name, product->name, MAX_NAME_LENGTH - 1);
+                msg.product_name[MAX_NAME_LENGTH - 1] = '\0';
 
                 // Send to chef manager
                 if (msgsnd(msg_queue_id, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
