@@ -16,18 +16,10 @@
  #include "bakery_utils.h"
  #include "products.h"
  #include "semaphores_utils.h"
+ #include "bakery_message.h"
  
  #define TEAM_COUNT      3
- #define INPUT_QUEUE_KEY 0xCAFEBABE
- #define MANAGER_BAKERS  0xBEEFCAFE     
- 
- 
- typedef struct {
-     long         mtype;                
-     char         item_name[MAX_NAME_LENGTH];
-     ProductType  category;
-     int          index;               
- } BakeryMessage;
+     
  
 
  static inline int category_to_slot(ProductType cat)
@@ -115,11 +107,11 @@ int msg_queue_id = -1;  /* Baker manager queue id */
          }
  
      /* ---------- public front‑door queue --------------------------- */
-     in_q = msgget(INPUT_QUEUE_KEY, 0666 | IPC_CREAT);
+     in_q = msgget(CHEF_MGR_KEY, 0666 | IPC_CREAT);
      if (in_q == -1) { perror("msgget input"); exit(EXIT_FAILURE); }
  
      printf("Manager ready – public queue key 0x%X  (id %d)\n",
-            INPUT_QUEUE_KEY, in_q);
+            CHEF_MGR_KEY, in_q);
      puts("Send BakeryMessage structs here to feed the bakers…");
  
      /* ---------- dispatcher loop ----------------------------------- */

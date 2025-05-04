@@ -53,7 +53,7 @@ void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
     while (msgrcv(msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0, IPC_NOWAIT) != -1) {
             // Forward to baker manager if needed
         if (msg.source_team != TEAM_SANDWICHES) {
-            if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
+            if (msgsnd(CHEF_MGR_KEY, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                 perror("Failed to forward to baker manager");
             }
         } else {
