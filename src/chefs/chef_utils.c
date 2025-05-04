@@ -50,10 +50,10 @@ void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
       
     // prepare a message for receipt from the chefs  
     ChefMessage msg;
-    while (msgrcv(msg_queue, &msg, sizeof(ChefMessage), 0, IPC_NOWAIT) != -1) {
+    while (msgrcv(msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0, IPC_NOWAIT) != -1) {
             // Forward to baker manager if needed
         if (msg.source_team != TEAM_SANDWICHES) {
-            if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage), 0) == -1) {
+            if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                 perror("Failed to forward to baker manager");
             }
         } else {
@@ -222,7 +222,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
                 msg.product_name = product->name;
 
                 // Send to chef manager
-                if (msgsnd(msg_queue_id, &msg, sizeof(ChefMessage), 0) == -1) {
+                if (msgsnd(msg_queue_id, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                     perror("[Chef Worker] Failed to send prepared item");
                 } else {
                     printf("[Chef Worker Team %d] Sent %s to baker\n",
