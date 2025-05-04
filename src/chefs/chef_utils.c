@@ -46,7 +46,7 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
 }
 
 // send messages between chef manager and chefs
-void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
+void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, Game *game) {
     
       
     // prepare a message for receipt from the chefs  

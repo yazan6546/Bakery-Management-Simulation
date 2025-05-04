@@ -60,7 +60,6 @@ void update_inventory() {
     int result = msgrcv(msg_queue_id, msg, sizeof(SupplyChainMessage) + sizeof(Ingredient) * shared_game->config.INGREDIENTS_TO_ORDER  - sizeof(long), getpid(), IPC_NOWAIT);
 
     if(result == -1) {
-        perror("Failed to receive message from supply chain");
         return;
     }
 

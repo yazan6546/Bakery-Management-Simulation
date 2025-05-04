@@ -63,7 +63,7 @@ void check_for_confirmations(ChefState *chef);
 void prepare_recipes(ChefState *chef, Inventory *inventory, ReadyProducts *ready_products);
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem);
 void start_chef(Chef* chef, int msg_queue_id);
-void process_chef_messages(ChefManager* manager, int msg_queue, Game *game);
+void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, Game *game);
 ChefTeam get_team_for_product_type(ProductType type);
 ProductType get_product_type_for_team(ChefTeam team);
 void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game);
