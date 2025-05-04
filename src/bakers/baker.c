@@ -22,6 +22,7 @@
      
  
 
+// from category to baker team
  static inline int category_to_slot(ProductType cat)
  {
      if (cat == BREAD)                     return 0;   /* Bread team      */
@@ -115,26 +116,27 @@ int msg_queue_id = -1;  /* Baker manager queue id */
      puts("Send BakeryMessage structs here to feed the bakers…");
  
      /* ---------- dispatcher loop ----------------------------------- */
-     BakeryMessage msg;
+     ChefMessage msg;
      while (1) {
         // receive a message from the chef manager
         // baker manager receives all messages from the chef manager, so mtype = 0
-         ssize_t r = msgrcv(in_q, &msg, sizeof(BakeryMessage) - sizeof(long), 0, 0);
+         ssize_t r = msgrcv(in_q, &msg, sizeof(ChefMessage) - sizeof(long), 0, 0);
          if (r == -1) {
              if (errno == EINTR) continue;          /* interrupted by signal */
              perror("manager msgrcv"); continue;
          }
- 
-         int slot = category_to_slot(msg.category);
+         
+
+         int baker_team = get_baker_team_from_chef_team(msg.source_team);
          if (msgsnd(msg_queue_id, &msg,
                     sizeof msg - sizeof(long), 0) == -1) {
              perror("manager msgsnd");
          } else {
              const char *team =
-                 (slot == 0) ? "Bread" :
-                 (slot == 1) ? "Cake/Sweet" : "Patisserie";
+                 (baker_team == 0) ? "Bread" :
+                 (baker_team == 1) ? "Cake/Sweet" : "Patisserie";
              printf("→ dispatched %-20s to %s queue (id %d)\n",
-                    msg.item_name, team, msg_queue_id);
+                    msg.product_name, team, msg_queue_id);
          }
      }
      /* never reached */

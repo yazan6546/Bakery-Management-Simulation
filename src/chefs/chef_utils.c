@@ -54,15 +54,8 @@ void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
     while (msgrcv(msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0, IPC_NOWAIT) != -1) {
             // Forward to baker manager if needed
         if (msg.source_team != TEAM_SANDWICHES) {
-            BakeryMessage bakery_msg;
-            // convert chef message to bakery message
-            bakery_msg.mtype = category_to_team(get_product_type_for_team(msg.source_team));
-            strncpy(bakery_msg.item_name, msg.product_name, MAX_ITEM_NAME);
-            bakery_msg.category = get_product_type_for_team(msg.source_team);
-            bakery_msg.index = msg.product_index;
-            
-            // send the converted message to the baker
-            if (msgsnd(CHEF_MGR_KEY, &bakery_msg, sizeof(BakeryMessage) - sizeof(long), 0) == -1) {
+        
+            if (msgsnd(CHEF_MGR_KEY, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                 perror("Failed to forward to baker manager");
             }
         } else {

@@ -11,12 +11,7 @@
 #define CHEF_MGR_KEY 0xCAFEBABE
 #define MANAGER_BAKERS 0xBEEFBEEF
 
-typedef struct {
-    long mtype; // Message type: 1 (Bread), 2 (Cake/Sweets), 3 (Patisseries)
-    char item_name[MAX_ITEM_NAME];
-    ProductType category;
-    int index;
-} BakeryMessage;
+
 
 
 // Message structure for both files
@@ -56,6 +51,7 @@ typedef struct {
     char product_name[MAX_NAME_LENGTH];
     int product_index;
 } ChefMessage;
+
 
 // Message structure for restock requests
 typedef struct {
