@@ -66,5 +66,4 @@ void setup_queue_shared_memory(queue_shm **queue_shm, size_t capacity) {
 
     fcntl(queue_fd, F_SETFD, fcntl(queue_fd, F_GETFD) & ~FD_CLOEXEC);
     close(queue_fd);
-
 }

@@ -2,9 +2,9 @@
 
 ## Game settings
 
-MAX_TIME=50            # Maximum time for the game (in minutes)
-MAX_CUSTOMERS=10          # Maximum number of customers at once
-FRUSTRATED_CUSTOMERS=5        # Number of frustrated customers
+MAX_TIME=500            # Maximum time for the game (in minutes)
+MAX_CUSTOMERS=5          # Maximum number of customers at once
+FRUSTRATED_CUSTOMERS=500        # Number of frustrated customers
 COMPLAINED_CUSTOMERS=3          # Number of customers that complained
 CUSTOMERS_MISSING=2            # Number of customers missing
 DAILY_PROFIT=1000            # Daily profit
@@ -14,7 +14,7 @@ NUM_SELLERS=2           # Number of sellers
 NUM_SUPPLY_CHAIN=2        # Number of supply chain members
 
 MIN_PURCHASE_QUANTITY=1        # Minimum purchase quantity
-MAX_PURCHASE_QUANTITY=5        # Maximum purchase quantity
+MAX_PURCHASE_QUANTITY=2        # Maximum purchase quantity
 
 MIN_OVEN_TIME=1        # should be changed later for each type
 MAX_OVEN_TIME=5        # should be changed later for each type
@@ -34,7 +34,7 @@ MAX_PATIENCE_DECAY=0.4        # Maximum patience decay
 CUSTOMER_PROBABILITY=0.5        # Probability of a customer arriving (every sec)
 
 MIN_ORDER_ITEMS=1        # Minimum number of items in an order
-MAX_ORDER_ITEMS=5        # Maximum number of items in an order
+MAX_ORDER_ITEMS=2        # Maximum number of items in an order
 
 CUSTOMER_CASCADE_PROBABILITY=0.1        # Probability of a customer cascade (every sec)
 CASCADE_WINDOW=5        # Time window for customer cascade (in seconds)

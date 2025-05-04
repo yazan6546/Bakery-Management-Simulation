@@ -32,12 +32,16 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
         "./graphics",
         "./chefs",
         "./bakers",
-        "./supply_chain_manager",
-         "./customer_manager"
+        "./supply_chain_manager"
+        // "./customer_manager"
     };
 
     for (int i = 0; i < 5; i++) {
-        processes[i] = start_process(binary_paths[i], shared_mem_fd);
+        bool suppress;
+        suppress = true;
+        if (strcmp(binary_paths[i], "./customer_manager") == 0)
+            suppress = false;
+        processes[i] = start_process(binary_paths[i], shared_mem_fd, suppress);
     }
     //
     // char *seller = "./sellers";
@@ -50,7 +54,7 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
 }
 
 
-pid_t start_process(const char *binary, int shared_mem_fd) {
+pid_t start_process(const char *binary, int shared_mem_fd, bool suppress) {
     pid_t pid = fork();
     if (pid == -1) {
         perror("fork");
@@ -62,6 +66,9 @@ pid_t start_process(const char *binary, int shared_mem_fd) {
         // Convert fd to string
 
         char fd_str[10];
+
+        if (suppress)
+            freopen("/dev/null", "w", stdout);
         snprintf(fd_str, sizeof(fd_str), "%d", shared_mem_fd);
         if (execl(binary, binary, fd_str, NULL)) {
 

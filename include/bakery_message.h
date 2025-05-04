@@ -3,15 +3,23 @@
 
 #include "customer.h"
 #include "chef.h"
-#define MAX_ITEM_NAME 50
-#define MAX_TEAM_NAME 50
-#define MAX_NAME_LENGTH 64
+#define MAX_ITEM_NAME 25
+#define MAX_TEAM_NAME 25
+#define MAX_NAME_LENGTH 25
+#define CUSTOMER_SELLER_MSG_KEY 0x1234
 
 // define message queue keys
 #define CHEF_BAKER_KEY 0xCAFEBABE
 #define MANAGER_BAKERS 0xBEEFBEEF
 
 
+
+
+typedef enum Action {
+    STATUS_UPDATE,
+    LEAVING_NORMALLY,
+    LEAVING_EARLY
+} ActionType;
 
 
 // Message structure for both files
@@ -21,8 +29,11 @@ typedef struct {
     int customer_id;      // Customer ID for logging
     float patience;       // Current patience level
     CustomerState state;  // Current state
-    int action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
+    ActionType action;           // 0: status update, 1: leaving, 2: frustrated, 3: complained, 4: missing order
+    bool in_queue;       // True if the customer is in the queue
 } CustomerStatusMsg;
+
+
 
 // Add to bakery_message.h
 typedef struct {
@@ -32,7 +43,8 @@ typedef struct {
 
 typedef enum {
     ORDER_SUCCESS,
-    ORDER_FAILED
+    ORDER_FAILED,
+    ORDER_MISSING
 } OrderResult;
 
 typedef struct {

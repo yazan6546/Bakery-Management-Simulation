@@ -53,7 +53,7 @@ void generate_random_customer_order(CustomerOrder *order, Game *game) {
     int num_items = (int) random_float(game->config.MIN_ORDER_ITEMS, game->config.MAX_ORDER_ITEMS);  // Order 1-3 items
 
     // Generate each item in the order
-    for (int i = 0; i < num_items && i < game->config.MAX_ORDER_ITEMS; i++) {
+    for (int i = 0; i < num_items ; i++) {
         // Get the product catalog
         ProductCatalog *catalog = &game->productCatalog;
 
@@ -92,4 +92,5 @@ void generate_random_customer_order(CustomerOrder *order, Game *game) {
 
         order->item_count++;
     }
+
 }
