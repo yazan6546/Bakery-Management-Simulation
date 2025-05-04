@@ -72,6 +72,9 @@ void handle_customer_message(int signum) {
         printf("Received message from customer %d (PID %d), action=%d, state=%d\n",
                cust_id, pid, msg.action, msg.state);
 
+        if (msg.action == 2 || msg.action == 3) {
+            printf("Customer %d is leaving due to frustration or complaint\n", cust_id);
+        }
         // Find the customer in the queue
         int found = 0;
         for (int temp = 0; temp < customer_queue->count; temp++) {
@@ -141,6 +144,8 @@ void handle_customer_message(int signum) {
                         queueShmRemoveAt(customer_queue, temp);
                         active_customers--;
                         break;
+                    default:
+                        printf("Unknown action %d from customer %d\n", msg.action, cust_id);
                 }
                 break;
             }

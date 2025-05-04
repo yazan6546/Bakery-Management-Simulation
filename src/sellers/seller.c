@@ -39,7 +39,7 @@ void process_customer_order(pid_t customer_pid, CustomerOrder *order, Game *shar
         // Handle order failure (e.g., notify customer)
         CompletionMessage compl_msg;
         compl_msg.mtype = customer_pid;  // Use customer's PID as message type
-        compl_msg.result = ORDER_FAILED;
+        compl_msg.result = ORDER_MISSING;
         compl_msg.total_price = 0.0f;
         if (msgsnd(msg_queue_id, &compl_msg, sizeof(CompletionMessage) - sizeof(long), 0) == -1) {
             perror("Failed to send completion message");

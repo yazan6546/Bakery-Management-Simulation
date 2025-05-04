@@ -127,15 +127,24 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
             if (completion_msg.result == ORDER_SUCCESS) {
                 printf("Customer %d received order successfully, total price: %.2f\n", customer_id, completion_msg.total_price);
                 leave_restaurant(WAITING_FOR_ORDER, 1); // 1 = normal leaving
-            } else {
+            } else if (completion_msg.result == ORDER_MISSING) {
                 printf("Customer %d's order failed!\n", customer_id);
-                leave_restaurant(FRUSTRATED, 4); // 4 = missing order
+                leave_restaurant(MISSING_ORDER, 4); // 4 = missing order
+            }
+            else if (completion_msg.result == ORDER_FAILED) {
+                printf("Customer %d's order failed!\n", customer_id);
+                leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
             }
             break;
 
         case FRUSTRATED:
             leave_restaurant(FRUSTRATED, 2); // 2 = frustrated
             pause();  // wait for manager to handle
+            break;
+
+        case MISSING_ORDER:
+            printf("Customer %d is missing order\n", customer_id);
+            leave_restaurant(MISSING_ORDER, 4); // 4 = missing order
             break;
 
         case COMPLAINING:
@@ -188,7 +197,7 @@ void update_patience(float new_patience) {
 
 // Notify manager and exit
 void leave_restaurant(CustomerState final_state, int action_type) {
-    update_state(final_state);
+    my_entry.state = final_state;
     send_status_message(action_type);
     exit(EXIT_SUCCESS);
 }

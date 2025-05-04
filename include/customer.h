@@ -22,6 +22,7 @@ typedef enum {
     WAITING_FOR_ORDER,
     FRUSTRATED,
     COMPLAINING,
+    MISSING_ORDER,
     CONTAGION
 } CustomerState;
 

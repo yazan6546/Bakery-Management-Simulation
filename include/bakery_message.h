@@ -34,7 +34,8 @@ typedef struct {
 
 typedef enum {
     ORDER_SUCCESS,
-    ORDER_FAILED
+    ORDER_FAILED,
+    ORDER_MISSING
 } OrderResult;
 
 typedef struct {
