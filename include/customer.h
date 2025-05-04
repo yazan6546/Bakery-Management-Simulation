@@ -18,10 +18,11 @@
 typedef enum {
     WALKING,
     WAITING_IN_QUEUE,
-    WAITING_FOR_ORDER,
     ORDERING,
+    WAITING_FOR_ORDER,
     FRUSTRATED,
     COMPLAINING,
+    MISSING_ORDER,
     CONTAGION
 } CustomerState;
 
@@ -31,6 +32,7 @@ typedef struct {
     float patience;  // in seconds
     float patience_decay;  // in seconds
     bool has_complained;
+    short seller_id;
     CustomerState state;
 } Customer;
 

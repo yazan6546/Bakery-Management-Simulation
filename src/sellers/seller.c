@@ -39,11 +39,13 @@ void process_customer_order(pid_t customer_pid, CustomerOrder *order, Game *shar
         // Handle order failure (e.g., notify customer)
         CompletionMessage compl_msg;
         compl_msg.mtype = customer_pid;  // Use customer's PID as message type
-        compl_msg.result = ORDER_FAILED;
+        compl_msg.result = ORDER_MISSING;
         compl_msg.total_price = 0.0f;
         if (msgsnd(msg_queue_id, &compl_msg, sizeof(CompletionMessage) - sizeof(long), 0) == -1) {
             perror("Failed to send completion message");
         }
+
+        printf("seller sent completion message\n\n");
 
         return;
     }
@@ -72,14 +74,15 @@ void serve_customer(Customer *customer) {
     kill(customer->pid, SIGUSR1);
     printf("Seller %d: Signaled customer %d\n", seller.id, customer->id);
 
+    printf("customer-id : %d\n", customer->pid);
     // Wait for customer to send order through message queue
     OrderMessage order_msg;
-    if (msgrcv(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), seller.pid, 0) != -1) {
+    if (msgrcv(msg_queue_id, &order_msg, sizeof(OrderMessage) - sizeof(long), customer->pid, 0) != -1) {
         // Update seller state
         seller.state = PROCESSING_ORDER;
 
         printf("seller received order!! %f\n", order_msg.order.total_price);
-
+        sleep(2);  // Simulate order processing time
         // Process the order
         process_customer_order(customer->pid, &order_msg.order, shared_game);
 
@@ -145,7 +148,7 @@ int main(int argc, char *argv[]) {
 
     // Set up shared memory for customer queue
     setup_queue_shared_memory(&customer_queue, shared_game->config.MAX_CUSTOMERS);
-    initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
+    // initQueueShm(customer_queue, sizeof(Customer), shared_game->config.MAX_CUSTOMERS);
 
     // Open the queue semaphore
     queue_sem = sem_open(QUEUE_SEM_NAME, O_CREAT, 0666, 1);
@@ -155,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Get the global message queue ID - use the same one as customer_manager
-    int msg_queue_id = get_message_queue();
+    msg_queue_id = get_message_queue();
 
     // Start seller loop
     seller_loop();

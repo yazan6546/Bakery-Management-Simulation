@@ -22,6 +22,12 @@ int max_customers = 0;
 int active_customers = 0;
 sem_t *complaint_sem = NULL;
 
+
+int find_and_update_customer(pid_t pid, queue_shm *customer_queue, sem_t *queue_sem,
+    CustomerState new_state, float new_patience);
+void handle_customer_state(CustomerStatusMsg msg);
+int find_and_remove_customer(pid_t pid, queue_shm *customer_queue, sem_t *queue_sem);
+
 void cleanup_resources() {
     printf("Cleaning up resources...in customer_manager\n");
     if (msg_queue_id > 0) {
@@ -58,102 +64,42 @@ void handle_sigint(int signum) {
     exit(0);
 }
 
-// Handle customer messages
-void handle_customer_message(int signum) {
+void process_customer_messages(int msg_queue_id, queue_shm *customer_queue, Game *shared_game, sem_t *queue_sem) {
     CustomerStatusMsg msg;
 
-    // Try to receive messages from customers (non-blocking)
     while (msgrcv(msg_queue_id, &msg, sizeof(CustomerStatusMsg) - sizeof(long), 1, IPC_NOWAIT) != -1) {
         pid_t pid = msg.customer_pid;
-        int cust_id = msg.customer_id;
-        if (msg.state == FRUSTRATED)
-            msg.action = 2;
 
-        printf("Received message from customer %d (PID %d), action=%d, state=%d\n",
-               cust_id, pid, msg.action, msg.state);
+        switch (msg.action) {
+            case STATUS_UPDATE: {
 
-        // Find the customer in the queue
-        int found = 0;
-        for (int temp = 0; temp < customer_queue->count; temp++) {
+                find_and_update_customer(pid, customer_queue, queue_sem, msg.state, msg.patience);
+                break;
+            }
 
-            int i = (customer_queue->head + temp) % customer_queue->capacity;
-            Customer *c = &((Customer*)customer_queue->elements)[i];
-            if (c->pid == pid) {
-                found = 1;
+            case LEAVING_NORMALLY: {
 
-                // Process different action types
-                switch (msg.action) {
-                    case 0: // Status update
-                        // Just update our knowledge of customer state
-                        c->patience = msg.patience;
-                        c->state = msg.state;
-                        printf("Updated status for customer %d: patience=%.4f, state=%d\n",
-                               cust_id, msg.patience, msg.state);
-                        break;
-
-                    case 1: // Normal leaving
-                        printf("Customer %d is leaving normally\n", cust_id);
-                        shared_game->num_customers_served++;
-                        kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
-                        active_customers--;
-                        break;
-
-                    case 2: // Frustrated
-                        printf("Customer %d left frustrated\n", cust_id);
-                        shared_game->num_frustrated_customers++;
-                        printf("pid : %d\n", c->pid);
-                        kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
-                        active_customers--;
-                        break;
-
-                    case 3: // Complained
-                        printf("Customer %d complained and left\n", cust_id);
-
-                        sem_wait(complaint_sem);
-                        shared_game->num_complained_customers++;
-                        shared_game->recent_complaint = true;
-                        shared_game->complaining_customer_pid = c->pid;
-                        shared_game->last_complaint_time = time(NULL);
-                        sem_post(complaint_sem);
-                        kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
-                        active_customers--;
-                        break;
-
-                    case 4: // Missing order
-                        printf("Customer %d had missing order\n", cust_id);
-                        shared_game->num_customers_missing++;
-                        kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
-                        active_customers--;
-                        break;
-
-                    case 5: // Cascade effect
-                        printf("Customer %d left due to cascade effect after seeing customer %d complain\n",
-                              cust_id, shared_game->complaining_customer_pid);
-
-                        sem_wait(complaint_sem);
-                        shared_game->num_customers_cascade++;
-                        sem_post(complaint_sem);
-                        kill(c->pid, SIGINT);
-                        queueShmRemoveAt(customer_queue, temp);
-                        active_customers--;
-                        break;
+                active_customers--;
+                shared_game->num_customers_served++;
+                kill(pid, SIGINT);
+                if (msg.in_queue) {
+                    find_and_remove_customer(msg.customer_pid, customer_queue, queue_sem);
                 }
                 break;
             }
-        }
+            case LEAVING_EARLY: {
+                active_customers--;
+                kill(pid, SIGINT);
+                if (msg.in_queue) {
+                    find_and_remove_customer(msg.customer_pid, customer_queue, queue_sem);
+                }
+                handle_customer_state(msg);
+            }
+                break;
 
-//         if (!found && msg.customer_pid > 0) {
-// //            kill(pid, SIGKILL); // Clean up the orphaned process
-//             printf("Unknown sender, killing process: %d\n", pid);
-//         }
+        }
     }
 }
-
-
 void check_and_reset_complaints() {
     sem_wait(complaint_sem);
 
@@ -237,8 +183,13 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    sem_t *queue_sem = sem_open(QUEUE_SEM_NAME, O_CREAT, 0666, 1);
+    if (queue_sem == SEM_FAILED) {
+        perror("Failed to create queue semaphore");
+        exit(EXIT_FAILURE);
+    }
+
     // Setup signal handler for customer messages
-    signal(SIGUSR1, handle_customer_message);
     signal(SIGINT, handle_sigint);
 
     // Register cleanup handler
@@ -268,8 +219,16 @@ int main(int argc, char *argv[]) {
         // Check and reset old complaints
         check_and_reset_complaints();
 
-        // Process any pending messages (in case SIGUSR1 was missed)
-        handle_customer_message(SIGUSR1);
+        process_customer_messages(msg_queue_id, customer_queue, shared_game, queue_sem);
+
+        for (int i = 0; i < shared_game->config.MAX_CUSTOMERS; i++) {
+            size_t index = (customer_queue->head + i) % customer_queue->capacity;
+            Customer *c = &((Customer*)customer_queue->elements)[index];
+
+            if (c->pid > 0) {
+                printf("Customer %d (PID: %d) is in queue with state: %d\n", c->id, c->pid, c->state);
+            }
+        }
 
         // Print statistics
         printf("Active: %d, Frustrated: %d, Complained: %d, Missing: %d, Cascade: %d\n",
@@ -284,4 +243,86 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+int find_and_update_customer(pid_t pid, queue_shm *customer_queue, sem_t *queue_sem, CustomerState new_state, float new_patience) {
+    int found = -1;
+
+    // Lock the queue with semaphore for thread safety
+    sem_wait(queue_sem);
+
+    // Find the customer in the queue
+    for (int i = 0; i < customer_queue->count; i++) {
+        size_t index = (customer_queue->head + i) % customer_queue->capacity;
+        Customer *c = &((Customer*)customer_queue->elements)[index];
+
+        if (c->pid == pid) {
+            // Update customer data in place
+            c->state = new_state;
+            c->patience = new_patience;
+
+            printf("Updated customer %d in queue: state=%d, patience=%.2f\n",
+                  c->id, c->state, c->patience);
+
+            found = i;
+            break;
+        }
+    }
+
+    // Release the semaphore
+    sem_post(queue_sem);
+
+    return found;  // Returns -1 if not found, or the index if found
+}
+
+int find_and_remove_customer(pid_t pid, queue_shm *customer_queue, sem_t *queue_sem) {
+    int found = -1;
+
+    // Lock the queue for the entire operation
+    sem_wait(queue_sem);
+
+    // Search for the customer in the queue
+    for (size_t i = 0; i < customer_queue->count; i++) {
+        size_t index = (customer_queue->head + i) % customer_queue->capacity;
+        Customer *c = &((Customer*)customer_queue->elements)[index];
+
+        if (c->pid == pid) {
+            // Found the customer, remove at this position
+            found = i;
+
+            // Remove customer at the found index
+            if (queueShmRemoveAt(customer_queue, i) != 0) {
+                // If removal failed, set found back to -1
+                found = -1;
+            }
+            break;
+        }
+    }
+
+    // Unlock the queue
+    sem_post(queue_sem);
+
+    return found;  // Returns -1 if not found or removal failed, or the index if found and removed
+}
+
+void handle_customer_state(CustomerStatusMsg msg) {
+    switch (msg.state) {
+        case FRUSTRATED:
+            shared_game->num_frustrated_customers++;
+            break;
+
+        case COMPLAINING: {
+            shared_game->num_complained_customers++;
+            shared_game->complaining_customer_pid = msg.customer_pid;
+            shared_game->last_complaint_time = time(NULL);
+            shared_game->recent_complaint = true;
+            break;
+        }
+        case MISSING_ORDER:
+            shared_game->num_customers_missing++;
+            break;
+        case CONTAGION:
+            shared_game->num_customers_cascade++;
+            break;
+    }
 }
