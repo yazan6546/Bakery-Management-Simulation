@@ -221,6 +221,15 @@ int main(int argc, char *argv[]) {
 
         process_customer_messages(msg_queue_id, customer_queue, shared_game, queue_sem);
 
+        for (int i = 0; i < shared_game->config.MAX_CUSTOMERS; i++) {
+            size_t index = (customer_queue->head + i) % customer_queue->capacity;
+            Customer *c = &((Customer*)customer_queue->elements)[index];
+
+            if (c->pid > 0) {
+                printf("Customer %d (PID: %d) is in queue with state: %d\n", c->id, c->pid, c->state);
+            }
+        }
+
         // Print statistics
         printf("Active: %d, Frustrated: %d, Complained: %d, Missing: %d, Cascade: %d\n",
                active_customers,
