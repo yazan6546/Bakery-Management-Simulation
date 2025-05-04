@@ -18,6 +18,7 @@
 #include "chef.h"
 #include "semaphores_utils.h"
 #include "bakery_message.h"
+#include "BakerTeam.h"
 
 
 // initialize manager
@@ -53,13 +54,22 @@ void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
     while (msgrcv(msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0, IPC_NOWAIT) != -1) {
             // Forward to baker manager if needed
         if (msg.source_team != TEAM_SANDWICHES) {
-            if (msgsnd(CHEF_MGR_KEY, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
+            BakeryMessage bakery_msg;
+            // convert chef message to bakery message
+            bakery_msg.mtype = category_to_team(get_product_type_for_team(msg.source_team));
+            strncpy(bakery_msg.item_name, msg.product_name, MAX_ITEM_NAME);
+            bakery_msg.category = get_product_type_for_team(msg.source_team);
+            bakery_msg.index = msg.product_index;
+            
+            // send the converted message to the baker
+            if (msgsnd(CHEF_MGR_KEY, &bakery_msg, sizeof(BakeryMessage) - sizeof(long), 0) == -1) {
                 perror("Failed to forward to baker manager");
             }
         } else {
             // Direct to ready products for items that don't need baking
+            ProductType type = get_product_type_for_team(msg.source_team);
             add_ready_product(&game->ready_products,
-                            msg.source_team,
+                            type,
                             msg.product_index,
                             1,
                             manager->ready_products_sem);
@@ -114,6 +124,24 @@ ChefTeam get_team_for_product_type(ProductType type) {
             return TEAM_SAVORY_PATISSERIES;
         default:
             fprintf(stderr, "Unknown product type: %d\n", type);
+            return -1;
+    }
+}
+
+// Function to convert from chef team to baker team
+Team get_baker_team_from_chef_team(ChefTeam team) {
+    switch (team) {
+        case TEAM_BREAD:
+            return BREAD_BAKERS;
+        case TEAM_CAKES:
+        case TEAM_SWEETS:
+            return CAKE_AND_SWEETS_BAKERS;
+        case TEAM_SANDWICHES:
+        case TEAM_SWEET_PATISSERIES:
+        case TEAM_SAVORY_PATISSERIES:
+            return PASTRIES_BAKERS;
+        default:
+            fprintf(stderr, "Unknown team type: %d\n", team);
             return -1;
     }
 }
