@@ -140,6 +140,7 @@ int msg_queue_id = -1;  /* Baker manager queue id */
          
 
          int baker_team = get_baker_team_from_chef_team(msg.source_team);
+         msg.mtype = baker_team + 1;  /* mtype = team id + 1 */
          if (msgsnd(msg_queue_id, &msg,
                     sizeof msg - sizeof(long), 0) == -1) {
              perror("manager msgsnd");
