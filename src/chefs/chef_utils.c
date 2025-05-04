@@ -135,6 +135,9 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id) {
         // Otherwise, wait for ingredients
         if (has_ingredients) {
             // Use ingredients
+            // copy product name into game->info.chefs[id].product_name
+            strncpy(game->info.chefs[id].Item, product->name, MAX_NAME_LENGTH - 1);
+            game->info.chefs[id].Item[MAX_NAME_LENGTH - 1] = '\0';
             for (int i = 0; i < product->ingredient_count; i++) {
                 game->inventory.quantities[product->ingredients[i].type] -=
                     product->ingredients[i].quantity;
