@@ -9,6 +9,7 @@
 #include <inventory.h>
 #include "products.h"
 #include "game.h"
+#include "team.h"
 
 
 
@@ -30,16 +31,7 @@ typedef struct {
 #define MAX_ITEMS_QUEUE 100
 
 
-typedef enum {
-    TEAM_PASTE=6,
-    TEAM_BREAD=0,
-    TEAM_CAKES=1,
-    TEAM_SANDWICHES=2,
-    TEAM_SWEETS=3,
-    TEAM_SWEET_PATISSERIES=4,
-    TEAM_SAVORY_PATISSERIES=5,
-    TEAM_COUNT=7
-} ChefTeam;
+
 
 
 typedef struct {
@@ -80,6 +72,6 @@ void reallocate_chefs(ChefManager* manager, int msg_queue, float* ratios);
 void balance_teams(ChefManager *manager, Game *game);
 void handle_team_change(int signum);
 void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game);
-Team get_baker_team_from_chef_team(ChefTeam team);
+
 
 #endif //CHEF_H

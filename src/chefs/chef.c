@@ -13,6 +13,7 @@
 #include "shared_mem_utils.h"
 #include "semaphores_utils.h"
 #include "inventory.h"
+#include "team.h"
 
 
 Game *game;
