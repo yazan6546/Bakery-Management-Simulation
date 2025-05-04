@@ -20,7 +20,7 @@
 #include "bakery_message.h"
 
 
-
+// initialize manager
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem) {
     ChefManager* manager = malloc(sizeof(ChefManager));
     if (!manager) {
@@ -44,33 +44,35 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
     return manager;
 }
 
-void process_chef_messages(ChefManager* manager, int* team_queues, Game *game) {
-    while (1) {
-        // Process messages from all team queues
-        for (int team = 0; team < TEAM_COUNT; team++) {
-            ChefMessage msg;
-            while (msgrcv(team_queues[team], &msg, sizeof(ChefMessage), 0, IPC_NOWAIT) != -1) {
-                // Forward to baker manager if needed
-                if (msg.source_team != TEAM_SANDWICHES) {
-                    if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage), 0) == -1) {
-                        perror("Failed to forward to baker manager");
-                    }
-                } else {
-                    // Direct to ready products for items that don't need baking
-                    add_ready_product(&game->ready_products,
-                                   msg.source_team,
-                                   msg.product_index,
-                                   1,
-                                   manager->ready_products_sem);
-                }
+// send messages between chef manager and chefs
+void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
+    
+      
+    // prepare a message for receipt from the chefs  
+    ChefMessage msg;
+    while (msgrcv(msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0, IPC_NOWAIT) != -1) {
+            // Forward to baker manager if needed
+        if (msg.source_team != TEAM_SANDWICHES) {
+            if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
+                perror("Failed to forward to baker manager");
             }
+        } else {
+            // Direct to ready products for items that don't need baking
+            add_ready_product(&game->ready_products,
+                            msg.source_team,
+                            msg.product_index,
+                            1,
+                            manager->ready_products_sem);
         }
+    }
+    
 
         // Delay to prevent busy waiting
         usleep(100000);
-    }
 }
 
+
+// Function to get the product type for a given team for adding to the products
 ProductType get_product_type_for_team(ChefTeam team) {
     switch (team) {
         case TEAM_BREAD:
@@ -94,6 +96,8 @@ ProductType get_product_type_for_team(ChefTeam team) {
     }
 }
 
+
+// Function to get the team for a given product type
 ChefTeam get_team_for_product_type(ProductType type) {
     switch (type) {
         case BREAD:
@@ -114,6 +118,7 @@ ChefTeam get_team_for_product_type(ProductType type) {
     }
 }
 
+// Function to simulate the work of a chef
 void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     // Set up random seed based on process ID
     srand(time(NULL) ^ getpid());
@@ -138,7 +143,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     printf("[Chef Worker] Started in team %d\n", team);
 
     while (1) {
-            if (chef.team != team) {
+        if (chef.team != team) {
             // Update team and specialization
             team = chef.team;
             printf("[Chef Worker] Switched to team %d\n", team);
@@ -159,6 +164,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
         lock_inventory(inventory_sem);
         int has_ingredients = 1;
 
+        // Check if we have enough of each ingredient
         for (int i = 0; i < product->ingredient_count; i++) {
             if (game->inventory.quantities[product->ingredients[i].type] <
                 product->ingredients[i].quantity) {
@@ -167,6 +173,8 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
             }
         }
 
+        // If we have enough ingredients, proceed with preparation
+        // Otherwise, wait for ingredients
         if (has_ingredients) {
             // Use ingredients
             for (int i = 0; i < product->ingredient_count; i++) {
@@ -208,13 +216,14 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
             } else {
                 // Prepare message for chef manager for items that need baking
                 ChefMessage msg;
-                msg.mtype = 1;
+                msg.mtype = team + 1;  // Adding 1 to ensure mtype is positive
                 msg.source_team = team;
                 msg.product_index = product_index;
-                msg.product_name = product->name;
+                strncpy(msg.product_name, product->name, MAX_NAME_LENGTH - 1);
+                msg.product_name[MAX_NAME_LENGTH - 1] = '\0';
 
                 // Send to chef manager
-                if (msgsnd(msg_queue_id, &msg, sizeof(ChefMessage), 0) == -1) {
+                if (msgsnd(msg_queue_id, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                     perror("[Chef Worker] Failed to send prepared item");
                 } else {
                     printf("[Chef Worker Team %d] Sent %s to baker\n",
