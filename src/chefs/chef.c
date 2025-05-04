@@ -49,11 +49,16 @@ int main(int argc, char *argv[]) {
                                            inventory_sem,
                                            ready_products_sem);
 
-    // Initial distribution of chefs per team
-    int chefs_per_team[TEAM_COUNT] = {0};
+    int chefs_per_team[TEAM_COUNT] = {0};  // Initialize all to 0
     int remaining_chefs = game->config.NUM_CHEFS;
 
-    // Randomly distribute chefs
+    // First assign 1 chef to each team
+    for (int i = 0; i < TEAM_COUNT; i++) {
+        chefs_per_team[i] = 1;
+        remaining_chefs--;
+    }
+
+    // Randomly distribute remaining chefs
     while (remaining_chefs > 0) {
         int team = rand() % TEAM_COUNT;
         chefs_per_team[team]++;
