@@ -29,14 +29,14 @@ int game_init(Game *game, pid_t *processes, pid_t *processes_sellers, int shared
 
 
     char *binary_paths[] = {
-        //"./graphics",
+        "./graphics",
         "./chefs",
         "./bakers",
-        "./supply_chain_manager",
+        "./supply_chain_manager"
         "./customer_manager"
     };
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         bool suppress;
         suppress = true;
         if (strcmp(binary_paths[i], "./customer_manager") == 0)

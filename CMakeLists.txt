@@ -18,7 +18,7 @@ add_executable(main src/main.c src/utils/config.c src/game.c src/inventory.c src
         src/utils/random.c  # Add this line
         src/utils/shared_mem_utils.c src/customers/customer_utils.c)
 add_executable(graphics)
-target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c)
+target_sources(graphics PRIVATE src/graphics/graphics.c src/graphics/animation.c src/utils/shared_mem_utils.c src/inventory.c src/utils/semaphores_utils.c)
 add_executable(chefs src/chefs/chef.c src/inventory.c src/chefs/chef_utils.c
         src/utils/semaphores_utils.c src/utils/shared_mem_utils.c src/team.c)
 

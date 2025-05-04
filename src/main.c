@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "assets.h"
 #include "config.h"
@@ -61,6 +62,18 @@ int main(int argc, char *argv[]) {
 
     }
 
+    int status_graphics;
+
+    waitpid(processes[0], &status_graphics, 0);
+
+    if (WIFEXITED(status_graphics)) {
+        printf("Graphics Child process exited with code: %d\n", WEXITSTATUS(status_graphics));
+    } else if (WIFSIGNALED(status_graphics)) {
+        printf("Graphics Child process terminated by signal: %d\n", WTERMSIG(status_graphics));
+
+        return 0; // cleanup_resources will be called automatically via atexit
+    }
+
 }
 
 void handle_alarm(int signum) {
@@ -79,6 +92,8 @@ void cleanup_resources() {
     for (int i = 0; i < 6; i++) {
         kill(processes[i], SIGINT);
     }
+
+
 
     // for (int i = 0; i<shared_game->config.NUM_SELLERS; i++) {
     //     kill(processes_sellers[i], SIGINT);
