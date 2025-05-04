@@ -119,7 +119,7 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 
             CompletionMessage completion_msg;
             // Remove IPC_NOWAIT to make the call blocking
-            if (msgrcv(gloabl_msg, &completion_msg, sizeof(OrderMessage), my_pid, 0) == -1) {
+            if (msgrcv(gloabl_msg, &completion_msg, sizeof(CompletionMessage) - sizeof(long), my_pid, 0) == -1) {
                 perror("Error receiving order completion");
                 leave_restaurant(FRUSTRATED, 2); // 2 = FRUSTRATED
             }

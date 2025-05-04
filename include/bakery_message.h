@@ -3,10 +3,10 @@
 
 #include "customer.h"
 #include "chef.h"
-#define MAX_ITEM_NAME 50
-#define MAX_TEAM_NAME 50
-#define MAX_NAME_LENGTH 64
-#define CUSTOMER_SELLER_MSG_KEY "vry_gud"
+#define MAX_ITEM_NAME 25
+#define MAX_TEAM_NAME 25
+#define MAX_NAME_LENGTH 25
+#define CUSTOMER_SELLER_MSG_KEY 0x1234
 
 typedef struct {
     long mtype; // Message type: 1 (Bread), 2 (Cake/Sweets), 3 (Patisseries)

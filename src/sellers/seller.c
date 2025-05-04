@@ -45,6 +45,8 @@ void process_customer_order(pid_t customer_pid, CustomerOrder *order, Game *shar
             perror("Failed to send completion message");
         }
 
+        printf("seller sent completion message\n\n");
+
         return;
     }
 
