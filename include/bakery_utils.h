@@ -6,11 +6,7 @@
 #include "config.h"
 
 
-typedef struct {
-    Team team_name;         // Team name
-    State state;           // State of the baker
-    char Item[MAX_NAME_LENGTH]; // Item name
-} Baker;
+
 
 
 

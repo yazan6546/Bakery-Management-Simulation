@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     // Convert message queue ID and team enum from string to integer
     int  mqid    = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
+    int  id      = atoi(argv[3]);
 
     // Open shared memory
     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
@@ -57,13 +58,13 @@ int main(int argc, char *argv[])
     setup_oven_semaphores(game->config.NUM_OVENS);
 
 
-    BakerState    state    = IDLE;
+    game->info.bakers[id].state    = BAKER_IDLE;
     ChefMessage cur_msg  = {0};
     int           oven_idx = -1;
 
     while (1) {
 
-        if (state == BUSY && oven_idx != -1) {
+        if (game->info.bakers[id].state == BAKER_BUSY && oven_idx != -1) {
             oven_tick(&game->ovens[oven_idx]);
             if (!game->ovens[oven_idx].is_busy) {
                 ProductType type = get_product_type_for_team(cur_msg.source_team);
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
                 printf("[Baker %s] Finished %s in oven %d\n",
                        get_team_name_str(my_team),
                        cur_msg.product_name, oven_idx);
-                state = IDLE;
+                game->info.bakers[id].state = BAKER_IDLE;
                 oven_idx = -1;
             } else {
                 sleep(1);
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (state == IDLE) {
+        if (game->info.bakers[id].state == BAKER_IDLE) {
             ChefMessage msg;
             ssize_t r = msgrcv(mqid, &msg, sizeof(ChefMessage) - sizeof(long), 0, 0);
             if (r < 0) {
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
                                          get_team_name_str(my_team),
                                          bake_time)) {
                         oven_idx = i;
-                        state    = BUSY;
+                        game->info.bakers[id].state    = BAKER_BUSY;
                         printf("[Baker %s] Placed %s in oven %d for %d s\n",
                                get_team_name_str(my_team),
                                cur_msg.product_name, i, bake_time);

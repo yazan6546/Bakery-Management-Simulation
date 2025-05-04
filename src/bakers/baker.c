@@ -95,14 +95,24 @@ int msg_queue_id = -1;  /* Baker manager queue id */
      /* ---------- fork baker_workers -------------------------------- */
      BakerTeam teams[TEAM_COUNT];
      distribute_bakers_locally(&game->config, teams);
+     int baker_count = 0;
  
      for (int t = 0; t < TEAM_COUNT; ++t)
          for (int b = 0; b < teams[t].number_of_bakers; ++b) {
-             if (fork() == 0) {               /* child process */
-                 char q_s[16], team_s[8];
+             if (fork() == 0) {   
+                int id = baker_count++;           /* child process */
+                 char q_s[16], team_s[8], id_s[8];
+                 snprintf(id_s, sizeof id_s, "%d", baker_count);
+
+                 
+                 // store the bakers' info in array
+                 game->info.bakers[id].team_name = teams[t].team_name;
+                 game->info.bakers[id].state = BAKER_IDLE;
+
+                 
                  snprintf(q_s, sizeof q_s, "%d", msg_queue_id);
                  snprintf(team_s, sizeof team_s, "%d", teams[t].team_name);
-                 execl("./baker_worker", "baker_worker", q_s, team_s, NULL);
+                 execl("./baker_worker", "baker_worker", q_s, team_s, id_s, NULL);
                  perror("execl"); _exit(EXIT_FAILURE);
              }
          }

@@ -8,6 +8,7 @@
 #include "inventory.h"
 #include "oven.h"
 #include <stdbool.h>
+#include "info.h"
 
 #define MAX_OVENS 10  // Max ovens allowed
 
@@ -28,6 +29,8 @@ typedef struct Game {
     Inventory inventory;
     ProductCatalog productCatalog;
     ReadyProducts ready_products;
+
+    Info info;
 
     Oven ovens[MAX_OVENS]; // Shared ovens
 } Game;
