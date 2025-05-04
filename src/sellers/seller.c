@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Get the global message queue ID - use the same one as customer_manager
-    int msg_queue_id = get_message_queue();
+    msg_queue_id = get_message_queue();
 
     // Start seller loop
     seller_loop();
