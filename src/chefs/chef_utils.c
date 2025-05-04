@@ -121,23 +121,6 @@ ChefTeam get_team_for_product_type(ProductType type) {
     }
 }
 
-// Function to convert from chef team to baker team
-Team get_baker_team_from_chef_team(ChefTeam team) {
-    switch (team) {
-        case TEAM_BREAD:
-            return BREAD_BAKERS;
-        case TEAM_CAKES:
-        case TEAM_SWEETS:
-            return CAKE_AND_SWEETS_BAKERS;
-        case TEAM_SANDWICHES:
-        case TEAM_SWEET_PATISSERIES:
-        case TEAM_SAVORY_PATISSERIES:
-            return PASTRIES_BAKERS;
-        default:
-            fprintf(stderr, "Unknown team type: %d\n", team);
-            return -1;
-    }
-}
 
 // Function to simulate the work of a chef
 void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
@@ -346,5 +329,23 @@ void balance_teams(ChefManager *manager, Game *game) {
     // If the ratio difference is significant, move a chef
     if (max_ratio / min_ratio > game->config.PRODUCTION_RATIO_THRESHOLD) {
         move_chef(manager, max_team, min_team, game);
+    }
+}
+
+// Function to convert from chef team to baker team
+Team get_baker_team_from_chef_team(ChefTeam team) {
+    switch (team) {
+        case TEAM_BREAD:
+            return BREAD_BAKERS;
+        case TEAM_CAKES:
+        case TEAM_SWEETS:
+            return CAKE_AND_SWEETS_BAKERS;
+        case TEAM_SANDWICHES:
+        case TEAM_SWEET_PATISSERIES:
+        case TEAM_SAVORY_PATISSERIES:
+            return PASTRIES_BAKERS;
+        default:
+            fprintf(stderr, "Unknown team type: %d\n", team);
+            return -1;
     }
 }

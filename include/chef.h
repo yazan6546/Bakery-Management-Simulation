@@ -80,4 +80,6 @@ void reallocate_chefs(ChefManager* manager, int msg_queue, float* ratios);
 void balance_teams(ChefManager *manager, Game *game);
 void handle_team_change(int signum);
 void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game);
+Team get_baker_team_from_chef_team(ChefTeam team);
+
 #endif //CHEF_H
