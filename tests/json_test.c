@@ -4,6 +4,7 @@
 #include <json-c/json.h>
 #include "config.h"
 #include "products.h"
+#include <unistd.h>
 
 // Function to create a test JSON file for products
 void create_test_json_file(const char *filename) {
@@ -145,38 +146,48 @@ void print_product_catalog(ProductCatalog *catalog) {
 
 int main() {
 
-    const char *test_filename = "test_products.json";
+//     const char *test_filename = "test_products.json";
+//
+//     printf("=== JSON Loading Test ===\n");
+//
+//     // Step 1: Create a test JSON file
+//     printf("Creating test JSON file: %s\n", test_filename);
+// //    create_test_json_file(test_filename);
+//
+//     // Step 2: Test enum conversion functions
+//     test_enum_conversions();
+//
+//     // Step 3: Load and test product catalog
+//     printf("\nLoading product catalog from file...\n");
+//     ProductCatalog catalog;
+//     int result = load_product_catalog(test_filename, &catalog);
+//
+//     if (result == 0) {
+//         printf("Successfully loaded product catalog!\n");
+//         print_product_catalog(&catalog);
+//     } else {
+//         printf("Failed to load product catalog. Error code: %d\n", result);
+//     }
+//
+//     // Step 4: Test error handling
+//     printf("\nTesting error handling:\n");
+//     printf("Attempting to load from non-existent file: ");
+//     result = load_product_catalog("non_existent_file.json", &catalog);
+//     printf("%s\n", (result != 0) ? "Failed as expected" : "Unexpectedly succeeded");
+//
+//     // Clean up
+// //    remove(test_filename);
 
-    printf("=== JSON Loading Test ===\n");
-
-    // Step 1: Create a test JSON file
-    printf("Creating test JSON file: %s\n", test_filename);
-//    create_test_json_file(test_filename);
-
-    // Step 2: Test enum conversion functions
-    test_enum_conversions();
-
-    // Step 3: Load and test product catalog
-    printf("\nLoading product catalog from file...\n");
+    // Step 5: Test JSON file creation
+    // execlp("ls", "ls", "-l", NULL);
     ProductCatalog catalog;
-    int result = load_product_catalog(test_filename, &catalog);
-
+    int result = load_product_catalog(CONFIG_PATH_JSON, &catalog);
     if (result == 0) {
         printf("Successfully loaded product catalog!\n");
         print_product_catalog(&catalog);
     } else {
         printf("Failed to load product catalog. Error code: %d\n", result);
     }
-
-    // Step 4: Test error handling
-    printf("\nTesting error handling:\n");
-    printf("Attempting to load from non-existent file: ");
-    result = load_product_catalog("non_existent_file.json", &catalog);
-    printf("%s\n", (result != 0) ? "Failed as expected" : "Unexpectedly succeeded");
-
-    // Clean up
-//    remove(test_filename);
-
     printf("\nJSON test completed.\n");
     return 0;
 }
