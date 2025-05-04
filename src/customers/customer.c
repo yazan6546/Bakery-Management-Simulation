@@ -76,10 +76,8 @@ int main(int argc, char *argv[]) {
     while (1) {
         printf("Customer %d patience : %.4f\n", customer_id, my_entry.patience);
         handle_state(my_entry.state, shared_game, global_msg);
-
-        if (my_entry.state != WAITING_FOR_ORDER) {
-            pause();
-        }
+        printf("stateeee %d\n", my_entry.state);
+        sleep(1);
     }
 
     return 0;
@@ -101,7 +99,6 @@ void handle_state(CustomerState state, Game *shared_game, int gloabl_msg) {
 
         case WAITING_IN_QUEUE:
             printf("Customer %d is waiting in queue...\n", customer_id);
-            pause(); // pause until seller signals
             break;
 
         case ORDERING:

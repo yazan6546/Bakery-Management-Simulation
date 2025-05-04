@@ -70,6 +70,7 @@ void serve_customer(Customer *customer) {
     // Update seller state
     seller.state = TAKING_ORDER;
 
+    sleep(2);
     // Send signal to customer that it's their turn
     kill(customer->pid, SIGUSR1);
     printf("Seller %d: Signaled customer %d\n", seller.id, customer->id);
