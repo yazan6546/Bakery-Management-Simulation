@@ -50,15 +50,15 @@ int main(int argc, char *argv[]) {
                                            ready_products_sem);
 
     // Initial distribution of chefs per team
-    int chefs_per_team[TEAM_COUNT] = {
-        [TEAM_PASTE] = 2,
-        [TEAM_BREAD] = 2,
-        [TEAM_CAKES] = 2,
-        [TEAM_SANDWICHES] = 2,
-        [TEAM_SWEETS] = 2,
-        [TEAM_SWEET_PATISSERIES] = 2,
-        [TEAM_SAVORY_PATISSERIES] = 2
-    };
+    int chefs_per_team[TEAM_COUNT] = {0};
+    int remaining_chefs = game->config.NUM_CHEFS;
+
+    // Randomly distribute chefs
+    while (remaining_chefs > 0) {
+        int team = rand() % TEAM_COUNT;
+        chefs_per_team[team]++;
+        remaining_chefs--;
+    }
 
     // Spawn chef workers for each team
     int chef_count = 0;
