@@ -1,6 +1,8 @@
 #ifndef TEAM_H
 #define TEAM_H
 
+#include "products.h"
+
 typedef enum Team {
     BREAD_BAKERS = 0,
     CAKE_AND_SWEETS_BAKERS = 1,
@@ -29,6 +31,7 @@ typedef struct {
 
 void init_team(BakerTeam *team, const char *name);
 Team get_baker_team_from_chef_team(ChefTeam team);
+ChefTeam get_team_for_product_type(ProductType type);
 
 
 #endif // BAKERTEAM_H
