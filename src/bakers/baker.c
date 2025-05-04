@@ -1,6 +1,4 @@
-
-      
- #include <stdio.h>
+#include <stdio.h>
  #include <stdlib.h>
  #include <unistd.h>
  #include <sys/mman.h>
@@ -102,7 +100,7 @@ int msg_queue_id = -1;  /* Baker manager queue id */
              if (fork() == 0) {   
                 int id = baker_count++;           /* child process */
                  char q_s[16], team_s[8], id_s[8];
-                 snprintf(id_s, sizeof id_s, "%d", baker_count);
+                 snprintf(id_s, sizeof id_s, "%d", id);  // Using id instead of baker_count
 
                  
                  // store the bakers' info in array
@@ -156,4 +154,3 @@ int msg_queue_id = -1;  /* Baker manager queue id */
      /* never reached */
      return 0;
  }
- 

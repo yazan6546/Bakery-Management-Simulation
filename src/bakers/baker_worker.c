@@ -34,17 +34,17 @@ Game *game;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <mqid> <team_enum>\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s <mqid> <team_enum> <baker_id>\n", argv[0]);
         return EXIT_FAILURE;
     }
-
 
     // Parse arguments
     // Convert message queue ID and team enum from string to integer
     int  mqid    = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
     int  id      = atoi(argv[3]);
+    printf("Baker %d started in team %s\n", id, get_team_name_str(my_team));
 
     // Open shared memory
     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
