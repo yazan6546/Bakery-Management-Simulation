@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
         if (game->info.bakers[id].state == BAKER_IDLE) {
             ChefMessage msg;
-            ssize_t r = msgrcv(mqid, &msg, sizeof(ChefMessage) - sizeof(long), 0, 0);
+            ssize_t r = msgrcv(mqid, &msg, sizeof(ChefMessage) - sizeof(long), msg.source_team + 1, 0);
             if (r < 0) {
                 if (errno == EIDRM || errno == EINVAL) _exit(0);
                 if (errno == EINTR) continue;
