@@ -22,7 +22,17 @@
  #include <stdio.h>
  #include <string.h>
  
- /* ---------- window & layout -------------------------------- */
+ /* ---------- helper: readable baker team -------------------- */
+ static const char* get_team_name_str(Team t){
+     switch(t){
+         case BREAD_BAKERS:           return "Bake Bread";
+         case CAKE_AND_SWEETS_BAKERS: return "Bake Cakes & Sweets";
+         case PASTRIES_BAKERS:        return "Bake Patisseries";
+         default:                     return "Unknown Team";
+     }
+ }
+ 
+ /* ---------- window & layout -------------------------------- */
  #ifndef ASSETS_PATH
  #define ASSETS_PATH "assets/"
  #endif
@@ -39,17 +49,17 @@
  #define FONT_SM 14
  #define FONT_XS 11
  
- /* ---------- customer visuals ------------------------------- */
+ /* ---------- queue / animation constants -------------------- */
  #define MAX_VISUALS   64
  #define MAX_LEAVERS   64
  #define QUEUE_SPACING 68
  #define WALK_SCALE    5.0f
- #define LEAVE_SPEED   180.0f   /* px/sec */
+ #define LEAVE_SPEED   180.0f   /* px per second */
  
- /* ---------- loaders / helpers ------------------------------ */
+ /* ---------- quick helpers ---------------------------------- */
  static Texture2D mustLoad(const char *p){
      Texture2D t = LoadTexture(p);
-     if(!t.id){ TraceLog(LOG_FATAL,"cannot load %s",p); exit(1);}
+     if(!t.id){ TraceLog(LOG_FATAL,"cannot load %s",p); exit(1); }
      return t;
  }
  static Color tintForState(CustomerState s){
@@ -64,21 +74,8 @@
          default:                 return GRAY;
      }
  }
-
- const char* get_team_name_str(Team team) {
-    switch (team) {
-        case BREAD_BAKERS:
-            return "Bake Bread";
-        case CAKE_AND_SWEETS_BAKERS:
-            return "Bake Cakes and Sweets";
-        case PASTRIES_BAKERS:
-            return "Bake Sweet and Savory Patisseries";
-        default:
-            return "Unknown Team";
-    }
-}
  
- /* ---------- sprite frames ---------------------------------- */
+ /* ---------- sprite frame tables ---------------------------- */
  static const Rectangle walkFrames[8] = {
      {22,289,20,48},{44,289,17,48},{63,289,12,48},{77,289,14,48},
      {97,289,20,49},{120,289,15,48},{140,289,13,48},{158,289,14,48}};
@@ -86,13 +83,13 @@
      {0,0,20,48},{20,0,20,48},{40,0,20,48},{60,0,20,48}};
  static const int idleFrameIdx = 0;
  
- /* ---------- queue visual cache ----------------------------- */
- typedef struct{ Animation *anim; CustomerState last; } Visual;
+ /* ---------- cached queue visuals --------------------------- */
+ typedef struct { Animation *anim; CustomerState last; } Visual;
  static Visual visuals[MAX_VISUALS] = {0};
  
- static void ensureAnim(Texture2D sh,Visual *v,CustomerState st){
-     const Rectangle *set = walkFrames; int len=8; float fps=8;
-     if(st==FRUSTRATED){ set=frustFrames; len=4; fps=12; }
+ static void ensureAnim(Texture2D sh, Visual *v, CustomerState st){
+     const Rectangle *set = walkFrames; int len=8; float fps=8.f;
+     if(st==FRUSTRATED){ set=frustFrames; len=4; fps=12.f; }
      if(!v->anim || v->last!=st){
          FreeAnimation(&v->anim);
          v->anim = CreateAnimation(sh,(Rectangle*)set,len,fps);
@@ -100,7 +97,7 @@
      }
  }
  
- /* ---------- leaver record ---------------------------------- */
+ /* ---------- leaver tracking -------------------------------- */
  typedef struct{
      const Customer *ref;
      Animation *anim;
@@ -109,19 +106,19 @@
  } Leaver;
  static Leaver leavers[MAX_LEAVERS] = {0};
  
- /* ---------- sound ------------------------------------------ */
+ /* ---------- frustration sound ------------------------------ */
  static Sound frustrSound = {0};
  static void playFrust(){ if(frustrSound.frameCount) PlaySound(frustrSound); }
  
  /* =========================================================== */
  int main(void)
  {
-     /* -------- shared memory -------------------------------- */
-     Game *g=NULL;              setup_shared_memory(&g);
-     queue_shm *custQ=NULL;     setup_queue_shared_memory(&custQ,
-                                            g->config.MAX_CUSTOMERS);
+     /* ---- shared memory ------------------------------------ */
+     Game *g=NULL;          setup_shared_memory(&g);
+     queue_shm *custQ=NULL; setup_queue_shared_memory(&custQ,
+                                        g->config.MAX_CUSTOMERS);
  
-     /* -------- assets --------------------------------------- */
+     /* ---- assets ------------------------------------------- */
      InitWindow(WIN_W,WIN_H,"Bakery GUI");
      InitAudioDevice();
  
@@ -133,16 +130,14 @@
      Texture2D bakeT = mustLoad(ASSETS_PATH "baker.png");
      frustrSound     = LoadSound(ASSETS_PATH "frustrated.wav");
  
-     /* seller sprite */
+     /* sprite sizes & geometry ------------------------------- */
      const float SELL_SCALE=0.12f;
      const float SELL_W=sellT.width *SELL_SCALE;
      const float SELL_H=sellT.height*SELL_SCALE;
  
-     /* chef sprite metrics */
      const Rectangle chefFrame={7,2,32,52};
      const float CHEF_SCALE=2.0f, BAK_R=30, CHEF_S=60;
  
-     /* world geometry */
      const int   BG_W=WIN_W-DASH_W, BG_H=WIN_H-BAR_H;
      const float SCALE   = (BG_H/(float)bg.height)*DRAW_SCALE;
      const float WORLD_W = bg.width*SCALE;
@@ -150,27 +145,26 @@
      const float groundY = TOP_M + drawH - walkFrames[0].height*WALK_SCALE/2;
      const float sellerY = TOP_M + drawH - 200;
  
-     /* frustrated exit */
      const float EXIT_X = WORLD_W + 200;
      const float EXIT_Y = groundY + 40;
  
      Camera2D cam={0};
      float vScroll=0, staffScroll=0;
  
-     /* ================= main loop =========================== */
+     /* ---------------- main loop ---------------------------- */
      while(!WindowShouldClose())
      {
          float dt=GetFrameTime();
  
-         /* counts -------------------------------------------------- */
+         /* live counts & pointers ----------------------------- */
          int nBakers = g->config.NUM_BAKERS;
          int nChefs  = g->config.NUM_CHEFS;
-         int nSeller = g->config.NUM_SELLERS;
+         int nSell   = g->config.NUM_SELLERS;
  
          Baker *bakers = g->info.bakers;
          Chef  *chefs  = g->info.chefs;
  
-         /* camera controls ---------------------------------------- */
+         /* camera -------------------------------------------- */
          if(IsKeyDown(KEY_RIGHT)) cam.target.x += 8;
          if(IsKeyDown(KEY_LEFT )) cam.target.x -= 8;
          cam.target.x = Clamp(cam.target.x,0,WORLD_W-BG_W);
@@ -179,20 +173,20 @@
          if(IsKeyDown(KEY_UP  )) vScroll -= 8;
          if(vScroll<0) vScroll=0;
  
-         /* staff‑bar scroll -------------------------------------- */
+         /* staff bar scroll ---------------------------------- */
          if(GetMouseY()>WIN_H-BAR_H) staffScroll -= GetMouseWheelMove()*40;
          if(IsKeyDown(KEY_LEFT_BRACKET ))  staffScroll -= 8;
          if(IsKeyDown(KEY_RIGHT_BRACKET))  staffScroll += 8;
-         float bakerW = 120 + nBakers*(BAK_R*2+140);
-         float chefW  = 120 + nChefs *(CHEF_S+180);
-         float contentW = bakerW>chefW? bakerW:chefW;
-         staffScroll = Clamp(staffScroll,0,contentW>WIN_W?contentW-WIN_W:0);
+         float bakerW  = 120 + nBakers*(BAK_R*2+140);
+         float chefW   = 120 + nChefs *(CHEF_S+180);
+         float contentW= bakerW>chefW ? bakerW : chefW;
+         staffScroll   = Clamp(staffScroll,0,contentW>WIN_W?contentW-WIN_W:0);
  
-         /* ================= DRAW ================================ */
+         /* ================= DRAW ============================ */
          BeginDrawing();
          ClearBackground(RAYWHITE);
  
-         /* ---- world clip --------------------------------------- */
+         /* ---- world clip ----------------------------------- */
          BeginScissorMode(0,0,BG_W,BG_H);
          {
              Rectangle src={0,0,bg.width,bg.height};
@@ -200,21 +194,21 @@
              DrawTexturePro(bg,src,dst,(Vector2){0,0},0,WHITE);
  
              /* sellers */
-             float sp=WORLD_W/(nSeller+1.f);
-             for(int i=0;i<nSeller;i++){
+             float sp=WORLD_W/(nSell+1.f);
+             for(int i=0;i<nSell;i++){
                  float xs=-cam.target.x+sp*(i+1)-SELL_W/2;
                  Rectangle d={xs,sellerY-SELL_H-vScroll-40,SELL_W,SELL_H};
                  DrawTexturePro(sellT,(Rectangle){0,0,sellT.width,sellT.height},
                                 d,(Vector2){0,0},0,WHITE);
              }
  
-             /* customers (queue) -------------------------------- */
+             /* queue customers */
              int qN = custQ->count>MAX_VISUALS?MAX_VISUALS:custQ->count;
              for(int i=0;i<qN;i++){
                  int qi=(custQ->head+i)%custQ->capacity;
                  Customer *c=&((Customer*)custQ->elements)[qi];
  
-                 /* frustrated → leaver --------------------------- */
+                 /* frustrated → leaver ------------------------- */
                  if(c->state==FRUSTRATED){
                      int slot=-1;
                      for(int l=0;l<MAX_LEAVERS;l++){
@@ -226,7 +220,7 @@
                          leavers[slot]=(Leaver){
                              .ref=c,.x=sx,.y=groundY-16,.active=true,
                              .anim=CreateAnimation(sheet,(Rectangle*)frustFrames,4,12)};
-                         Vector2 dir=Vector2Normalize((Vector2){EXIT_X-sx, EXIT_Y-(groundY-16)});
+                         Vector2 dir=Vector2Normalize((Vector2){EXIT_X-sx,EXIT_Y-(groundY-16)});
                          leavers[slot].dx=dir.x; leavers[slot].dy=dir.y;
                          playFrust();
                      }
@@ -245,7 +239,7 @@
                                   tintForState(c->state));
              }
  
-             /* leavers ----------------------------------------- */
+             /* leavers update & draw -------------------------- */
              for(int l=0;l<MAX_LEAVERS;l++) if(leavers[l].active){
                  Animation *a=leavers[l].anim;
                  UpdateAnimation(a,dt);
@@ -266,7 +260,7 @@
          }
          EndScissorMode();
  
-         /* ---- right dashboard -------------------------------- */
+         /* ---- right dashboard (unchanged) ------------------- */
          int rx=BG_W;
          DrawRectangle(rx,0,DASH_W,WIN_H,(Color){245,245,245,255});
          DrawText("Game Dashboard",rx+10,10,FONT_LG,DARKGRAY);
@@ -281,7 +275,7 @@
          DrawText(TextFormat("Missing Item  : %d",g->num_customers_missing),rx+10,y,FONT_XS,BLACK); y+=14;
          DrawText(TextFormat("Cascade Events: %d",g->num_customers_cascade),rx+10,y,FONT_XS,BLACK); y+=20;
  
-         /* ---- ready products / ingredients ------------------ */
+         /* ---- ready products / ingredients / ovens ---------- */
          int colW=(DASH_W-20)/2, readyX=rx+10, ingrX=rx+10+colW;
          int yR=y, yI=y;
          DrawText("Ready products:",readyX,yR,FONT_MD,DARKGRAY); yR+=20;
@@ -311,7 +305,7 @@
              }
          }
  
-         /* ---- ovens ---------------------------------------- */
+         /* ovens --------------------------------------------- */
          float ovensY=yI+20;
          if(ovensY+ovenT.height>WIN_H-BAR_H-10)
              ovensY=WIN_H-BAR_H-ovenT.height-10;
@@ -327,35 +321,45 @@
                           x,ovensY+ovenT.height+32,FONT_XS,MAROON);
          }
  
-         /* ---- staff bar with live info --------------------- */
+         /* ---- staff bar ------------------------------------ */
          int by=WIN_H-BAR_H;
          DrawRectangle(0,by,WIN_W,BAR_H,(Color){235,235,235,255});
  
-         /* bakers */
+         /* bakers -------------------------------------------- */
          DrawText("Bakers:",10,by+10,FONT_MD,DARKGRAY);
          float bx=120-staffScroll;
          for(int i=0;i<nBakers;i++){
              Baker *bk=&bakers[i];
              const char *teamStr = get_team_name_str(bk->team_name);
              const char *stateStr= bk->state==0? "Idle":"Busy";
-             const char *itemStr = strlen(bk->Item)? bk->Item:"–";
+ 
+             /* show item only when busy */
+             char bItem[64];
+             if(bk->state==0) bItem[0]='\0';
+             else { strncpy(bItem,bk->Item,sizeof(bItem)-1); bItem[sizeof(bItem)-1]='\0'; }
+             const char *itemStr = strlen(bItem)? bItem:"";
  
              Rectangle dst={bx-32,by+15,64,96};
              DrawTexturePro(bakeT,(Rectangle){0,0,bakeT.width,bakeT.height},
                             dst,(Vector2){0,0},0,WHITE);
              DrawText(TextFormat("State %s",stateStr), bx+BAK_R+10,by+20,FONT_XS,BLACK);
              DrawText(teamStr,                           bx+BAK_R+10,by+35,FONT_XS,BLACK);
-             DrawText(TextFormat("Item %s",itemStr),    bx+BAK_R+10,by+50,FONT_XS,BLACK);
+             if(strlen(itemStr))
+                 DrawText(TextFormat("Item %s",itemStr),bx+BAK_R+10,by+50,FONT_XS,BLACK);
              bx += BAK_R*2 + 140;
          }
  
-         /* chefs (team shown as number) ---------------------- */
+         /* chefs --------------------------------------------- */
          DrawText("Chefs:",10,by+120,FONT_MD,DARKGRAY);
          float cx=120-staffScroll;
          for(int i=0;i<nChefs;i++){
              Chef *ch=&chefs[i];
              const char *stateStr = ch->is_active? "Busy":"Idle";
-             const char *itemStr  = strlen(ch->Item)? ch->Item:"–";
+ 
+             char cItem[64];
+             if(!ch->is_active) cItem[0]='\0';
+             else { strncpy(cItem,ch->Item,sizeof(cItem)-1); cItem[sizeof(cItem)-1]='\0'; }
+             const char *itemStr = strlen(cItem)? cItem:"";
  
              float top=by+145;
              Rectangle dst={cx-(chefFrame.width*CHEF_SCALE)/2,
@@ -365,7 +369,8 @@
              DrawTexturePro(chefT,chefFrame,dst,(Vector2){0,0},0,WHITE);
              DrawText(TextFormat("State %s",stateStr), cx+CHEF_S/2+10,top-10,FONT_XS,BLACK);
              DrawText(TextFormat("Team %d",ch->team),  cx+CHEF_S/2+10,top+5 ,FONT_XS,BLACK);
-             DrawText(TextFormat("Item %s",itemStr),   cx+CHEF_S/2+10,top+20,FONT_XS,BLACK);
+             if(strlen(itemStr))
+                 DrawText(TextFormat("Item %s",itemStr),cx+CHEF_S/2+10,top+20,FONT_XS,BLACK);
              cx += CHEF_S + 180;
          }
  
@@ -379,7 +384,7 @@
          EndDrawing();
      }
  
-     /* -------- cleanup ------------------------------------- */
+     /* cleanup ----------------------------------------------- */
      for(int i=0;i<MAX_VISUALS;i++) FreeAnimation(&visuals[i].anim);
      for(int l=0;l<MAX_LEAVERS;l++) if(leavers[l].active)
          FreeAnimation(&leavers[l].anim);
