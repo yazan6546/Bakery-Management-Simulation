@@ -45,18 +45,24 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+
+    // Parse arguments
+    // Convert message queue ID and team enum from string to integer
     int  mqid    = atoi(argv[1]);
     Team my_team = (Team)atoi(argv[2]);
 
+    // Open shared memory
     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
     if (shm_fd == -1) { perror("shm_open"); exit(EXIT_FAILURE); }
     game = mmap(NULL, sizeof(Game), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (game == MAP_FAILED) { perror("mmap"); exit(EXIT_FAILURE); }
     close(shm_fd);
 
+    // Setup semaphores
     sem_t *ready_sem = setup_ready_products_semaphore();
     setup_oven_semaphores(game->config.NUM_OVENS);
 
+    
     BakerState    state    = IDLE;
     BakeryMessage cur_msg  = {0};
     int           oven_idx = -1;
