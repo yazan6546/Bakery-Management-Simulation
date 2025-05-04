@@ -10,7 +10,7 @@
 #include "oven.h"
 #include "inventory.h"
 #include "game.h"
-#include "BakerTeam.h"
+#include "team.h"
 #include "bakery_utils.h"
 #include "products.h"
 #include "semaphores_utils.h"

@@ -2,7 +2,7 @@
 #ifndef BAKER_UTILS_H
 #define BAKER_UTILS_H
 
-#include "BakerTeam.h"
+#include "team.h"
 #include "config.h"
 
 // Get the team name string from the enum
