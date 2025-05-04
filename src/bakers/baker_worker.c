@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     Team my_team = (Team)atoi(argv[2]);
     int  id      = atoi(argv[3]);
     printf("Baker %d started in team %s\n", id, get_team_name_str(my_team));
+    fflush(stdout);
 
     // Open shared memory
     int shm_fd = shm_open("/game_shared_mem", O_RDWR, 0666);
@@ -61,6 +62,10 @@ int main(int argc, char *argv[])
     game->info.bakers[id].state    = BAKER_IDLE;
     ChefMessage cur_msg  = {0};
     int           oven_idx = -1;
+
+
+    game->info.bakers[id].team_name = my_team;
+    game->info.bakers[id].state    = BAKER_IDLE;
 
     while (1) {
 
