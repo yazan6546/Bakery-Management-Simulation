@@ -79,7 +79,7 @@ void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_qu
 
 
 // Function to simulate the work of a chef
-void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
+void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id) {
     // Set up random seed based on process ID
     srand(time(NULL) ^ getpid());
 
@@ -93,17 +93,15 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     }
 
     // Initialize chef state
-    Chef chef = {
-        .team = team,
-        .is_active = 1, // Start as active
-        .inventory_sem = inventory_sem,
-        .ready_products_sem = ready_products_sem
-    };
+    game->info.chefs[id].team = team;
+    game->info.chefs[id].is_active = 1; // Start as active
+    game->info.chefs[id].inventory_sem = inventory_sem;
+    game->info.chefs[id].ready_products_sem = ready_products_sem;
 
     printf("[Chef Worker] Started in team %d\n", team);
 
     while (1) {
-        if (chef.team != team) {
+        if (game->info.chefs[id].team != team) {
             // Update team and specialization
             team = chef.team;
             printf("[Chef Worker] Switched to team %d\n", team);
@@ -151,6 +149,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
             // Simulate preparation time
             printf("[Chef Worker Team %d] Starting production of %s\n",
                    team, product->name);
+            
             sleep(product->preparation_time);
 
             // Handle products that don't need baking (sandwiches and paste)

@@ -38,7 +38,7 @@ typedef struct {
     pid_t pid;
     int is_active;
     int items_produced;
-    char Item_name[MAX_NAME_LENGTH];
+    char Item[MAX_NAME_LENGTH];
     ProductCategory* specialization;
     sem_t* inventory_sem;
     sem_t* ready_products_sem;

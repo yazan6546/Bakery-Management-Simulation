@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    
+
     // Initialize chef manager
     ChefManager* manager = init_chef_manager(&game->productCatalog,
                                            inventory_sem,
@@ -67,20 +67,22 @@ int main(int argc, char *argv[]) {
 
             if (pid == 0) {
                 // Child process
-                char mqid_str[16], team_str[8];
+                char mqid_str[16], team_str[8], ;
                 snprintf(mqid_str, sizeof(mqid_str), "%d", msg_queue);
                 snprintf(team_str, sizeof(team_str), "%d", team);
 
-                execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
-                perror("execl failed");
-                exit(1);
-            } else if (pid > 0) {
                 // Parent process
                 Chef* chef = &manager->chefs[manager->chef_count++];
                 chef->id = manager->chef_count;
                 chef->team = team;
                 chef->pid = pid;
                 chef->is_active = 1;
+
+                execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
+                perror("execl failed");
+                exit(1);
+            } else if (pid > 0) {
+                
             } else {
                 perror("Fork failed");
             }

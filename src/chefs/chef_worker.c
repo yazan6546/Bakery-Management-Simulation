@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     // Parse arguments
     int msg_queue_id = atoi(argv[1]);
     ChefTeam team = atoi(argv[2]);
+    int id = 
 
     struct sigaction sa;
     sa.sa_handler = move_chef;
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]) {
     sigaction(SIGUSR1, &sa, NULL);
 
     // Start chef work simulation
-    simulate_chef_work(team, msg_queue_id, game);
+    simulate_chef_work(team, msg_queue_id, game, id);
 
     return 0;
 }

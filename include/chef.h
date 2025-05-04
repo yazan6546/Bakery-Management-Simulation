@@ -37,7 +37,6 @@ typedef struct {
 
 
 typedef struct {
-    Chef chefs[MAX_CHEFS];
     int chef_count;
     int msg_queue_chefs;    // Queue for communication with chefs
     int msg_queue_bakers;   // Queue for communication with baker manager
@@ -57,7 +56,7 @@ void start_chef(Chef* chef, int msg_queue_id);
 void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, Game *game);
 ChefTeam get_team_for_product_type(ProductType type);
 ProductType get_product_type_for_team(ChefTeam team);
-void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game);
+void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game, int id);
 void calculate_production_ratios(const ReadyProducts *ready_products, float *ratios);
 void reallocate_chefs(ChefManager* manager, int msg_queue, float* ratios);
 void balance_teams(ChefManager *manager, Game *game);
