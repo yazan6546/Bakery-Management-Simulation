@@ -20,7 +20,7 @@
 #include "bakery_message.h"
 
 
-
+// initialize manager
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem) {
     ChefManager* manager = malloc(sizeof(ChefManager));
     if (!manager) {
@@ -44,6 +44,7 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
     return manager;
 }
 
+// send messages between chef manager and chefs
 void process_chef_messages(ChefManager* manager, int* team_queues, Game *game) {
     while (1) {
         // Process messages from all team queues
@@ -71,6 +72,7 @@ void process_chef_messages(ChefManager* manager, int* team_queues, Game *game) {
     }
 }
 
+// Function to get the product type for a given team for adding to the products
 ProductType get_product_type_for_team(ChefTeam team) {
     switch (team) {
         case TEAM_BREAD:
@@ -94,6 +96,8 @@ ProductType get_product_type_for_team(ChefTeam team) {
     }
 }
 
+
+// Function to get the team for a given product type
 ChefTeam get_team_for_product_type(ProductType type) {
     switch (type) {
         case BREAD:
@@ -114,6 +118,7 @@ ChefTeam get_team_for_product_type(ProductType type) {
     }
 }
 
+// Function to simulate the work of a chef
 void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     // Set up random seed based on process ID
     srand(time(NULL) ^ getpid());
@@ -138,7 +143,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
     printf("[Chef Worker] Started in team %d\n", team);
 
     while (1) {
-            if (chef.team != team) {
+        if (chef.team != team) {
             // Update team and specialization
             team = chef.team;
             printf("[Chef Worker] Switched to team %d\n", team);
@@ -159,6 +164,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
         lock_inventory(inventory_sem);
         int has_ingredients = 1;
 
+        // Check if we have enough of each ingredient
         for (int i = 0; i < product->ingredient_count; i++) {
             if (game->inventory.quantities[product->ingredients[i].type] <
                 product->ingredients[i].quantity) {
@@ -167,6 +173,8 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
             }
         }
 
+        // If we have enough ingredients, proceed with preparation
+        // Otherwise, wait for ingredients
         if (has_ingredients) {
             // Use ingredients
             for (int i = 0; i < product->ingredient_count; i++) {
@@ -208,7 +216,7 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
             } else {
                 // Prepare message for chef manager for items that need baking
                 ChefMessage msg;
-                msg.mtype = 1;
+                msg.mtype = team;
                 msg.source_team = team;
                 msg.product_index = product_index;
                 msg.product_name = product->name;
