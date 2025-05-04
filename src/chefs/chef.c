@@ -67,18 +67,22 @@ int main(int argc, char *argv[]) {
 
             if (pid == 0) {
                 // Child process
-                char mqid_str[16], team_str[8], ;
+                char mqid_str[16], team_str[8], id_str[8];
+
+                int id = game->info.chef_count++;
+
                 snprintf(mqid_str, sizeof(mqid_str), "%d", msg_queue);
                 snprintf(team_str, sizeof(team_str), "%d", team);
+                snprintf(id_str, sizeof(id_str), "%d", game->info.chef_count);
 
                 // Parent process
-                Chef* chef = &manager->chefs[manager->chef_count++];
-                chef->id = manager->chef_count;
+                Chef* chef = &game->info.chefs[id];
+                chef->id = id;
                 chef->team = team;
                 chef->pid = pid;
                 chef->is_active = 1;
 
-                execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
+                execl("./chef_worker", "chef_worker", mqid_str, team_str, id_str, NULL);
                 perror("execl failed");
                 exit(1);
             } else if (pid > 0) {

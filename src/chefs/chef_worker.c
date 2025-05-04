@@ -23,7 +23,12 @@ int main(int argc, char *argv[]) {
     // Parse arguments
     int msg_queue_id = atoi(argv[1]);
     ChefTeam team = atoi(argv[2]);
-    int id = 
+    int id = atoi(argv[3]);
+
+    if(argc != 4) {
+        fprintf(stderr, "Usage: %s <msg_queue_id> <team> <id>\n", argv[0]);
+        exit(1);
+    }
 
     struct sigaction sa;
     sa.sa_handler = move_chef;
