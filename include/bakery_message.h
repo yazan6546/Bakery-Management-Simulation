@@ -5,6 +5,7 @@
 #include "chef.h"
 #define MAX_ITEM_NAME 50
 #define MAX_TEAM_NAME 50
+#define MAX_NAME_LENGTH 64
 
 typedef struct {
     long mtype; // Message type: 1 (Bread), 2 (Cake/Sweets), 3 (Patisseries)
@@ -42,13 +43,13 @@ typedef struct {
 } CompletionMessage;
 
 
-int get_message_queue();
+int get_message_queue(void);
 
 
 typedef struct {
     long mtype;
     ChefTeam source_team;
-    char *product_name;
+    char product_name[MAX_NAME_LENGTH];
     int product_index;
 } ChefMessage;
 
