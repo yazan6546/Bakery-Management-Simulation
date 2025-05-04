@@ -121,7 +121,6 @@ int msg_queue_id = -1;  /* Baker manager queue id */
         // receive a message from the chef manager
         // baker manager receives all messages from the chef manager, so mtype = 0
 
-        printf("BAKER MANAGER READY");
         fflush(stdout);
 
          ssize_t r = msgrcv(in_q, &msg, sizeof(ChefMessage) - sizeof(long), 0, 0);
@@ -130,8 +129,6 @@ int msg_queue_id = -1;  /* Baker manager queue id */
              if (errno == EINTR) continue;          /* interrupted by signal */
              perror("manager msgrcv"); continue;
          }
-
-         printf("MESSAGE RECEIVED");
          
 
          int baker_team = get_baker_team_from_chef_team(msg.source_team);

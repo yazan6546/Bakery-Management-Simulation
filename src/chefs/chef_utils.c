@@ -55,7 +55,7 @@ void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_qu
             // Forward to baker manager if needed
         if (msg.source_team != TEAM_SANDWICHES) {
         
-            if (msgsnd(CHEF_BAKER_KEY, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
+            if (msgsnd(baker_msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                 perror("Failed to forward to baker manager");
             }
         } else {
