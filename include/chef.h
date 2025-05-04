@@ -9,6 +9,7 @@
 #include <inventory.h>
 #include "products.h"
 #include "game.h"
+#include "team.h"
 
 
 
@@ -30,16 +31,7 @@ typedef struct {
 #define MAX_ITEMS_QUEUE 100
 
 
-typedef enum {
-    TEAM_PASTE=6,
-    TEAM_BREAD=0,
-    TEAM_CAKES=1,
-    TEAM_SANDWICHES=2,
-    TEAM_SWEETS=3,
-    TEAM_SWEET_PATISSERIES=4,
-    TEAM_SAVORY_PATISSERIES=5,
-    TEAM_COUNT=7
-} ChefTeam;
+
 
 
 typedef struct {
@@ -71,7 +63,7 @@ void check_for_confirmations(ChefState *chef);
 void prepare_recipes(ChefState *chef, Inventory *inventory, ReadyProducts *ready_products);
 ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* ready_sem);
 void start_chef(Chef* chef, int msg_queue_id);
-void process_chef_messages(ChefManager* manager, int msg_queue, Game *game);
+void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, Game *game);
 ChefTeam get_team_for_product_type(ProductType type);
 ProductType get_product_type_for_team(ChefTeam team);
 void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game);
@@ -80,4 +72,6 @@ void reallocate_chefs(ChefManager* manager, int msg_queue, float* ratios);
 void balance_teams(ChefManager *manager, Game *game);
 void handle_team_change(int signum);
 void move_chef(ChefManager *manager, ChefTeam from_team, ChefTeam to_team, Game *game);
+
+
 #endif //CHEF_H

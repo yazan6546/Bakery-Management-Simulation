@@ -18,6 +18,7 @@
 #include "chef.h"
 #include "semaphores_utils.h"
 #include "bakery_message.h"
+#include "team.h"
 
 
 // initialize manager
@@ -45,7 +46,7 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
 }
 
 // send messages between chef manager and chefs
-void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
+void process_chef_messages(ChefManager* manager, int msg_queue, int baker_msg_queue, Game *game) {
     
       
     // prepare a message for receipt from the chefs  
@@ -53,13 +54,15 @@ void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
     while (msgrcv(msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0, IPC_NOWAIT) != -1) {
             // Forward to baker manager if needed
         if (msg.source_team != TEAM_SANDWICHES) {
-            if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
+        
+            if (msgsnd(baker_msg_queue, &msg, sizeof(ChefMessage) - sizeof(long), 0) == -1) {
                 perror("Failed to forward to baker manager");
             }
         } else {
             // Direct to ready products for items that don't need baking
+            ProductType type = get_product_type_for_team(msg.source_team);
             add_ready_product(&game->ready_products,
-                            msg.source_team,
+                            type,
                             msg.product_index,
                             1,
                             manager->ready_products_sem);
@@ -72,51 +75,8 @@ void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
 }
 
 
-// Function to get the product type for a given team for adding to the products
-ProductType get_product_type_for_team(ChefTeam team) {
-    switch (team) {
-        case TEAM_BREAD:
-            return BREAD;
-        case TEAM_CAKES:
-            return CAKE;
-        case TEAM_SANDWICHES:
-            return SANDWICH;
-        case TEAM_SWEETS:
-            return SWEET;
-        case TEAM_SWEET_PATISSERIES:
-            return SWEET_PATISSERIES;
-        case TEAM_SAVORY_PATISSERIES:
-            return SAVORY_PATISSERIES;
-        case TEAM_PASTE:
-            // Handle paste team as special case - no direct product type mapping
-            return -1;
-        default:
-            fprintf(stderr, "Unknown team type: %d\n", team);
-            return -1;
-    }
-}
 
 
-// Function to get the team for a given product type
-ChefTeam get_team_for_product_type(ProductType type) {
-    switch (type) {
-        case BREAD:
-            return TEAM_BREAD;
-        case CAKE:
-            return TEAM_CAKES;
-        case SANDWICH:
-            return TEAM_SANDWICHES;
-        case SWEET:
-            return TEAM_SWEETS;
-        case SWEET_PATISSERIES:
-            return TEAM_SWEET_PATISSERIES;
-        case SAVORY_PATISSERIES:
-            return TEAM_SAVORY_PATISSERIES;
-        default:
-            fprintf(stderr, "Unknown product type: %d\n", type);
-            return -1;
-    }
-}
 
 // Function to simulate the work of a chef
 void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
@@ -327,3 +287,4 @@ void balance_teams(ChefManager *manager, Game *game) {
         move_chef(manager, max_team, min_team, game);
     }
 }
+

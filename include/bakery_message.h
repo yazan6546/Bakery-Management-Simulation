@@ -8,12 +8,11 @@
 #define MAX_NAME_LENGTH 25
 #define CUSTOMER_SELLER_MSG_KEY 0x1234
 
-typedef struct {
-    long mtype; // Message type: 1 (Bread), 2 (Cake/Sweets), 3 (Patisseries)
-    char item_name[MAX_ITEM_NAME];
-    ProductType category;
-    int index;
-} BakeryMessage;
+// define message queue keys
+#define CHEF_BAKER_KEY 0xCAFEBABE
+#define MANAGER_BAKERS 0xBEEFBEEF
+
+
 
 
 typedef enum Action {
@@ -64,6 +63,7 @@ typedef struct {
     char product_name[MAX_NAME_LENGTH];
     int product_index;
 } ChefMessage;
+
 
 // Message structure for restock requests
 typedef struct {

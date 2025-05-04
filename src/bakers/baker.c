@@ -11,24 +11,18 @@
  #include <errno.h>
  
  #include "oven.h"
- #include "BakerTeam.h"
+ #include "team.h"
  #include "game.h"
  #include "bakery_utils.h"
  #include "products.h"
  #include "semaphores_utils.h"
+ #include "bakery_message.h"
  
  #define TEAM_COUNT      3
- #define INPUT_QUEUE_KEY 0xCAFEBABE     
- 
- 
- typedef struct {
-     long         mtype;                
-     char         item_name[MAX_NAME_LENGTH];
-     ProductType  category;
-     int          index;               
- } BakeryMessage;
+     
  
 
+// from category to baker team
  static inline int category_to_slot(ProductType cat)
  {
      if (cat == BREAD)                     return 0;   /* Bread team      */
@@ -37,7 +31,7 @@
  }
  
 
- static int   team_q [TEAM_COUNT] = { -1,-1,-1 };
+int msg_queue_id = -1;  /* Baker manager queue id */
  static int   in_q                = -1;
  static pid_t manager_pgid        = 0;  
  
@@ -48,8 +42,8 @@
      if (done) return;  done = 1;
  
      if (in_q != -1)             msgctl(in_q, IPC_RMID, NULL);
-     for (int i = 0; i < TEAM_COUNT; ++i)
-         if (team_q[i] != -1)    msgctl(team_q[i], IPC_RMID, NULL);
+     
+    if (msg_queue_id != -1)    msgctl(msg_queue_id, IPC_RMID, NULL);
  
      if (manager_pgid > 0)
          kill(-manager_pgid, SIGTERM);
@@ -94,8 +88,8 @@
      print_config(&game->config);
 
      for (int i = 0; i < TEAM_COUNT; ++i) {
-         team_q[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-         if (team_q[i] == -1) { perror("msgget team"); exit(EXIT_FAILURE); }
+         msg_queue_id = msgget(MANAGER_BAKERS, 0666 | IPC_CREAT);
+         if (msg_queue_id == -1) { perror("msgget team"); exit(EXIT_FAILURE); }
      }
  
      /* ---------- fork baker_workers -------------------------------- */
@@ -106,7 +100,7 @@
          for (int b = 0; b < teams[t].number_of_bakers; ++b) {
              if (fork() == 0) {               /* child process */
                  char q_s[16], team_s[8];
-                 snprintf(q_s, sizeof q_s, "%d", team_q[t]);
+                 snprintf(q_s, sizeof q_s, "%d", msg_queue_id);
                  snprintf(team_s, sizeof team_s, "%d", teams[t].team_name);
                  execl("./baker_worker", "baker_worker", q_s, team_s, NULL);
                  perror("execl"); _exit(EXIT_FAILURE);
@@ -114,32 +108,39 @@
          }
  
      /* ---------- public front‑door queue --------------------------- */
-     in_q = msgget(INPUT_QUEUE_KEY, 0666 | IPC_CREAT);
+     in_q = msgget(CHEF_BAKER_KEY, 0666 | IPC_CREAT);
      if (in_q == -1) { perror("msgget input"); exit(EXIT_FAILURE); }
  
      printf("Manager ready – public queue key 0x%X  (id %d)\n",
-            INPUT_QUEUE_KEY, in_q);
+        CHEF_BAKER_KEY, in_q);
      puts("Send BakeryMessage structs here to feed the bakers…");
  
      /* ---------- dispatcher loop ----------------------------------- */
-     BakeryMessage msg;
+     ChefMessage msg;
      while (1) {
-         ssize_t r = msgrcv(in_q, &msg, sizeof msg - sizeof(long), 0, 0);
+        // receive a message from the chef manager
+        // baker manager receives all messages from the chef manager, so mtype = 0
+
+        fflush(stdout);
+
+         ssize_t r = msgrcv(in_q, &msg, sizeof(ChefMessage) - sizeof(long), 0, 0);
+         
          if (r == -1) {
              if (errno == EINTR) continue;          /* interrupted by signal */
              perror("manager msgrcv"); continue;
          }
- 
-         int slot = category_to_slot(msg.category);
-         if (msgsnd(team_q[slot], &msg,
+         
+
+         int baker_team = get_baker_team_from_chef_team(msg.source_team);
+         if (msgsnd(msg_queue_id, &msg,
                     sizeof msg - sizeof(long), 0) == -1) {
              perror("manager msgsnd");
          } else {
              const char *team =
-                 (slot == 0) ? "Bread" :
-                 (slot == 1) ? "Cake/Sweet" : "Patisserie";
+                 (baker_team == 0) ? "Bread" :
+                 (baker_team == 1) ? "Cake/Sweet" : "Patisserie";
              printf("→ dispatched %-20s to %s queue (id %d)\n",
-                    msg.item_name, team, team_q[slot]);
+                    msg.product_name, team, msg_queue_id);
          }
      }
      /* never reached */
