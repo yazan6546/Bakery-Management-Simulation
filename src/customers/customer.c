@@ -233,6 +233,7 @@ void handle_alarm(int sig) {
 void handle_seller_signal(int sig) {
 
     printf("me  order qe2opek\n");
+    alarm(0); // Stop the timer
     if (sig == SIGUSR1) {
         in_queue = 0;
         update_state(ORDERING, in_queue); // Update state to ORDERING
