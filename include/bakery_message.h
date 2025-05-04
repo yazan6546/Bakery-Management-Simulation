@@ -8,7 +8,7 @@
 #define MAX_NAME_LENGTH 64
 
 // define message queue keys
-#define CHEF_MGR_KEY 0xCAFEBABE
+#define CHEF_BAKER_KEY 0xCAFEBABE
 #define MANAGER_BAKERS 0xBEEFBEEF
 
 

@@ -108,11 +108,11 @@ int msg_queue_id = -1;  /* Baker manager queue id */
          }
  
      /* ---------- public front‑door queue --------------------------- */
-     in_q = msgget(CHEF_MGR_KEY, 0666 | IPC_CREAT);
+     in_q = msgget(CHEF_BAKER_KEY, 0666 | IPC_CREAT);
      if (in_q == -1) { perror("msgget input"); exit(EXIT_FAILURE); }
  
      printf("Manager ready – public queue key 0x%X  (id %d)\n",
-            CHEF_MGR_KEY, in_q);
+        CHEF_BAKER_KEY, in_q);
      puts("Send BakeryMessage structs here to feed the bakers…");
  
      /* ---------- dispatcher loop ----------------------------------- */
