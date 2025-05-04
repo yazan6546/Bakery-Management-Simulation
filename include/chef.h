@@ -38,6 +38,8 @@ typedef struct {
     int is_active;
     int items_produced;
     ProductCategory* specialization;
+    char current_product_name[MAX_NAME_LENGTH];
+    int current_product_prep_time;
     sem_t* inventory_sem;
     sem_t* ready_products_sem;
 } Chef;

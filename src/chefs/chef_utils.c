@@ -119,7 +119,8 @@ void simulate_chef_work(ChefTeam team, int msg_queue_id, Game *game) {
         // Select random product from category
         int product_index = rand() % category->product_count;
         Product* product = &category->products[product_index];
-
+        chef.current_product_prep_time = product->preparation_time;
+        strncpy(chef.current_product_name, product->name, MAX_NAME_LENGTH - 1);
         // Check if we have enough ingredients
         lock_inventory(inventory_sem);
         int has_ingredients = 1;
