@@ -45,32 +45,32 @@ ChefManager* init_chef_manager(ProductCatalog* catalog, sem_t* inv_sem, sem_t* r
 }
 
 // send messages between chef manager and chefs
-void process_chef_messages(ChefManager* manager, int* team_queues, Game *game) {
-    while (1) {
-        // Process messages from all team queues
-        for (int team = 0; team < TEAM_COUNT; team++) {
-            ChefMessage msg;
-            while (msgrcv(team_queues[team], &msg, sizeof(ChefMessage), 0, IPC_NOWAIT) != -1) {
-                // Forward to baker manager if needed
-                if (msg.source_team != TEAM_SANDWICHES) {
-                    if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage), 0) == -1) {
-                        perror("Failed to forward to baker manager");
-                    }
-                } else {
-                    // Direct to ready products for items that don't need baking
-                    add_ready_product(&game->ready_products,
-                                   msg.source_team,
-                                   msg.product_index,
-                                   1,
-                                   manager->ready_products_sem);
-                }
+void process_chef_messages(ChefManager* manager, int msg_queue, Game *game) {
+    
+      
+    // prepare a message for receipt from the chefs  
+    ChefMessage msg;
+    while (msgrcv(msg_queue, &msg, sizeof(ChefMessage), 0, IPC_NOWAIT) != -1) {
+            // Forward to baker manager if needed
+        if (msg.source_team != TEAM_SANDWICHES) {
+            if (msgsnd(manager->msg_queue_bakers, &msg, sizeof(ChefMessage), 0) == -1) {
+                perror("Failed to forward to baker manager");
             }
+        } else {
+            // Direct to ready products for items that don't need baking
+            add_ready_product(&game->ready_products,
+                            msg.source_team,
+                            msg.product_index,
+                            1,
+                            manager->ready_products_sem);
         }
+    }
+    
 
         // Delay to prevent busy waiting
         usleep(100000);
-    }
 }
+
 
 // Function to get the product type for a given team for adding to the products
 ProductType get_product_type_for_team(ChefTeam team) {

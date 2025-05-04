@@ -35,14 +35,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    // Create message queues for each team
-    int team_queues[TEAM_COUNT];
-    for (int i = 0; i < TEAM_COUNT; i++) {
-        team_queues[i] = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
-        if (team_queues[i] == -1) {
-            perror("Failed to create team message queue");
-            exit(1);
-        }
+   int msg_queue = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);
+    if (msg_queue == -1) {
+        perror("Failed to create message queue");
+        exit(1);
     }
 
     // Initialize chef manager
@@ -69,7 +65,7 @@ int main(int argc, char *argv[]) {
             if (pid == 0) {
                 // Child process
                 char mqid_str[16], team_str[8];
-                snprintf(mqid_str, sizeof(mqid_str), "%d", team_queues[team]);
+                snprintf(mqid_str, sizeof(mqid_str), "%d", msg_queue);
                 snprintf(team_str, sizeof(team_str), "%d", team);
 
                 execl("./chef_worker", "chef_worker", mqid_str, team_str, NULL);
@@ -90,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         // Process messages from chefs
-        process_chef_messages(manager, team_queues, game);
+        process_chef_messages(manager, msg_queue, game);
 
         // Check if it's time to rebalance teams
         time_t current_time = time(NULL);
