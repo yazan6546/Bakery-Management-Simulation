@@ -89,7 +89,7 @@ void process_customer_messages(int msg_queue_id, queue_shm *customer_queue, Game
             }
             case LEAVING_EARLY: {
                 active_customers--;
-                kill(SIGINT, pid);
+                kill(pid, SIGINT);
                 if (msg.in_queue) {
                     find_and_remove_customer(msg.customer_pid, customer_queue, queue_sem);
                 }
