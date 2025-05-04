@@ -220,7 +220,7 @@ void handle_alarm(int sig) {
             alarm(0); // Stop the timer
             printf("Customer %d ran out of patience and is leaving\n", customer_id);
             // Let manager update game stats
-            update_state(FRUSTRATED, in_queue);
+            leave_restaurant (FRUSTRATED, LEAVING_EARLY, in_queue); // 2 = frustrated
             return;
         }
     }
